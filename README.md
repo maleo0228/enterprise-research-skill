@@ -1,123 +1,67 @@
-# Enterprise Research Skill
+# Enterprise Research Skill V1.0.0
 
-**Evidence-grounded company research → a single-file, offline HTML report.**
-**Current version: v2.3.7** · [Changelog](https://github.com/maleo0228/enterprise-research-skill/releases) · [中文版 README](README.zh-CN.md)
+An evidence-first skill for researching one named company from public information. It identifies the entity, plans the research, verifies high-impact claims, and produces one detailed report plus structured CSV and Excel outputs.
 
-Research a company from public sources under a frozen discipline spec, structure the findings as one JSON file, and this skill turns it into a **validated, navigable, fully source-traceable report** — a single HTML file that opens in any browser, works offline, and can be shared as-is. The skill covers both stages: research ([`research-discipline-spec.md`](research-discipline-spec.md)) and rendering. v2.0 is a complete rewrite of the archived [v1.x line](https://github.com/maleo0228/enterprise-research-skill/releases).
+## What it is for
 
-> **New in v2.3.7** — spec v0.4: the research-discipline spec gains §10 (collection-dimension table mapping every required contract node to sources and evidence level, mechanically guarded by new regression R24) and §11 (neutral defaults: zero user parameters still executes end-to-end to a first version, at most 2 blocking questions, no deployment-specific defaults); §7.3 gap list gains a machine-readable `gap-list.json` form with carrier syntax; new `renderer/gap_fidelity_check.py` makes gap-to-carrier fidelity a mechanical pre-render gate (R23). 137-item regression suite, zero-defect seeded fuzz.
->
-> **New in v2.3.6** — two-stage framing made explicit: SKILL.md, `skill.yml`, and this README now state up front that the skill covers **both** the research stage (governed by `research-discipline-spec.md`, read-before-start) and the rendering stage, removing the contradictory declarations that made some agents conclude the skill only renders HTML. `skill.yml` triggers extended ("企业研究 / analyze company"…); new regression R22 locks the framing against regression. 131-item regression suite, zero-defect seeded fuzz.
->
-> **New in v2.3.5** — mobile reading & validation hardening: on phones the sidebar now collapses to a single row of chips so the report text is visible on the first screen (sidebar 876→292px at 375px); tapping a citation [En] records your reading position — the browser Back button or a tap on the source row's ID cell returns you there. Wide charts (8 categories × 4 series) keep text ≥11px on desktop instead of shrinking to 3–6px; searching no longer swallows chart labels; misspelled field names (e.g. `caption_source`) are flagged with a did-you-mean suggestion instead of silently dropping citations; s4 zero-result directions get a spec-§1.5 hint instead of a `--strict` failure; the annual/interim mixing check also catches periods laid out as rows; `check_urls` gains `--user-agent` for SEC EDGAR; the shipped ginlong example now fully follows spec §5.2.1. 129-item regression suite, zero-defect seeded fuzz.
->
-> **New in v2.3.4** — interim-report layout rules: annual tables/charts now hold complete fiscal years only (no more H1/Q3 columns next to audited annual data — Q1, semi-annual, and Q3 reports go into a separate "latest reporting period" table, spec §5.2.1); the renderer warns on year/interim column mixing and `--strict` blocks it. Also: the "export full Markdown" button moved into the sidebar header so it no longer covers report text on phones or desktop. 121-item regression suite, zero-defect seeded fuzz.
->
-> **New in v2.3.3** — chart correctness & readability overhaul: bar charts no longer silently drop data past 4 categories; value labels, legend, and axis can no longer overlap (layout computed from conservative, browser-calibrated text-width estimates); on phones and narrow windows tables scroll inside the card and chart text never shrinks below a readable 11px. Plus: hand-written citation marks are rejected, per-direction source warnings for section 4.0, a rewritten URL checker (TLS verified by default, failure reasons, redirect flags, GBK-safe, `--json`), China-unlisted-company source platforms added to the spec, both shipped examples fully cited, and Markdown export now includes chart data tables. 119-item regression suite, zero-defect seeded fuzz. At ≥1000px, reports without bar charts render pixel-identically to v2.3.1; bar charts are intentionally re-laid out (canvas height 250→255, centred labels, integer series without .00), so chart-bearing pages differ in the chart area and are 5px taller.
->
-> **New in v2.3.1** — the research-stage discipline spec ([see below](#research-discipline--the-stage-before-rendering-new-in-v231)), plus renderer hardening: byte-exact deterministic output (UTF-8/LF on all platforms), GBK-console-safe test suite, one validation gap closed. **Zero output change for conformant data.**
+- A single, user-specified company.
+- Public-source research with clear evidence, date, and scope.
+- A 43-field summary plus repeatable product, customer/case, event, competitor, score, IT-opportunity, evidence, and fact-to-judgment-to-opportunity records.
 
-## See it in one minute
+It is not for multi-agent workflows, batch scanning, ICP or lead discovery, databases, APIs, MCP, Web UI, complex scoring, PPT, or PDF. It is not legal, financial, investment, or compliance advice.
 
-Open a finished sample — no server, no install:
+## Research flow
 
-- **Ginlong (Solis) Technologies 锦浪科技** — [ginlong-solis_2026-10-19.html](https://maleo0228.github.io/enterprise-research-skill/samples/ginlong-solis_2026-10-19.html)
-- **Mingshi Investment 鸣石投资** — [mingshi-investment_2026-10-14.html](https://maleo0228.github.io/enterprise-research-skill/samples/mingshi-investment_2026-10-14.html)
-
-Then render your own:
-
-```bash
-python renderer/render.py report.json renderer/skeleton.html report.html
+```text
+Entity identification → Plan → Research → Verify → Synthesize
 ```
 
-That is the whole pipeline: one command, **Python 3.8+ standard library only** — no third-party packages, no network, no build step.
+High-impact facts should use primary public sources first: official company/IR materials, original filings, exchanges, regulators, governments, courts, and official sanctions/export-control databases. If a fact cannot be verified, the skill says so rather than guessing. Facts, calculations, analysis judgments, and opportunity judgments are explicitly separated.
 
-## What you get
+## Outputs
 
-A single self-contained HTML report, five modules:
-
-- **1.0 Company Overview** — profile, ownership & financing, full financials with charts;
-- **2.0 Events & Signals** — sourced business events, ranked signals;
-- **3.0 Business & Technology Analysis** — mechanism-by-mechanism breakdown, with *confirmed* and *unconfirmed* explicitly separated;
-- **4.0 IT Focus & Follow-up** — IT-relevant directions graded by evidence strength;
-- **5.0 Source Index & Evidence Chain** — every key claim traceable to a numbered source with its original link.
-
-Plus sidebar navigation, full-text search, SVG charts (negative values supported), clickable `[E#]` anchors jumping to the source table, and per-section / full-report Markdown export.
-
-## Research discipline — the stage before rendering (new in v2.3.1)
-
-A report is only as trustworthy as the research behind it. [`research-discipline-spec.md`](research-discipline-spec.md) — frozen v0.4, tool-neutral — defines what disciplined research output looks like, so research notes are **auditable instead of free-form prose**:
-
-- **Three output formats**: source list / fact card / gap list — every number carries a numbered source, every gap is declared with its reason and impact;
-- **Retrieval discipline**: lock the exact legal entity first and build the name-mapping chain (given name → brand → domain → platform namespaces); check platforms directly by subject type; diffuse one hop from the official site; recurse from platform pages; seek counter-evidence before trusting self-reported claims; never assert "nothing exists" without the zero-result evidence trio (channels / actions / date); pair self-reported figures with third-party measurements, calibers labeled;
-- **A pre-delivery self-check list** (spec §8).
-
-`SKILL.md` carries a condensed 8-point checklist of the same discipline. This skill covers the research stage itself: the spec is the discipline the built-in research stage follows, and the renderer validates and renders its output.
-
-## How it works
-
-```
-your research → report.json (conform to the data contract) → render.py → report.html
-```
-
-**1. Prepare the dataset.** Structure your findings into one `report.json` conforming to [`data-contract/report-data.schema.json`](data-contract/report-data.schema.json). Two validated examples in [`examples/`](examples/) show the full shape: five modules, a numbered source table, per-claim `sources` arrays. Three hard rules enforced by the contract:
-
-- **Source closure** — every claim is cited as `[E#]`, every `[E#]` is declared in the source table, and every declared source is actually cited;
-- **Citations are generated, never hand-written** — you supply `sources` arrays; the renderer emits the `[E#]` marks; hand-written citation markup is rejected;
-- **Named financial blocks** — financial content is typed blocks (`table` / `chart_bar` / `timeline` / `text` / `missing`), each with a `表N｜` or `图N｜` caption; gaps are declared explicitly with `missing`, never silently dropped.
-
-If your data doesn't fit the contract, reshape the data — do not patch the renderer to accept non-conformant input.
-
-**2. Render.** `render.py` **validates first** — structural completeness, source closure, unique navigation anchors, naming, chart-data sanity — and aborts with a plain, itemized "validation failed" list instead of emitting a broken report. On success it fills the frozen `skeleton.html` and emits the fully self-contained page.
-
-**3. Verify before delivery.**
-
-```bash
-python renderer/check_urls.py report.json   # every source URL reachable; WARN items (403/202/429, cross-site redirect, timeout, TLS interrupted, http-only blocked by network) need a manual re-check
-```
-
-Then open the HTML once in a browser (navigation, search, MD export, charts) and confirm no *renderer-residual* `{{...}}` tokens — literal template tokens coming from your own data values are kept verbatim by design (single-pass substitution, renderer v0.10+) and are not a defect.
-
-## Repository layout
-
-| Path | Contents |
+| File | Purpose |
 |---|---|
-| `SKILL.md` | Skill entry point (two stages: research discipline + validated rendering) + condensed research-stage checklist |
-| `research-discipline-spec.md` | Frozen v0.4 research-stage discipline, output formats, collection-dimension table (§10) & neutral defaults (§11) |
-| `data-contract/` | `report-data.schema.json` — the JSON data contract |
-| `examples/` | Two validated example datasets (Mingshi / Ginlong) |
-| `renderer/` | `render.py`, frozen `skeleton.html`, `compare.py`, `check_urls.py`, test & fuzz gates; `make_skeleton.py` (maintainer-only — refuses to run in public checkouts without the internal baseline) |
-| `samples/` | Finished single-file HTML report samples (open offline, share freely) |
+| `{company}_企业研究_V1.0.md` | Detailed research, evidence ledger, conflicts, reasoning, repeat-record tables, and limitations. |
+| `{company}_企业画像_V1.0.csv` | 14 columns and 43 field rows. UTF-8 BOM and CRLF for Chinese Excel compatibility. |
+| `{company}_企业画像_四页_V1.0.xlsx` | A five-sheet workbook: four analysis pages plus the source index. |
 
-## Installation
+The workbook sheets are fixed: `企业总览`, `业务·产品·技术`, `发展·资本·市场`, `研究判断·IT机会·证据`, `来源索引`. The Chinese output labels are intentional: they preserve the approved Excel reading workflow. CSV is the compact exchange format; the workbook retains layout, wrapping, filtering, frozen panes, and source drill-down.
 
-The repository is a standard agent skill package (entry: `SKILL.md`). Clone or copy it into your agent's skill directory:
+## Codex
 
-```bash
-git clone https://github.com/maleo0228/enterprise-research-skill.git
+G4 has verified local Codex installation, discovery, reference/template reading, a minimal official-site lookup, and generation of all three output types. Give Codex network access and write access to the selected output directory.
+
+Example:
+
+```text
+Use enterprise-company-research to perform standard research on "宁德时代" and write the outputs to 测试结果.
 ```
 
-- **Codex**: copy to `~/.agents/skills/enterprise-research-skill/` (or `~/.codex/skills/`)
-- **Claude Code**: copy to `~/.claude/skills/enterprise-research-skill/`
-- **WorkBuddy**: copy to `~/.workbuddy/skills/enterprise-research-skill/` (user-level) or `{workspace}/.workbuddy/skills/enterprise-research-skill/` (project-level)
-- **Kimi / other agents**: point the skill search path at this directory; if the platform does not auto-discover skills, read `SKILL.md` directly and run the render command manually — the renderer is a zero-dependency CLI (Python 3.8+ stdlib) and works standalone.
+## WorkBuddy installation
 
-After installing, restart or refresh the agent so it re-discovers skills.
+WorkBuddy support is **compatibility-designed, not yet device-tested**. After the GitHub Release is published, download the dedicated release ZIP; in WorkBuddy choose **Skills → Add skill → Upload skill**, select the ZIP, then enable it. Do not use GitHub source-code ZIPs. A GitHub URL is not a confirmed direct-install method.
 
-**Scope**: this skill covers both stages — the research stage (governed by [`research-discipline-spec.md`](research-discipline-spec.md), producing the contract-conformant dataset) and the report generation stage (contract-conformant JSON → validated HTML report).
+Minimum test prompt:
 
-## For maintainers
+```text
+使用企业研究Skill对宁德时代做一次快速研究，先确认主体，再输出可追溯来源。
+```
 
-Renderer or skeleton changes only: `python renderer/test_renderer.py` runs the 137-item attack-surface & regression suite, and a mandatory seeded fuzz run (`python renderer/fuzz_renderer.py`, 4 seeds × 2000 cases, zero defects required) — all green before any release; `python renderer/compare.py <rendered.html> <baseline.html>` checks equivalence against a frozen baseline sample.
+Grant only the network and selected output-folder permissions needed for this research.
 
-## Roadmap
+## Compatibility with the previous 40 fields
 
-- **Non-IT industry example** — within 3 months of v2.3.1, a manufacturing or consumer-sector listed-company example (full real research, then instantiated to the contract) will be added, shipping with a follow-up release (planned v2.4.0). Progress is tracked in the changelog.
+The approved CSV contract has 43 summary fields. The prior standard-name field is represented by fields 2–4 (standard name, short name, English name where available); the former combined founding/headquarters field is split into fields 8–9. Other semantics are preserved; see [company-profile-fields.md](references/company-profile-fields.md).
 
-## License
+## Known limitations
 
-[MIT](LICENSE)
+- CSV display and delimiter behavior vary by local Excel settings; the workbook is the primary reading surface.
+- The G3 workbook still needs human opening checks in Mac/Windows Excel.
+- WorkBuddy import, trigger, network access, and three-output generation will be validated from the public Release in G7.
 
----
+## Acknowledgements and license
 
-**Note**: this repo ships the report renderer, the data contract, the research-discipline spec (v0.4), and finished samples. The analytical frameworks behind the methodology — module design rationale, mechanism-analysis perspectives, direction-rating criteria, inclusion thresholds, and the internal case library — are not part of this public repository.
+The project structure and research method reference [flicy/enterprise-company-research-agent](https://github.com/flicy/enterprise-company-research-agent). It borrows only the Plan → Research → Synthesize, Quick Research, CSV, and anti-hallucination ideas from Browserbase company-research. Both references are MIT licensed. Browserbase API, API keys, CLI, and complex subagents are not included.
+
+Released under the [MIT License](LICENSE).

@@ -1,123 +1,47 @@
-# Enterprise Research Skill｜企业深度研究 Skill
+# 企业研究 Skill V1.0.0
 
-**基于公开证据的企业研究 → 单文件离线 HTML 报告。**
-**当前版本：v2.3.7** ·[更新日志](https://github.com/maleo0228/enterprise-research-skill/releases) · [English README](README.md)
+这是面向一家指定企业的公开信息研究 Skill。它先确认主体，再完成 Plan、Research、Verify、Synthesize，输出详细研究、43字段 CSV 和五Sheet Excel 工作簿。
 
-对指定企业做公开信息研究（按冻结规范 [`research-discipline-spec.md`](research-discipline-spec.md)），把结论整理成一个 JSON 文件，本 skill 将其变成一份**经校验、可导航、全链路可溯源的报告**——单个 HTML 文件，任何浏览器直接打开、离线可用、可原样转发。本 skill 覆盖两个阶段：研究与渲染。v2.0 是对 [v1.x（已归档）](https://github.com/maleo0228/enterprise-research-skill/releases) 的完全重写。
+## 适用与边界
 
-> **v2.3.7 新特性**——规范 v0.4：研究纪律规范新增 §10 采集维度表（把契约全部必填节点映射到来源分档与证据等级，由新回归 R24 机械防漂移）与 §11 中立默认决策树（零用户参数也可端到端执行至第一版，反问 ≤2 且均阻塞，不写死任何部署方专属场景默认）；§7.3 缺口清单新增机器可读 `gap-list.json` 格式与承载位置语法；新增 `renderer/gap_fidelity_check.py`，把缺口↔承载对应变成渲染前机械门禁（R23）。137 项回归套件、种子化模糊零缺陷。
->
-> **v2.3.6 新特性**——两阶段定位明确化：SKILL.md、`skill.yml` 与本 README 现在 upfront 声明 skill 覆盖**研究段**（由 research-discipline-spec.md 管辖，开工前必读）与**渲染段**两个阶段，删除了与正文研究清单自相矛盾的表述——此前部分 agent 读到这些声明会误判"skill 只做渲染"。`skill.yml` 触发词扩充（"企业研究 / analyze company"等）；新增回归 R22 锁定该框架防回退。131 项回归套件、种子化模糊零缺陷。
->
-> **v2.3.5 新特性**——手机阅读与校验加固：手机端侧栏精简为一行可换行的标签（375px 下侧栏高 876→292px，首屏即可见正文）；点引用 [En] 自动记录阅读位置，浏览器返回键或点来源表编号格即回原处；加宽画布柱图（8 类目×4 序列）桌面端字号保底 11px（原为 3–6px）；正文搜索命中图内文字不再吞字；拼错的字段名（如 `caption_source`）给出"是否应为"提示，不再静默丢引用；s4 零结果方向整条无来源改为 §1.5 三要素提示，`--strict` 不再误拦；年度/中期混排告警扩展到"期间排在行上"的形态；`check_urls` 新增 `--user-agent`（SEC EDGAR 403 问题解决）；锦浪示例完全对齐 §5.2.1。129 项回归套件、种子化模糊零缺陷。
->
-> **v2.3.4 新特性**——财报中期数据展示规则：年度表/图只放完整会计年度（不再把 H1、前三季度列与经审计年度数据并排——一季报、半年报、三季报统一进单列的「最新报告期」表，规范 §5.2.1）；渲染器对年度列与中期列混排给出警告，`--strict` 时阻断。另有：「导出全文 MD」按钮移入边栏标题区，手机与桌面都不再压住正文。121 项回归套件、种子化模糊零缺陷。
->
-> **v2.3.3 新特性**——图表正确性与可读性全面修复：柱状图不再静默丢弃超过 4 个类目的数据；数值标签、图例、坐标轴不再互相重叠（按经浏览器标定的保守字宽估计计算布局）；手机与窄窗口下表格在卡片内横向滚动、图上文字不小于可读的 11px。另有：手写引用编号被拒绝、4.0 方向逐条"未挂来源"警告、链接检查重写（默认校验 TLS、失败给原因、重定向标 WARN、GBK 安全、`--json`）、规范补充中国非上市企业来源平台、两个示例 4.0 全部挂来源、MD 导出附图表数据表。119 项回归套件、种子化模糊零缺陷。≥1000px 桌面下，不含柱状图的报告与 v2.3.1 逐像素一致；柱状图按新布局重排（画布高 250→255、标签居中、整数序列不补 .00），含图报告在图表区域不同、页面高 5px。
->
-> **v2.3.1 新特性**——研究段纪律规范（[见下文](#研究纪律渲染之前的那一段-v231-新增)），以及渲染器加固：跨平台逐字节确定性输出（统一 UTF-8/LF）、测试套件 GBK 控制台环境可用、封堵一处校验缺口。**合规数据产出零变化。**
+- 仅研究一家公司；主体不清时要求补充股票代码、国家/地区或官网。
+- 重要事实优先官网、原始披露、交易所、监管、政府、法院和官方制裁/出口管制入口。
+- 事实、计算、分析判断和机会判断明确分开；无法确认写“待核实”，找不到可靠来源写“未发现可靠公开信息”。
 
-## 一分钟看懂
+不用于多 Agent、批量研究、ICP/客户发现、数据库、API、MCP、Web UI、复杂评分、PPT 或 PDF；不构成法律、财务、投资或合规意见。
 
-直接打开成品样张——无需服务器、无需安装：
+## 调用与输出
 
-- **锦浪科技（Ginlong/Solis）**——[ginlong-solis_2026-10-19.html](https://maleo0228.github.io/enterprise-research-skill/samples/ginlong-solis_2026-10-19.html)
-- **鸣石投资（Mingshi）**——[mingshi-investment_2026-10-14.html](https://maleo0228.github.io/enterprise-research-skill/samples/mingshi-investment_2026-10-14.html)
-
-然后渲染你自己的数据：
-
-```bash
-python renderer/render.py report.json renderer/skeleton.html report.html
+```text
+请使用 enterprise-company-research，对“宁德时代”执行标准研究，输出到测试结果。
 ```
 
-这就是全部流程：一条命令，**仅需 Python 3.8+ 标准库**——零第三方依赖、零网络、零构建。
+默认输出：
 
-## 你会得到什么
+1. `{企业名}_企业研究_V1.0.md`：详细证据、口径、冲突和限制；
+2. `{企业名}_企业画像_V1.0.csv`：14列、43字段行、UTF-8 BOM、CRLF；
+3. `{企业名}_企业画像_四页_V1.0.xlsx`：4个主题页加`来源索引`的五Sheet工作簿。
 
-一个自包含 HTML 报告，五个模块：
+固定Sheet顺序：`企业总览`、`业务·产品·技术`、`发展·资本·市场`、`研究判断·IT机会·证据`、`来源索引`。前四页只保留短来源名与证据编号，完整 URL 与字段级台账放在最后一页。
 
-- **1.0 企业概览**——基础信息、股权与融资、完整财务数据与图表；
-- **2.0 经营事件与信号**——有来源的经营事件与分级信号；
-- **3.0 业务及技术解析**——按机制逐条拆解，"已确认／未确认"显式分离；
-- **4.0 IT 关注方向及跟进**——按证据强度分级的 IT 方向与跟进建议；
-- **5.0 来源索引与证据链**——每个关键结论可回溯到编号来源（含原始链接）。
+## 安装状态
 
-另含：侧边导航、全文搜索、SVG 图表（支持负值）、可点击跳转来源表的 `[E#]` 锚点、按模块与全文导出 Markdown。
+Codex 已完成 G4 最小实测：本地安装、发现、引用读取、联网核验和三类输出均通过。
 
-## 研究纪律——渲染之前的那一段（v2.3.1 新增）
+WorkBuddy 为“兼容设计，未实机验证”。发布后请下载 Release 中的专用 ZIP，在 WorkBuddy 依次执行“技能 → 添加技能 → 上传技能 → 启用”。GitHub 仓库 URL 不是已验证的直装入口。
 
-报告的可信度取决于背后的研究。[`research-discipline-spec.md`](research-discipline-spec.md)——冻结版 v0.4、工具中立——定义了"规范的研究产物"长什么样，让研究记录**可核验、不再是自由散文**：
+## 与旧40字段的关系
 
-- **研究段三格式**：来源清单／事实卡片／缺口清单——每个数字挂编号来源，每个缺口声明原因与影响；
-- **检索动作纪律**：先锁定准确法人人名并建立名称映射链（给定名→品牌→域名→平台命名空间）；按标的类型平台直查；官网一跳扩散；从平台页线索递归；公司自述主张先找反方复核；不作无据否定——零结果须留举证三要素（渠道／动作／日期）；公司口径与第三方实测并排呈现、口径标注；
-- **交付前自检清单**（规范 §8）。
+正式 CSV 升级为43字段：字段2—4承接旧标准全称/简称/英文名，字段8—9拆分旧成立与总部；其余语义以字段说明为准。CSV负责摘要与交换；五Sheet XLSX保留阅读层级、筛选、冻结、换行和来源下钻。
 
-`SKILL.md` 载有同一套纪律的 8 点浓缩清单。本 skill 覆盖研究段本身：规范是内置研究段遵循的纪律，渲染器负责校验并渲染其产物。
+## 已知限制
 
-## 工作原理
+- CSV 的分列和显示会受 Excel 地区设置影响；五Sheet XLSX是正式阅读载体。
+- G3 工作簿仍待 Mac/Windows Excel 真人打开复核。
+- WorkBuddy 将在 G7 从公开 Release 完成真实导入和输出测试。
 
-```
-你的研究  →  report.json（按数据契约填写）  →  render.py  →  成品 HTML
-```
+## 致谢与许可
 
-**1. 准备数据集。** 把研究结论结构化为一个符合 [`data-contract/report-data.schema.json`](data-contract/report-data.schema.json) 的 `report.json`。[`examples/`](examples/) 内有两个通过校验的实例（鸣石／锦浪）展示完整形态。契约三条硬规则：
+参考`enterprise-company-research-agent`的公开研究流程与结构，并借鉴 Browserbase company-research 的 Plan → Research → Synthesize、Quick Research、CSV 与防无依据结论思想。两者均为 MIT License；未引入 Browserbase API、密钥、CLI 或复杂子代理。
 
-- **来源闭环**——每条结论以 `[E#]` 引用，每个 `[E#]` 在来源表声明，每个声明的来源都被实际引用；
-- **引用标记由渲染器生成，禁止手写**——数据只提供 `sources` 数组，手写引用标记会被拒绝；
-- **财务块命名制**——财务内容按类型分块（`table`／`chart_bar`／`timeline`／`text`／`missing`），每块带 `表N｜` 或 `图N｜` 命名行；缺项用 `missing` 显式声明，不静默丢弃。
-
-数据不合契约时，改数据迁就契约——不要改渲染器迁就数据。
-
-**2. 渲染。** `render.py` **先校验后渲染**——结构完整性、来源闭环、导航锚点唯一、命名齐全、图表数据合法性——任何问题都以逐条列出的"校验失败"清单中止，**不出半成品**；通过后填充冻结的 `skeleton.html`，产出完全自包含的页面。
-
-**3. 交付前核验。**
-
-```bash
-python renderer/check_urls.py report.json   # 每个来源 URL 可达；标 WARN 的（403/202/429、跨站重定向、超时、TLS 握手中断、网络禁止明文 http）需人工复核——反爬/JS 页面在浏览器里仍可能打开
-```
-
-然后在浏览器中打开一次（导航、搜索、MD 导出、图表），确认无**渲染器残留**的 `{{...}}` 令牌——数据值里的字面模板令牌按设计原样保留（渲染器 v0.10+ 单趟替换），不属于缺陷。
-
-## 目录结构
-
-| 路径 | 内容 |
-|---|---|
-| `SKILL.md` | Skill 入口文件（两阶段：研究纪律＋校验渲染）＋研究段纪律 8 点浓缩清单 |
-| `research-discipline-spec.md` | 冻结版（v0.4）研究段纪律、输出格式、采集维度表（§10）与中立默认（§11） |
-| `data-contract/` | `report-data.schema.json` 数据契约 |
-| `examples/` | 两个通过校验的数据实例（鸣石／锦浪） |
-| `renderer/` | `render.py`、冻结骨架 `skeleton.html`、`compare.py`、`check_urls.py`、测试与模糊闸门；`make_skeleton.py`（仅维护者——公开环境缺内部基线样张会拒绝运行） |
-| `samples/` | 成品单文件 HTML 样张（离线可开、可自由分享） |
-
-## 安装
-
-本仓库是标准 agent skill 包（入口：`SKILL.md`）。克隆或复制到您所用 agent 的技能目录即可：
-
-```bash
-git clone https://github.com/maleo0228/enterprise-research-skill.git
-```
-
-- **Codex**：复制到 `~/.agents/skills/enterprise-research-skill/`（或 `~/.codex/skills/`）
-- **Claude Code**：复制到 `~/.claude/skills/enterprise-research-skill/`
-- **WorkBuddy**：复制到 `~/.workbuddy/skills/enterprise-research-skill/`（用户级）或 `{workspace}/.workbuddy/skills/enterprise-research-skill/`（项目级）
-- **Kimi 及其他 agent**：将技能搜索路径指向本目录；平台不支持自动发现时，直接阅读 `SKILL.md` 并手动执行渲染命令——渲染器是零依赖 CLI（仅需 Python 3.8+ 标准库），独立可用。
-
-安装后重启或刷新 agent 使其重新发现技能。
-
-**范围**：本 skill 覆盖"报告生成段"（合规 JSON → 校验过的 HTML 报告）；产出数据集的研究段由使用者自己的研究工作流完成，行为准则见 [`research-discipline-spec.md`](research-discipline-spec.md)。
-
-## 维护者专用
-
-仅改版渲染器/骨架时：`python renderer/test_renderer.py` 跑 137 项攻击面与回归套件，并必须跑 `python renderer/fuzz_renderer.py` 种子化模糊（4 种子×2000 用例零缺陷）——全部通过才可发版；`python renderer/compare.py <渲染产物.html> <基线样张.html>` 与冻结基线做等价比对。
-
-## 路线图
-
-- **非 IT 行业示例**——v2.3.1 发布后 3 个月内，补充一个制造业或消费类上市公司的完整示例（真实研究后按契约实例化），随后续版本（拟 v2.4.0）发布；进展见更新日志。
-
-## 协议
-
-[MIT](LICENSE)
-
----
-
-**说明**：本公开仓库发布报告渲染器、数据契约、研究纪律规范（v0.4）与成品样张；方法论文背后的分析框架——模块划分论证、机制分析视角、方向状态机判据、收录阈值与内部案例库——不在公开范围内。
+本项目按 [MIT License](LICENSE) 发布。

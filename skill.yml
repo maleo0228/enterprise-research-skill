@@ -1,20 +1,40 @@
-name: enterprise-research-skill
-version: 2.3.8
-description: 对指定企业做公开信息研究并交付单文件、可离线、可溯源的交互式 HTML 报告：研究段按 research-discipline-spec.md 产出符合数据契约的 report.json，渲染段校验并渲染为最终 HTML。Research a company from public sources per research-discipline-spec.md, then render the contract-conformant report.json into a validated single-file interactive HTML report.
+name: enterprise-company-research
+version: 1.0.0
+type: instruction-skill
 entry: SKILL.md
-triggers:
-  - 企业研究
-  - 分析企业
-  - 生成企业研究报告
-  - 企业研究报告渲染
-  - company research
-  - company analysis
-  - analyze company
-  - render enterprise research report
-  - company report html
-tags:
-  - research-report
-  - html-rendering
-  - data-contract
-stage: research-and-report-generation
 license: MIT
+summary:
+  en: Research one named company and produce a source-backed Markdown report, a 43-field CSV, and a five-sheet XLSX research workbook.
+description:
+  en: Uses public internet sources to identify, plan, research, verify, and synthesize one company. It defaults to standard research and excludes batch scanning, ICP, and lead discovery.
+inputs:
+  - name: company_name
+    required: true
+    description: Name of the single company to research.
+  - name: research_mode
+    required: false
+    default: standard
+    enum: [quick, standard]
+outputs:
+  - name: company_research_markdown
+    format: markdown
+    required: true
+  - name: company_profile_csv
+    format: csv
+    required: true
+  - name: company_profile_xlsx
+    format: xlsx
+    required: true
+permissions:
+  network: required
+  filesystem: required
+compatibility:
+  codex:
+    entry: SKILL.md
+    invocation: enterprise-company-research
+  workbuddy:
+    entry: SKILL.md
+requirements:
+  browserbase: false
+  api_key: false
+tags: [enterprise-research, company-profile, evidence-based-research, markdown, csv, xlsx]

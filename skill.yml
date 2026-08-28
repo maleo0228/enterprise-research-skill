@@ -1,0 +1,40 @@
+name: enterprise-company-research
+version: 1.0.0
+type: instruction-skill
+entry: SKILL.md
+license: MIT
+summary:
+  en: Research one named company and produce a source-backed Markdown report, a 43-field CSV, and a five-sheet XLSX research workbook.
+description:
+  en: Uses public internet sources to identify, plan, research, verify, and synthesize one company. It defaults to standard research and excludes batch scanning, ICP, and lead discovery.
+inputs:
+  - name: company_name
+    required: true
+    description: Name of the single company to research.
+  - name: research_mode
+    required: false
+    default: standard
+    enum: [quick, standard]
+outputs:
+  - name: company_research_markdown
+    format: markdown
+    required: true
+  - name: company_profile_csv
+    format: csv
+    required: true
+  - name: company_profile_xlsx
+    format: xlsx
+    required: true
+permissions:
+  network: required
+  filesystem: required
+compatibility:
+  codex:
+    entry: SKILL.md
+    invocation: enterprise-company-research
+  workbuddy:
+    entry: SKILL.md
+requirements:
+  browserbase: false
+  api_key: false
+tags: [enterprise-research, company-profile, evidence-based-research, markdown, csv, xlsx]

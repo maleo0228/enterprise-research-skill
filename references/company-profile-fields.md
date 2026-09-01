@@ -1,4 +1,4 @@
-# Company profile field contract
+# Company profile field contract V1.0 (unchanged by v1.0.1)
 
 The CSV has 14 columns and 43 field rows. Empty values must be explicit: `未发现可靠公开信息`, `待核实`, or `不适用`.
 

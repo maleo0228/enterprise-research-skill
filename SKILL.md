@@ -2,10 +2,10 @@
 name: enterprise-company-research
 description: Research one named company from public sources and produce a source-backed Markdown report, a 43-field UTF-8 BOM CSV, and a five-sheet XLSX workbook. Use for company research, not batch scanning or lead discovery.
 metadata:
-  version: "1.0.0"
+  version: "1.0.1"
 ---
 
-# Enterprise Research Skill V1.0.0
+# Enterprise Research Skill v1.0.1
 
 Research one user-named company. Default to `standard` research and follow this flow:
 
@@ -36,10 +36,12 @@ Read `five-sheet-workbook-template.xlsx` before generating the workbook. All out
 ## Outputs
 
 1. `{company}_企业研究_V1.0.md` — detailed evidence, scope, conflicts, repeat-record tables, and limitations.
-2. `{company}_企业画像_V1.0.csv` — 14 columns, 43 field rows, UTF-8 BOM, comma-separated, CRLF. Chinese headings are retained intentionally for the approved Chinese Excel workflow.
-3. `{company}_企业画像_四页_V1.0.xlsx` — five visible sheets in this fixed order: `企业总览`, `业务·产品·技术`, `发展·资本·市场`, `研究判断·IT机会·证据`, `来源索引`.
+2. `{company}_企业结构化数据_V1.0.csv` — 14 columns, 43 field rows, UTF-8 BOM, comma-separated, CRLF. It is the structured-data attachment for machine reading, imports, comparison, and completeness checks. Chinese headings are retained intentionally for the approved Chinese Excel workflow.
+3. `{company}_企业画像_V1.0.xlsx` — five visible sheets in this fixed order: `企业总览`, `业务·产品·技术`, `发展·资本·市场`, `研究判断·IT机会·证据`, `来源索引`.
 
 The first four sheets show short source names and evidence IDs only. The fifth sheet holds complete URLs and the field-level evidence ledger. Do not silently omit XLSX; state why if the environment cannot generate it.
+
+**No-freeze-pane rule (v1.0.1):** do not set frozen panes on any of the five sheets. Do not use a data-header row, narrative boundary, or any cell as a freeze point. After generation, inspect the workbook package itself: no worksheet may contain `state="frozen"`. A rendered image alone is not enough to pass this check.
 
 ## Invocation
 

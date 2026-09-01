@@ -28,3 +28,5 @@ For standard research, verify entity identity; finance and capital-market facts;
 ## Output rules
 
 Each CSV row should contain content, status, confidence, source, URL, publication date, access date, cutoff date, and a note where needed. Keep at most two URLs in CSV; retain full source detail, conflicts, and calculations in Markdown and the workbook source index. Do not leave unexplained blanks.
+
+`{company}_企业结构化数据_V1.0.csv` is the structured-data attachment. `{company}_企业研究_V1.0.md` and `{company}_企业画像_V1.0.xlsx` are the primary reading outputs. The workbook must have five visible sheets and no frozen panes: inspect the worksheet XML and confirm no pane has `state="frozen"`.

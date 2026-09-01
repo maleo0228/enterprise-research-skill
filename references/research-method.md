@@ -25,7 +25,9 @@ When sources conflict, compare entity, publication date, reporting period, defin
 ## Synthesis
 
 - Markdown carries detailed evidence, full URLs, conflict treatment, repeat-record tables, calculation method, and reasoning.
-- CSV carries the 43-row structured summary; keep text compact and use up to two key URLs.
+- CSV carries the 43-row structured-data attachment; keep text compact and use up to two key URLs.
 - The five-sheet workbook carries decision cards, product/customer/competitor matrices, timeline, evidence-linked ratings and IT opportunities, and the full source index.
 
 Every fact gets a fact ID. A judgment or opportunity must link to the underlying fact/evidence ID. Never use an unverified claim to fill a missing field.
+
+For compatibility, do not set frozen panes on any workbook sheet. After export, check the workbook package rather than relying on a screenshot: no worksheet pane may have `state="frozen"`.

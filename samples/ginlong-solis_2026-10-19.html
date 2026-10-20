@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>企业研究报告：锦浪科技股份有限公司（销售成品样张 v0.3）</title>
+<style>
+  :root{
+    --ink:#1f2733; --ink2:#5b6675; --line:#e3e8ef; --bg:#f6f8fa; --card:#ffffff;
+    --side:#1a56a0; --side-deep:#0f3d75; --side-soft:#f0f4fa;
+    --s1:#c2410c; --s1bg:#fdf0e8;
+    --s2:#1a56a0; --s2bg:#eaf1fa;
+    --s3:#4d7c0f; --s3bg:#f1f6e6;
+    --s4:#6b7280; --s4bg:#f1f2f4;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+  body{font-family:-apple-system,"Segoe UI","Microsoft YaHei","PingFang SC",sans-serif;
+       color:var(--ink); background:var(--bg); line-height:1.75; font-size:15px;}
+  a{color:var(--side); text-decoration:none;}
+  a:hover{text-decoration:none;}
+
+  /* ===== 左侧边栏（参照 seths.blog：白底边栏＋左上双色横道） ===== */
+  .sidebar{position:fixed; top:0; left:0; bottom:0; width:300px; background:#fff;
+           border-right:1px solid var(--line); display:flex; flex-direction:column; overflow-y:auto; z-index:50;}
+  .band-deep{height:8px; background:var(--side-deep);}
+  .band-light{height:10px; background:var(--side);}
+  .logo-area{padding:18px 20px 12px; display:flex; gap:12px; align-items:center; border-bottom:1px solid var(--line);}
+  .logo-badge{width:46px; height:46px; border-radius:10px; background:var(--side); color:#fff;
+              font-weight:800; font-size:20px; display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+  .logo-name{font-size:14.5px; font-weight:700; line-height:1.4; color:var(--ink);}
+  .logo-sub{font-size:11.5px; color:var(--ink2); margin-top:2px;}
+
+  .widget-title{font-size:13px; font-weight:700; color:var(--ink2); margin:16px 20px 6px;}
+
+  /* 搜索（照参考页样式：圆角边框框＋实心按钮） */
+  .searchform{margin:0 20px;}
+  .searchform>div{border:1.5px solid var(--ink); border-radius:5px; display:flex; overflow:hidden; background:#fff;}
+  .searchform input[type=text]{flex:1; min-width:0; border:none; padding:8px 10px; font-size:13.5px; outline:none; color:var(--ink);}
+  .searchform input[type=submit]{width:58px; border:none; cursor:pointer; background:var(--side);
+    background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.6"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.8-3.8"/></svg>');
+    background-repeat:no-repeat; background-position:center;}
+  .searchform input[type=submit]:hover{background-color:var(--side-deep);}
+  .search-status{margin:6px 20px 0; font-size:12px; color:var(--ink2); display:none; align-items:center; gap:8px; flex-wrap:wrap;}
+  .search-status.show{display:flex;}
+  .search-status button{border:1px solid var(--line); background:#fff; border-radius:4px; padding:1px 8px; font-size:12px; cursor:pointer; color:var(--side);}
+  .search-status button:hover{background:var(--side-soft);}
+
+  .sidenav{padding:4px 10px 30px; font-size:13.5px;}
+  .sidenav .grp{display:block; padding:7px 12px; border-radius:6px; color:var(--ink); font-weight:600;}
+  .sidenav .sub{display:block; padding:4px 12px 4px 30px; border-radius:6px; color:var(--ink2); font-size:12.5px; font-weight:400;}
+  .sidenav .grp:hover,.sidenav .sub:hover{background:var(--side-soft); color:var(--side);}
+  .sidenav .grp.active{background:var(--side); color:#fff;}
+  .sidenav .sub.active{background:var(--side-soft); color:var(--side); font-weight:700;}
+
+  /* ===== 右侧内容 ===== */
+  .content{margin-left:300px; padding:26px 34px 80px; max-width:980px;}
+  section.page{background:var(--card); border:1px solid var(--line); border-radius:12px;
+               padding:26px 30px; margin-bottom:26px; scroll-margin-top:16px;}
+  .page-title{font-size:20px; font-weight:700; margin-bottom:4px; display:flex; align-items:baseline; gap:10px;}
+  .page-title .no{color:var(--side); font-variant-numeric:tabular-nums;}
+  .page-lead{color:var(--ink2); font-size:14px; border-left:3px solid var(--side);
+             padding:8px 14px; background:#f0f5fc; border-radius:0 8px 8px 0; margin:12px 0 20px;}
+  h3.block-title{font-size:16px; margin:26px 0 10px; padding-bottom:6px; border-bottom:1px solid var(--line); scroll-margin-top:16px;}
+
+  table.t{width:100%; border-collapse:collapse; font-size:13.5px;}
+  table.t th,table.t td{border:1px solid var(--line); padding:7px 10px; text-align:left; vertical-align:top;}
+  table.t th{background:#f2f5f9; font-weight:600; white-space:nowrap;}
+  table.kv th{width:120px;}
+
+  sup.src{cursor:pointer; color:var(--side); font-size:11px; font-weight:600; padding:0 2px;}
+  sup.src:hover{color:var(--side-deep);}
+
+  mark.hit{background:#ffe9a8; padding:0;}
+  mark.hit.cur{background:#ffb900;}
+
+  .signal{border:1px solid var(--line); border-radius:10px; padding:16px 18px; margin-bottom:14px; scroll-margin-top:16px;}
+  .signal h4{font-size:15px; margin-bottom:8px;}
+  .signal p{margin-bottom:6px; font-size:14px;}
+  .signal .lbl{font-weight:700; color:var(--side); margin-right:6px;}
+  .dyn-list li{font-size:13.5px; color:var(--ink2); margin:6px 0 6px 18px;}
+
+  .mech{border:1px solid var(--line); border-radius:10px; padding:16px 18px; margin-bottom:16px; scroll-margin-top:16px;}
+  .mech h4{font-size:15px; margin-bottom:8px;}
+  .kn{font-size:13.5px; margin-top:8px;}
+  .kn .k1{color:#4d7c0f; font-weight:700; margin-right:4px;}
+  .kn .k2{color:#b45309; font-weight:700; margin-right:4px;}
+  .mech .evi{font-size:13.5px; color:var(--ink2); margin-top:8px; border-top:1px dashed var(--line); padding-top:8px;}
+
+  .dir{border:1px solid var(--line); border-radius:10px; padding:16px 18px; margin-bottom:14px; scroll-margin-top:16px;}
+  .dir-head{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:8px;}
+  .dir-head h4{font-size:15px;}
+  .tag{font-size:12px; font-weight:700; padding:3px 10px; border-radius:20px; white-space:nowrap;}
+  .tag.s1{color:var(--s1); background:var(--s1bg); border:1px solid var(--s1);}
+  .tag.s2{color:var(--s2); background:var(--s2bg); border:1px solid var(--s2);}
+  .tag.s3{color:var(--s3); background:var(--s3bg); border:1px solid var(--s3);}
+  .tag.s4{color:var(--s4); background:var(--s4bg); border:1px solid var(--s4);}
+  .dir .basis{font-size:12.5px; color:var(--ink2); margin-bottom:6px;}
+  .dir p{font-size:14px; margin-bottom:5px;}
+  .dir .lbl{font-weight:700; color:var(--side); margin-right:6px;}
+
+  .timeline{display:flex; gap:0; overflow-x:auto; padding:18px 4px 8px;}
+  .tl-node{flex:1; min-width:150px; position:relative; padding:0 10px;}
+  .tl-node::before{content:""; position:absolute; top:7px; left:0; right:0; height:2px; background:var(--line);}
+  .tl-node:first-child::before{left:50%;}
+  .tl-node:last-child::before{right:50%;}
+  .tl-dot{width:12px; height:12px; border-radius:50%; background:var(--side); margin:2px auto 8px; position:relative; z-index:1; border:2px solid #fff; box-shadow:0 0 0 1px var(--side);}
+  .tl-card{background:#f2f5f9; border-radius:8px; padding:8px 10px; font-size:12.5px; text-align:center;}
+  .tl-card b{display:block; font-size:15px; color:var(--ink);}
+  .tl-card .who{color:var(--ink2); font-size:11.5px;}
+
+  .missing{border:1px dashed #c2410c; background:#fdf7f2; color:#9a3412; border-radius:8px;
+           padding:10px 14px; font-size:13.5px; margin:10px 0;}
+
+  .note{font-size:12.5px; color:var(--ink2);}
+  .hl{animation:hl 2s;}
+  @keyframes hl{0%{background:#fff3c4;}100%{background:transparent;}}
+
+  #src-table td{font-size:12.5px;}
+  #src-table td.eid{font-weight:700; color:var(--side); white-space:nowrap;}
+  #src-table td.url a{word-break:break-all;}
+  .legend{display:flex; gap:10px; flex-wrap:wrap; margin:10px 0;}
+  .legend span{font-size:12.5px; border:1px solid var(--line); border-radius:6px; padding:3px 10px; background:#f2f5f9;}
+
+  footer{margin:0 34px 40px 334px; color:var(--ink2); font-size:12px;}
+
+  @media(max-width:920px){
+    .sidebar{position:static; width:100%; max-height:none;}
+    .content{margin-left:0; padding:18px 16px 60px;}
+    footer{margin:0 16px 30px;}
+  }
+
+  /* 导出按钮 */
+  .export-row{text-align:right; margin-top:14px;}
+  .export-btn{border:1px solid var(--side); color:var(--side); background:#fff; border-radius:6px;
+              padding:4px 12px; font-size:12.5px; cursor:pointer; font-family:inherit;}
+  .export-btn:hover{background:var(--side); color:#fff;}
+  .export-fixed{position:fixed; top:14px; right:16px; z-index:60;}
+</style>
+</head>
+<body>
+
+<button id="export-all" class="export-btn export-fixed" title="导出全篇为 Markdown 文件">导出全文 MD</button>
+
+<!-- ===== 左侧边栏 ===== -->
+<aside class="sidebar">
+  <div class="band-deep"></div>
+  <div class="band-light"></div>
+  <div class="logo-area">
+    <div class="logo-badge">锦浪</div>
+    <div>
+      <div class="logo-name">锦浪科技股份有限公司</div>
+      <div class="logo-sub">企业研究报告 · 锚点 2026-10-19</div>
+    </div>
+  </div>
+
+  <div class="widget-title">搜索</div>
+  <form class="searchform" id="searchform" action="javascript:void(0)">
+    <div>
+      <input type="text" id="q" placeholder="输入关键词，如：储能、锦浪云、募投、毛利率……">
+      <input type="submit" id="searchsubmit" value="">
+    </div>
+  </form>
+  <div class="search-status" id="status">
+    <span id="status-text"></span>
+    <button type="button" id="prev">上一个</button>
+    <button type="button" id="next">下一个</button>
+    <button type="button" id="clear">清除</button>
+  </div>
+
+  <nav class="sidenav" id="sidenav">
+    <a class="grp" href="#p1" data-t="企业概览">企业概览</a>
+    <a class="sub" href="#s1-base" data-t="基础信息">基础信息</a>
+    <a class="sub" href="#s1-biz" data-t="业务与竞争力">业务与竞争力</a>
+    <a class="sub" href="#s1-fin" data-t="财务数据">财务数据</a>
+    <a class="grp" href="#p2" data-t="经营事件与信号">经营事件与信号</a>
+    <a class="sub" href="#sig1" data-t="储能接棒并网">储能接棒并网</a>
+    <a class="sub" href="#sig2" data-t="募投落地">募投落地</a>
+    <a class="sub" href="#sig3" data-t="业绩波动">业绩波动</a>
+    <a class="sub" href="#sig4" data-t="FCC 禁令">FCC 禁令</a>
+    <a class="sub" href="#sig5" data-t="股权激励">股权激励</a>
+    <a class="sub" href="#sig-dyn" data-t="动态信息">动态信息</a>
+    <a class="grp" href="#p3" data-t="业务及技术解析">业务及技术解析</a>
+    <a class="sub" href="#mech1" data-t="研发设计与测试">研发设计与测试</a>
+    <a class="sub" href="#mech2" data-t="未来工厂智能制造">未来工厂智能制造</a>
+    <a class="sub" href="#mech3" data-t="全球供应链履约">全球供应链履约</a>
+    <a class="sub" href="#mech4" data-t="锦浪云运维平台">锦浪云运维平台</a>
+    <a class="sub" href="#mech5" data-t="电站资产运营">电站资产运营</a>
+    <a class="sub" href="#mech6" data-t="储能系统交付">储能系统交付</a>
+    <a class="grp" href="#p4" data-t="IT关注方向及跟进">IT关注方向及跟进</a>
+    <a class="grp" href="#p5" data-t="来源索引与证据链">来源索引与证据链</a>
+  </nav>
+</aside>
+
+<!-- ===== 右侧内容 ===== -->
+<div class="content" id="content">
+<section class="page" id="p1">
+  <div class="page-title"><span class="no">1.0</span><span>企业概览</span></div>
+  <div class="page-lead">锦浪是全球第三大光伏逆变器厂商（2022–2024 连续三年，Wood Mackenzie 口径），靠“逆变器＋分布式电站发电”赚钱；储能逆变器 2025 年 +185.31% 接棒并网成为第一大产品，2026H1 海外收入占比升至 60.3%。16.77 亿可转债募投明确投向数智化（0.99 亿）、上海研发中心（2.48 亿）与两条智能化产线——对 IT 供应商而言，最明确的切入点是建设期内的未来工厂数智化与研发、云平台扩容。</div>
+  <h3 class="block-title" id="s1-base">基础信息</h3>
+  <table class="t kv">
+    <tr><th>公司全称</th><td>锦浪科技股份有限公司（曾用名：宁波锦浪新能源科技股份有限公司）<sup class="src" data-e="E1">[E1]</sup></td></tr>
+    <tr><th>官网</th><td>www.ginlong.com；海外品牌 Solis<sup class="src" data-e="E23">[E23]</sup></td></tr>
+    <tr><th>成立时间</th><td>2005-09-09（前身宁波锦浪新能源科技有限公司，初始注册资本 150 万元）<sup class="src" data-e="E1">[E1]</sup></td></tr>
+    <tr><th>注册地／经营地</th><td>浙江省宁波市象山县经济开发区滨海工业园金通路 57 号（注册地与主要经营地一致）<sup class="src" data-e="E1">[E1]</sup></td></tr>
+    <tr><th>所有制／资本状态</th><td>民营；上市（2019-03-19 深交所创业板，300763）<sup class="src" data-e="E1">[E1]</sup></td></tr>
+    <tr><th>高管背景</th><td>王一鸣，1981 年生，上海交通大学信息工程专业本科、英国爱丁堡大学电子与电信硕士，国家特聘专家、教授级高级工程师；2005 年创立公司并任董事长兼总经理至今——技术背景创始人全程主导经营<sup class="src" data-e="E2">[E2]</sup></td></tr>
+    <tr><th>员工规模</th><td>4,755 人（2025 年报期末：母公司 3,968＋主要子公司 787），其中研发人员 1,032 人占 21.7%。实控人家族合计持股约 45.8%（王一鸣 29.73%、王峻适 8.47%、林伊蓓 7.62%，聚合页时点口径）<sup class="src" data-e="E3">[E3]</sup><sup class="src" data-e="E29">[E29]</sup></td></tr>
+    <tr><th>组织结构</th><td>董事长／总经理：王一鸣；副总经理／财务总监：郭俊强；副总经理／董事会秘书：张婵；副总经理：陆荷峰（2026-05 业绩说明会口径，名单与年报一致，无窗口内变动）<sup class="src" data-e="E18">[E18]</sup><sup class="src" data-e="E28">[E28]</sup></td></tr>
+  </table>
+  <h3 class="block-title" id="s1-biz">业务与竞争力</h3>
+  <p><b>业务轮廓（三层，按价值创造逻辑）：</b></p>
+  <p>① 光伏逆变器（主营，收入占比 66.6%）——组串式并网＋储能逆变器研发、生产、销售与服务，客户为 EPC 承包商、系统集成商、安装商、电站投资业主四类；2025 年销量 79.02 万台、收入 46.28 亿元、毛利率 26.88%、产能 175 万台/年；2022–2024 连续三年全球出货量第 3 位（2024 年约占全球 589GW 的 5%）。主营成熟期，内部结构剧变（储能接棒并网，见财务数据表2）。<sup class="src" data-e="E3">[E3]</sup><sup class="src" data-e="E13">[E13]</sup></p>
+  <p>② 分布式光伏发电（主营，占比约 29%）——全资子公司锦浪智慧运营：工商业电站持有发电（2025 年收入 5.87 亿）＋户用光伏系统服务（14.44 亿），截至 2025 年末累计并网 4,818.09MW；2025 年出售电站 239.06MW、户用系统当年未新增——存量资产转向轻资产运营。毛利率 50%+ 的现金流型业务，提供稳定现金与利润支撑。<sup class="src" data-e="E3">[E3]</sup></p>
+  <p>③ 储能系统（培育→放量）——2025 下半年切入、全年收入 1.48 亿“从无到有”；2026Q2 单季确认约 1.4 亿、户储占比超 60%；管理层目标 2027 年户储配套率 50% 以上。<sup class="src" data-e="E15">[E15]</sup><sup class="src" data-e="E17">[E17]</sup></p>
+  <p><b>产业链位置：</b>中游电力电子设备制造。</p>
+  <p>上游：电子元器件（直接材料占营业成本 84.4%）——功率器件（IGBT/SiC）等，国产化推进中，三安光电 SiC 器件已向锦浪批量交付，无卡脖子管制风险披露。<sup class="src" data-e="E26">[E26]</sup></p>
+  <p>下游：EPC 承包商、系统集成商、安装商、电站投资业主，分散、无单一客户依赖；海外经销为主，2025 年海外收入 34.62 亿、占比 49.79%，2026H1 升至 60.3%；直接受各国光伏政策与关税影响（美国 2019 年起加征 25% 关税，2025 年起“对等关税”叠加）。<sup class="src" data-e="E3">[E3]</sup><sup class="src" data-e="E6">[E6]</sup><sup class="src" data-e="E9">[E9]</sup></p>
+  <p>合规面：2025 年法律意见书核查口径，无重大诉讼/处罚。<sup class="src" data-e="E30">[E30]</sup></p>
+  <p><b>核心竞争力：</b></p>
+  <p>① 技术自研——产品已迭代至第七代平台，主持/参与国家及行业标准 40 余项（两项国标第一起草单位）；建有国家企业技术中心、院士专家工作站、博士后工作站；研发人员 1,032 人（＋19.4%）、研发投入 5.08 亿元（＋32.05%，占营收 7.3%）。<sup class="src" data-e="E3">[E3]</sup></p>
+  <p>② 品牌与认证——Solis/锦浪双品牌；全球第一家获得 PVEL 可靠性测试报告的逆变器企业，连续十年获 EuPD“顶级光伏逆变器品牌”（2016–2025）。<sup class="src" data-e="E3">[E3]</sup></p>
+  <p>③ 全球渠道——100+ 国家销售，欧洲/澳洲/东南亚/美国/拉美本地化服务网络。<sup class="src" data-e="E3">[E3]</sup><sup class="src" data-e="E23">[E23]</sup></p>
+  <p>④ 制造——175 万台/年产能＋浙江省未来工厂试点（数字化智能制造，见 3.0 机制二）。<sup class="src" data-e="E3">[E3]</sup><sup class="src" data-e="E24">[E24]</sup></p>
+  <p><b>护城河：</b>认证与可靠性构成主要结构性壁垒——逆变器设计寿命要求 20 年以上，主流市场准入认证（欧盟 CE、澳 SAA、美 ETL、PVEL 可靠性）周期长、转换成本高；全球渠道与十年品牌积累次之。</p>
+  <p><b>短板（如实写）：</b>行业价格竞争激烈，逆变器毛利率从 2022 年 28.88% 降至 2024 年 20.14%（2025 年回升至 26.88%）；规模与阳光电源、华为存在量级差距。结论：存在以认证/可靠性/渠道为核心的结构性壁垒，宽度中等。<sup class="src" data-e="E12">[E12]</sup><sup class="src" data-e="E3">[E3]</sup></p>
+  <h3 class="block-title" id="s1-fin">财务数据</h3>
+  <p class="note">口径说明：上市公司经审计年报为主锚（合并报表口径）；2026H1 为半年报、未经审计，单独标注。</p>
+  <p style="margin-top:14px"><b>表1｜主锚财务指标（2022–2025，合并报表，经审计年报）</b><sup class="src" data-e="E3">[E3]</sup><sup class="src" data-e="E4">[E4]</sup><sup class="src" data-e="E5">[E5]</sup></p>
+  <table class="t">
+    <tr><th>指标（亿元）</th><th>2022</th><th>2023</th><th>2024</th><th>2025</th></tr>
+    <tr><th>营业收入</th><td>58.90</td><td>61.01</td><td>65.42</td><td>69.52</td></tr>
+    <tr><th>营收同比</th><td>＋77.7%</td><td>＋3.59%</td><td>＋7.23%</td><td>＋6.26%</td></tr>
+    <tr><th>归母净利润</th><td>10.60</td><td>7.79</td><td>6.91</td><td>7.43</td></tr>
+    <tr><th>归母同比</th><td>＋123.7%</td><td>－26.4%</td><td>－11.32%</td><td>＋7.53%</td></tr>
+    <tr><th>扣非归母净利</th><td>10.45</td><td>7.86</td><td>6.37</td><td>6.88</td></tr>
+    <tr><th>经营活动现金流净额</th><td>未披露*</td><td>3.83</td><td>20.51</td><td>22.03</td></tr>
+    <tr><th>研发投入（费用口径）</th><td>2.99</td><td>3.12</td><td>3.84</td><td>5.08</td></tr>
+    <tr><th>研发投入占营收</th><td>5.1%</td><td>5.1%</td><td>5.9%</td><td>7.3%</td></tr>
+  </table>
+  <p class="note">* 2022 年经营现金流本次未获取数值，未予估算。数据来源：2023–2025 年报（经审计）。</p>
+  <p style="margin-top:14px"><b>图1｜营业收入与归母净利润（亿元，2022–2025）</b></p>
+<svg width="660" height="250" viewBox="0 0 660 250" role="img" aria-label="图1 营业收入与归母净利润柱状图（2022–2025）" style="margin:6px 0 4px; max-width:100%;">
+    <rect x="70" y="10" width="10" height="10" fill="#1a56a0" rx="2"/>
+    <text x="86" y="19" font-size="12" fill="#1f2733">营业收入（亿元）</text>
+    <rect x="220" y="10" width="10" height="10" fill="#c2410c" rx="2"/>
+    <text x="236" y="19" font-size="12" fill="#1f2733">归母净利润（亿元）</text>
+    <rect x="70" y="58.6" width="30" height="141.4" fill="#1a56a0" rx="2"/>
+    <text x="70" y="53" font-size="12" fill="#1a56a0">58.90</text>
+    <rect x="106" y="174.6" width="30" height="25.4" fill="#c2410c" rx="2"/>
+    <text x="106" y="169" font-size="12" fill="#c2410c">10.60</text>
+    <rect x="210" y="53.6" width="30" height="146.4" fill="#1a56a0" rx="2"/>
+    <text x="210" y="48" font-size="12" fill="#1a56a0">61.01</text>
+    <rect x="246" y="181.3" width="30" height="18.7" fill="#c2410c" rx="2"/>
+    <text x="246" y="175" font-size="12" fill="#c2410c">7.79</text>
+    <rect x="350" y="43.0" width="30" height="157.0" fill="#1a56a0" rx="2"/>
+    <text x="350" y="37" font-size="12" fill="#1a56a0">65.42</text>
+    <rect x="386" y="183.4" width="30" height="16.6" fill="#c2410c" rx="2"/>
+    <text x="386" y="177" font-size="12" fill="#c2410c">6.91</text>
+    <rect x="490" y="33.2" width="30" height="166.8" fill="#1a56a0" rx="2"/>
+    <text x="490" y="27" font-size="12" fill="#1a56a0">69.52</text>
+    <rect x="526" y="182.2" width="30" height="17.8" fill="#c2410c" rx="2"/>
+    <text x="526" y="176" font-size="12" fill="#c2410c">7.43</text>
+    <line x1="50" y1="200" x2="640" y2="200" stroke="#e3e8ef" stroke-width="1.5"/>
+    <text x="70" y="222" font-size="12.5" fill="#1f2733">2022</text>
+    <text x="210" y="222" font-size="12.5" fill="#1f2733">2023</text>
+    <text x="350" y="222" font-size="12.5" fill="#1f2733">2024</text>
+    <text x="490" y="222" font-size="12.5" fill="#1f2733">2025</text>
+  </svg>
+  <p class="note">营收三年复合约 5.7%；归母净利 2023–2024 连续下滑后 2025 年回升（＋7.53%）。</p>
+  <p style="margin-top:14px"><b>表2｜分部结构演进（营业收入，亿元）</b><sup class="src" data-e="E3">[E3]</sup><sup class="src" data-e="E4">[E4]</sup><sup class="src" data-e="E5">[E5]</sup><sup class="src" data-e="E6">[E6]</sup></p>
+  <table class="t">
+    <tr><th>分部</th><th>2022</th><th>2023</th><th>2024</th><th>2025</th><th>2026H1（半年）</th></tr>
+    <tr><th>并网逆变器</th><td>40.03</td><td>40.64</td><td>37.92（－6.7%）</td><td>29.96（－20.98%）</td><td>10.56（－41.99%）</td></tr>
+    <tr><th>储能逆变器</th><td>10.68</td><td>4.39（－58.9%）</td><td>5.72（＋30.4%）</td><td>16.32（＋185.31%）</td><td>16.40（＋106.7%）</td></tr>
+    <tr><th>户用光伏发电系统</th><td>5.79</td><td>11.94</td><td>14.64（＋22.7%）</td><td>14.44（－1.3%）</td><td>6.64（－17.8%）</td></tr>
+    <tr><th>新能源电力生产</th><td>1.35</td><td>0.93</td><td>6.17（＋111%）</td><td>5.87</td><td>2.55（－16.0%）</td></tr>
+    <tr><th>储能系统</th><td>—</td><td>—</td><td>—</td><td>1.48（新增）</td><td>Q2 单季约 1.4</td></tr>
+  </table>
+  <p style="margin-top:14px"><b>表3｜毛利率两口径对照（均如实列示，不混用）</b><sup class="src" data-e="E3">[E3]</sup><sup class="src" data-e="E12">[E12]</sup><sup class="src" data-e="E6">[E6]</sup></p>
+  <table class="t">
+    <tr><th>口径</th><th>2022</th><th>2023</th><th>2024</th><th>2025</th><th>2026H1</th></tr>
+    <tr><th>审核问询函还原口径·综合</th><td>33.52%</td><td>32.38%</td><td>31.78%</td><td>未披露</td><td>光伏行业口径 35.10%（同比微降）</td></tr>
+    <tr><th>还原口径·逆变器业务</th><td>28.88%</td><td>23.14%</td><td>20.14%</td><td>未披露</td><td>未披露</td></tr>
+    <tr><th>年报口径·储能逆变器</th><td>—</td><td>—</td><td>—</td><td>31.75%（＋4.27pct）</td><td>33.16%</td></tr>
+    <tr><th>年报口径·并网逆变器</th><td>—</td><td>—</td><td>—</td><td>24.22%（＋5.54pct）</td><td>30.45%</td></tr>
+  </table>
+  <p class="note">综合毛利率与逆变器毛利率两口径并存（质保金是否计入营业成本），不混用；2025 全年综合毛利率年报精确值本次未获取，以分产品口径代替，不影响判断。行业中位数：同细分赛道 5 家上市公司 2025 年综合毛利率中位数约 31–33%（样本含阳光电源、德业股份、固德威、上能电气、禾迈股份，来源混合、口径不完全一致，仅供参考）。<sup class="src" data-e="E19">[E19]</sup><sup class="src" data-e="E20">[E20]</sup></p>
+  <p style="margin-top:14px"><b>图2｜融资历史时间线（2019 年上市以来五项，合计约 67.6 亿元）</b><sup class="src" data-e="E25">[E25]</sup><sup class="src" data-e="E8">[E8]</sup><sup class="src" data-e="E9">[E9]</sup><sup class="src" data-e="E10">[E10]</sup><sup class="src" data-e="E16">[E16]</sup></p>
+  <div class="timeline">
+    <div class="tl-node"><div class="tl-dot"></div><div class="tl-card"><b>5.33 亿</b>2019-03<span class="who">IPO（创业板）</span><sup class="src" data-e="E25">[E25]</sup></div></div>
+    <div class="tl-node"><div class="tl-dot"></div><div class="tl-card"><b>7.24 亿</b>2020<span class="who">定向增发</span><sup class="src" data-e="E25">[E25]</sup></div></div>
+    <div class="tl-node"><div class="tl-dot"></div><div class="tl-card"><b>8.97 亿</b>2022<span class="who">可转债（锦浪转债）</span><sup class="src" data-e="E25">[E25]</sup></div></div>
+    <div class="tl-node"><div class="tl-dot"></div><div class="tl-card"><b>29.25 亿</b>2022<span class="who">定向增发</span><sup class="src" data-e="E25">[E25]</sup></div></div>
+    <div class="tl-node"><div class="tl-dot"></div><div class="tl-card"><b>16.77 亿</b>2025-10<span class="who">可转债“锦浪转02”</span><sup class="src" data-e="E8">[E8]</sup></div></div>
+  </div>
+  <p class="note">锦浪转02 募投六项目：分布式光伏电站 3.54 亿、高电压大功率并网逆变器产线 3.33 亿、中大功率混合式储能逆变器产线 2.91 亿、上海研发中心 2.48 亿、<b>数智化提升项目 0.99 亿</b>、补充流动资金 3.51 亿；两条新产线均明确配置智能生产、智能检测、智能仓储与智能搬运系统。上市后累计现金分红 7.40 亿元（截至 2026H1）；锦浪转02 转股价 2026-09 公告预计触发向下修正条件。<sup class="src" data-e="E9">[E9]</sup><sup class="src" data-e="E16">[E16]</sup><sup class="src" data-e="E10">[E10]</sup></p>
+  <p style="margin-top:14px"><b>最新动向（未经审计，标注披露时点）</b><sup class="src" data-e="E6">[E6]</sup><sup class="src" data-e="E14">[E14]</sup><sup class="src" data-e="E15">[E15]</sup><sup class="src" data-e="E22">[E22]</sup></p>
+  <p>2026H1：营收 38.82 亿（＋2.32%）；归母净利 4.23 亿（－29.74%）；研发投入 2.56 亿（＋19.0%）；毛利率 35.10%。利润下滑三因素（公司业绩预告口径）：汇兑损失约 4,794 万元；2026 年限制性股票激励每月分摊股份支付约 1,897 万元；天气因素致发电小时数下降。季度节奏：Q1 归母约 0.6 亿（同比近七成降幅），Q2 环比大幅修复（+491.68%）。2026 三季报截至锚点日尚未披露（法定截止 10 月 31 日）。<sup class="src" data-e="E6">[E6]</sup><sup class="src" data-e="E14">[E14]</sup><sup class="src" data-e="E15">[E15]</sup><sup class="src" data-e="E22">[E22]</sup><sup class="src" data-e="E7">[E7]</sup></p>
+  <div class="export-row"><button class="export-btn" data-sec="p1" data-name="1.0企业概览" title="导出为 Markdown 文件">导出 MD</button></div>
+</section>
+
+<section class="page" id="p2">
+  <div class="page-title"><span class="no">2.0</span><span>经营事件与信号</span></div>
+  <div class="page-lead">过去 18 个月五件值得重点看的事：储能逆变器接棒并网成为第一大产品、16.77 亿可转债募投落地（数智化＋研发中心＋两条智能产线）、业绩 Q1 降七成而 Q2 环比修复近五倍（非现金因素为主）、美国 FCC 逆变器禁令落地成为行业级合规变量、股权激励绑定营收复合 15% 的增长考核。</div>
+  <div class="signal" id="sig1">
+    <h4>重点信号 S1｜储能逆变器爆发，接棒并网成为第一大产品</h4>
+    <p><span class="lbl">事实依据：</span>储能逆变器收入 2024 年 5.72 亿 → 2025 年 16.32 亿（＋185.31%）、占比 23.47%、毛利率 31.75%（＋4.27pct）；2026H1 收入 16.40 亿（＋106.7%）、占比 42.24%，反超并网（27.19%）成为第一大产品。工商业储能逆变器月接单超 4,000 套、户储逆变器月接单达 10 万台（公司业绩交流口径）。<sup class="src" data-e="E3">[E3]</sup><sup class="src" data-e="E17">[E17]</sup><sup class="src" data-e="E6">[E6]</sup></p>
+    <p><span class="lbl">为什么重要：</span>光储融合下储能逆变器是技术溢价最高的产品线（公司交流口径：工商业储能逆变器毛利率约 40–50%）；接单量倍增意味着研发测试任务、产线负载与售后接入量同步放大。<sup class="src" data-e="E17">[E17]</sup></p>
+    <p><span class="lbl">对关注方向的影响：</span>储能相关的研发测试环境（机制一）、新产线（机制二）与全球设备接入（机制四）三条链路负载都在放大，是 D1/D2/D3 的核心佐证。</p>
+  </div>
+  <div class="signal" id="sig2">
+    <h4>重点信号 S2｜16.77 亿可转债募投落地，数智化与研发中心进入建设期</h4>
+    <p><span class="lbl">事实依据：</span>“锦浪转02”2025-10-17 发行、11-06 上市，募投六项目中含数智化提升项目（拟投 0.99 亿）、上海研发中心建设项目（拟投 2.48 亿）及两条智能化新产线（均明确配置自动生产设备、智能检测设备、智能仓储系统、智能搬运系统）。年报自述打造“锦浪光储逆变器未来工厂”，集成应用 SCADA 等工业控制系统及工业软件，实现“生产制造自动化、生产过程控制闭环化、物流控制精准化、生产指挥可视化、设计制造运营一体化”。<sup class="src" data-e="E8">[E8]</sup><sup class="src" data-e="E9">[E9]</sup><sup class="src" data-e="E3">[E3]</sup><sup class="src" data-e="E24">[E24]</sup></p>
+    <p><span class="lbl">为什么重要：</span>募投即资本开支的公开承诺，建设期 2 年（至约 2027）——IT 相关投入（智能仓储/搬运/检测、数智化、研发中心）进入可跟进窗口。</p>
+    <p><span class="lbl">对关注方向的影响：</span>时点与金额均明确（募集说明书与年报等一手资料），是全部方向中证据最硬的一类；切入点为未来工厂与募投项目建设话题（D1/D2）。</p>
+  </div>
+  <div class="signal" id="sig3">
+    <h4>重点信号 S3｜业绩短期剧烈波动：Q1 利润降七成、Q2 环比修复近五倍</h4>
+    <p><span class="lbl">事实依据：</span>2026Q1 归母约 0.6 亿（同比近七成降幅），Q2 环比 ＋491.68%，H1 归母 4.23 亿（－29.74%）。公司归因：汇兑损失约 4,794 万＋股权激励月摊约 1,897 万＋天气影响发电（业绩预告口径）。<sup class="src" data-e="E14">[E14]</sup><sup class="src" data-e="E22">[E22]</sup><sup class="src" data-e="E6">[E6]</sup><sup class="src" data-e="E15">[E15]</sup></p>
+    <p><span class="lbl">为什么重要：</span>波动主因非现金或一次性（股份支付、汇兑），主营毛利率 35.10% 处历史高位——经营面没有同步恶化；但并网收入 2026H1 同比 －42% 提示国内基本盘承压。</p>
+    <p><span class="lbl">对关注方向的影响：</span>用于校验“增长叙事”的真实性——储能放量是真的，传统并网萎缩也是真的；跟进时应以储能/出海为主线，不把公司整体当作全面扩张期。本信号仅作认知价值与风险校验。</p>
+  </div>
+  <div class="signal" id="sig4">
+    <h4>重点信号 S4｜美国 FCC 逆变器禁令落地，出海合规成为行业级变量</h4>
+    <p><span class="lbl">事实依据：</span>2026-07 美国 FCC 逆变器禁令无缓冲落地，引发板块波动（媒体口径）；锦浪美国敞口较小——2024 年北美逆变器收入 1.60 亿、占逆变器收入 5.8%；公司无海外制造产能（对比阳光电源印度/泰国产能），海外布局为销售及服务网络本地化。<sup class="src" data-e="E21">[E21]</sup><sup class="src" data-e="E12">[E12]</sup><sup class="src" data-e="E3">[E3]</sup><sup class="src" data-e="E23">[E23]</sup></p>
+    <p><span class="lbl">为什么重要：</span>禁令管制的是未获授权的新型号——合规认证能力成为出海前置条件；欧洲公共资金限制政策同类（业绩说明会称涉及项目少、影响有限）。<sup class="src" data-e="E18">[E18]</sup></p>
+    <p><span class="lbl">对关注方向的影响：</span>合规认证数据管理、海外本地化 IT（数据合规、服务网络支撑）成为出海企业共性话题；锦浪敞口小于同行，但趋势不可逆（D5）。</p>
+  </div>
+  <div class="signal" id="sig5">
+    <h4>重点信号 S5｜2026 年股权激励绑定高增长考核</h4>
+    <p><span class="lbl">事实依据：</span>首次授予 601.73 万股（319 人，44.49 元/股），考核 2026–2028 年以 2025 年为基数营收复合增速 ≥15% 或净利复合增速 ≥10%。<sup class="src" data-e="E11">[E11]</sup></p>
+    <p><span class="lbl">为什么重要：</span>考核目标公开承诺了增长斜率，与 S1/S2 的储能＋募投扩张相互印证。</p>
+    <p><span class="lbl">对关注方向的影响：</span>增长意愿有制度化保障；同时考核期内费用摊销压制报表利润（S3 的镜像）。</p>
+  </div>
+  <h3 class="block-title" id="sig-dyn">顺带知道（动态信息）</h3>
+  <ul class="dyn-list">
+    <li><b>D1</b>｜2025 年逆变器销量 79.02 万台（－13.44%）、产量 80.15 万台，产能 175 万台/年——产能充裕、结构切换中<sup class="src" data-e="E3">[E3]</sup></li>
+    <li><b>D2</b>｜电站资产轻资产化：2025 年出售电站 239.06MW（交易净利 2,861.61 万）、户用系统当年未新增<sup class="src" data-e="E3">[E3]</sup></li>
+    <li><b>D3</b>｜锦浪转02 转股价 89.82 → 72.35 元，2026-09 公告预计触发向下修正条件<sup class="src" data-e="E10">[E10]</sup></li>
+    <li><b>D4</b>｜欧盟对中国逆变器公共资金限制政策——业绩说明会称涉及项目少、影响有限<sup class="src" data-e="E18">[E18]</sup></li>
+    <li><b>D5</b>｜2026H1 海外收入 23.40 亿（＋31.63%）、占比升至 60.3%；国内 15.42 亿（－23.52%）<sup class="src" data-e="E6">[E6]</sup></li>
+    <li><b>D6</b>｜2025-02 起新能源上网电价市场化改革（136 号文）影响增量电站收益预期，公司半年报明示<sup class="src" data-e="E27">[E27]</sup></li>
+  </ul>
+  <div class="export-row"><button class="export-btn" data-sec="p2" data-name="2.0经营事件与信号" title="导出为 Markdown 文件">导出 MD</button></div>
+</section>
+
+<section class="page" id="p3">
+  <div class="page-title"><span class="no">3.0</span><span>业务及技术解析</span></div>
+  <div class="page-lead">锦浪的 IT 需求分三层：最确定的是募投直接点名的未来工厂数智化与研发中心（建设期至约 2027）；锦浪云随储能出货倍增的扩容需求真实存在，但接入规模未公开；储能系统交付数字化处于培育期，需求侧证据待出现。</div>
+  <div class="mech" id="mech1">
+    <h4>机制一：逆变器研发设计与测试验证</h4>
+    <table class="t">
+      <tr><th>业务任务</th><td>电力电子拓扑设计、嵌入式软件、热设计、EMC/可靠性测试，产品迭代至第七代平台</td></tr>
+      <tr><th>业务系统</th><td>电路/热仿真工具链、嵌入式开发测试环境、实验检测中心（CNAS 认可）、PLM（推断）</td></tr>
+      <tr><th>功能需求</th><td>仿真验证、样机测试、认证测试数据管理、研发项目管理</td></tr>
+      <tr><th>负载特性</th><td>设计文件与仿真任务（计算密集型，推断）；测试数据持续增长；保密性高</td></tr>
+      <tr><th>运行方式</th><td>象山本部＋上海研发中心（募投在建，拟投 2.48 亿）；仿真/PLM 具体环境未公开<sup class="src" data-e="E9">[E9]</sup></td></tr>
+      <tr><th>对业务结果的影响</th><td>研发产出直接决定产品线竞争力；研发人员 1,032 人（＋19.4%）、研发投入 5.08 亿（＋32%）持续加码<sup class="src" data-e="E3">[E3]</sup></td></tr>
+      <tr><th>关联的 IT 能力</th><td>研发算力（CAE/仿真）、PLM、研发数据安全、实验室数据管理</td></tr>
+    </table>
+    <p class="kn"><span class="k1">已确认：</span>研发人员、投入双增与研发中心募投均见年报与募集说明书。</p>
+    <p class="kn"><span class="k2">未确认：</span>仿真算力规模与 PLM 部署未公开，属推断。</p>
+    <p class="evi">相关信号：储能研发负载放大（S1）；研发中心募投落地（S2）。</p>
+  </div>
+  <div class="mech" id="mech2">
+    <h4>机制二：未来工厂智能制造</h4>
+    <table class="t">
+      <tr><th>业务任务</th><td>逆变器/储能产品生产制造与质量管控（SMT、组装、老化测试、在线检测）</td></tr>
+      <tr><th>业务系统</th><td>SCADA 等工业控制系统＋工业软件（年报自述）；MES/ERP 集成（推断）；智能仓储与智能搬运系统（募投明确引入）<sup class="src" data-e="E3">[E3]</sup><sup class="src" data-e="E9">[E9]</sup><sup class="src" data-e="E24">[E24]</sup></td></tr>
+      <tr><th>功能需求</th><td>生产过程闭环控制、在线检测自动化、生产指挥可视化、设计制造运营一体化</td></tr>
+      <tr><th>负载特性</th><td>产线实时数据采集（秒级，推断）；7×24 高可用（停线即损失）；175 万台/年产能配套</td></tr>
+      <tr><th>运行方式</th><td>象山基地自建（浙江省未来工厂试点）；云使用情况未公开<sup class="src" data-e="E3">[E3]</sup></td></tr>
+      <tr><th>对业务结果的影响</th><td>智能制造直接支撑降本（第七代产品目标成本降 10–15%，公司交流口径）与质量一致性<sup class="src" data-e="E15">[E15]</sup></td></tr>
+      <tr><th>关联的 IT 能力</th><td>工业网络、边缘计算节点、虚拟化/私有云、工业软件、智能仓储系统、产线可视化</td></tr>
+    </table>
+    <p class="kn"><span class="k1">已确认：</span>SCADA、未来工厂试点与募投智能仓储/搬运/检测均见年报与募集说明书。</p>
+    <p class="kn"><span class="k2">未确认：</span>MES 品牌与产线数据架构未公开，属推断。</p>
+    <p class="evi">相关信号：储能新产线建设（S1）；募投落地（S2）为核心佐证。</p>
+  </div>
+  <div class="mech" id="mech3">
+    <h4>机制三：全球供应链与订单履约</h4>
+    <table class="t">
+      <tr><th>业务任务</th><td>全球采购、库存、物流、进出口合规、多币种结算与汇率风险管理</td></tr>
+      <tr><th>业务系统</th><td>覆盖销售、采购、生产、库存的 ERP 系统（年报明确）；关务/合规系统（推断）；财务共享与资金系统（推断）<sup class="src" data-e="E3">[E3]</sup></td></tr>
+      <tr><th>功能需求</th><td>全球多组织协同、订单到交付可视、关税与原产地合规、套期保值管理</td></tr>
+      <tr><th>负载特性</th><td>100+ 国家订单流；多币种、多税制；海外收入占比 60.3%（2026H1）后合规复杂度上升<sup class="src" data-e="E6">[E6]</sup></td></tr>
+      <tr><th>运行方式</th><td>自建 ERP（年报口径）＋第三方境外服务机构协同<sup class="src" data-e="E3">[E3]</sup></td></tr>
+      <tr><th>对业务结果的影响</th><td>2026H1 汇兑损失约 4,794 万元（业绩预告口径）——汇率风险管理能力直接影响利润；交付效率影响储能订单兑现（月接单超 4,000 套）<sup class="src" data-e="E15">[E15]</sup></td></tr>
+      <tr><th>关联的 IT 能力</th><td>ERP 高可用与全球化部署、关务合规软件、资金/套保系统、全球网络</td></tr>
+    </table>
+    <p class="kn"><span class="k1">已确认：</span>ERP 存在与海外收入占比见年报披露。</p>
+    <p class="kn"><span class="k2">未确认：</span>关务/套保系统未公开，属推断。</p>
+    <p class="evi">相关信号：汇兑损失（S3）；出海合规政策（S4）。</p>
+  </div>
+  <div class="mech" id="mech4">
+    <h4>机制四：全球设备连接与运维云平台（锦浪云 / SolisCloud）</h4>
+    <table class="t">
+      <tr><th>业务任务</th><td>全球售出设备（逆变器/储能）的运行监控、告警、远程升级与运维服务</td></tr>
+      <tr><th>业务系统</th><td>锦浪云平台——光伏智能监控运维系统：实时监控、智能报警、远程升级控制、可视化大屏、统计分析；配套 4G/5G 数据采集器、PLC 电力载波通信<sup class="src" data-e="E23">[E23]</sup></td></tr>
+      <tr><th>功能需求</th><td>海量设备接入、电站/设备维度发电与效率分析、故障快速定位、远程 OTA</td></tr>
+      <tr><th>负载特性</th><td>接入设备数随储能出货倍增（2025 年储能逆变器交付超 20 万台，公司交流口径）——接入点达百万级（推断）；时序数据海量；海外数据合规（GDPR 等，行业通行）<sup class="src" data-e="E17">[E17]</sup></td></tr>
+      <tr><th>运行方式</th><td>公司自述“采用领先的云计算平台”（官网，未披露云厂商与区域架构）；推断多区域部署<sup class="src" data-e="E23">[E23]</sup></td></tr>
+      <tr><th>对业务结果的影响</th><td>运维响应能力支撑品牌溢价与渠道信任（20 年设计寿命承诺的履约工具）；接入规模是储能服务收入基础</td></tr>
+      <tr><th>关联的 IT 能力</th><td>云平台、IoT 接入平台、时序数据库、全球节点/CDN、数据合规架构</td></tr>
+    </table>
+    <p class="kn"><span class="k1">已确认：</span>锦浪云平台功能为官网与年报明确披露。</p>
+    <p class="kn"><span class="k2">未确认：</span>接入规模、云厂商与海外架构未公开（公司交流口径＋推断）。</p>
+    <p class="evi">相关信号：储能出货倍增（S1）→ 接入负载放大；海外数据合规（S4）。</p>
+  </div>
+  <div class="mech" id="mech5">
+    <h4>机制五：分布式电站资产运营与能源管理</h4>
+    <table class="t">
+      <tr><th>业务任务</th><td>4,818.09MW 存量电站的发电监控、运维管理、电费结算与投后评估<sup class="src" data-e="E3">[E3]</sup></td></tr>
+      <tr><th>业务系统</th><td>智能化集中监控系统平台（年报：锦浪智慧通过该平台监督第三方运维团队执行）；功率预测/结算系统（推断）<sup class="src" data-e="E3">[E3]</sup></td></tr>
+      <tr><th>功能需求</th><td>电站运行监测、发电量评估、异常工单、投后技改分析</td></tr>
+      <tr><th>负载特性</th><td>数千 MW 级测点接入（时序数据）；轻资产化后运维外包管理需求上升<sup class="src" data-e="E3">[E3]</sup></td></tr>
+      <tr><th>运行方式</th><td>自建平台＋第三方运维团队（年报口径）<sup class="src" data-e="E3">[E3]</sup></td></tr>
+      <tr><th>对业务结果的影响</th><td>发电业务贡献 50%+ 毛利率与稳定现金流；电价市场化（136 号文）后收益管理精细化需求上升<sup class="src" data-e="E27">[E27]</sup></td></tr>
+      <tr><th>关联的 IT 能力</th><td>IoT 采集、电站数据平台、移动运维应用、电力交易/结算接口</td></tr>
+    </table>
+    <p class="kn"><span class="k1">已确认：</span>监控平台、运维模式与电站规模见年报披露。</p>
+    <p class="kn"><span class="k2">未确认：</span>平台架构未公开，属推断。</p>
+    <p class="evi">相关信号：电站轻资产化（动态 D2）；电价市场化（动态 D6）。</p>
+  </div>
+  <div class="mech" id="mech6">
+    <h4>机制六：储能系统新业务交付与售后</h4>
+    <table class="t">
+      <tr><th>业务任务</th><td>储能系统产品选型配置、订单交付、安装调试与售后服务（2025 下半年起）</td></tr>
+      <tr><th>业务系统</th><td>EMS/BMS 软件栈（产品配套，推断）；订单配置器与售后工单系统（推断）</td></tr>
+      <tr><th>功能需求</th><td>光储协同配置、工商业项目交付管理、返单客户跟踪</td></tr>
+      <tr><th>负载特性</th><td>项目制交付；2026 年目标 5,000–10,000 套（公司交流口径）——交付管理负载快速上升<sup class="src" data-e="E17">[E17]</sup></td></tr>
+      <tr><th>运行方式</th><td>依托逆变器渠道与欧洲/亚非拉服务网点；IT 系统未公开<sup class="src" data-e="E3">[E3]</sup></td></tr>
+      <tr><th>对业务结果的影响</th><td>储能系统是公司第二条增长曲线（2026Q2 单季收入约 1.4 亿）；交付体验决定返单率（公司称返单率高）<sup class="src" data-e="E15">[E15]</sup></td></tr>
+      <tr><th>关联的 IT 能力</th><td>EMS 软件平台、CPQ 配置、售后工单与备件管理</td></tr>
+    </table>
+    <p class="kn"><span class="k1">已确认：</span>业务存在与 2026Q2 收入见半年报；交付目标为公司交流口径。</p>
+    <p class="kn"><span class="k2">未确认：</span>交付/售后 IT 系统未公开，属推断。</p>
+    <p class="evi">相关信号：储能放量（S1）为核心佐证。</p>
+  </div>
+  <div class="export-row"><button class="export-btn" data-sec="p3" data-name="3.0业务及技术解析" title="导出为 Markdown 文件">导出 MD</button></div>
+</section>
+
+<section class="page" id="p4">
+  <div class="page-title"><span class="no">4.0</span><span>IT关注方向及跟进</span></div>
+  <div class="page-lead">六个方向按优先级排列：3 个优先跟进（未来工厂数智化、上海研发中心 IT、锦浪云扩容）、2 个值得研究（储能系统数字化、出海合规 IT）、1 个持续观察（电站运营平台）。</div>
+  <div class="dir">
+    <div class="dir-head"><span class="tag s1">优先跟进</span><h4>D1｜未来工厂与数智化提升建设</h4></div>
+    <div class="basis">依据：募集说明书＋年报自述（一手披露），全部方向中证据最硬；建设期至约 2027，窗口开放</div>
+    <p><span class="lbl">为什么值得关注：</span>数智化提升项目拟投 0.99 亿，两条新产线明确配置智能检测、智能仓储与智能搬运系统，承载核心生产任务，影响全部产品线的降本与质量。</p>
+    <p><span class="lbl">怎么跟进：</span>从“未来工厂”与募投项目建设切入（智能检测、智能仓储搬运、生产可视化）。若出现募投延期/变更公告（2022 年募投曾有变更先例），降级为跟踪。</p>
+  </div>
+  <div class="dir">
+    <div class="dir-head"><span class="tag s1">优先跟进</span><h4>D2｜上海研发中心 IT 环境</h4></div>
+    <div class="basis">依据：研发中心募投 2.48 亿（一手披露）＋研发人员/投入双增（机制一）</div>
+    <p><span class="lbl">为什么值得关注：</span>研发中心建设启动期，涉及研发算力、PLM、实验室数据管理，属计算与平台类需求。</p>
+    <p><span class="lbl">怎么跟进：</span>从研发中心建设话题进入（仿真算力、研发数据平台）。若建设进度公告延迟，转持续观察。</p>
+  </div>
+  <div class="dir">
+    <div class="dir-head"><span class="tag s1">优先跟进</span><h4>D3｜锦浪云全球运维平台扩容</h4></div>
+    <div class="basis">依据：平台存在为事实（官网/年报明确披露）；扩容需求由负载推导（储能出货倍增）</div>
+    <p><span class="lbl">为什么值得关注：</span>全球设备接入量随储能出货持续放大，涉及云平台、IoT 接入、时序数据与海外数据合规，服务成本与续费价值直接相关。</p>
+    <p><span class="lbl">怎么跟进：</span>从全球设备接入规模与海外数据合规话题切入（FCC 禁令背景）。若接入规模数据公开披露，升级为机会假设。</p>
+  </div>
+  <div class="dir">
+    <div class="dir-head"><span class="tag s2">值得研究</span><h4>D4｜储能系统业务数字化</h4></div>
+    <div class="basis">依据：业务放量为公司交流口径（媒体与交流会口径为主）＋2026Q2 收入见半年报；IT 需求本体未公开</div>
+    <p><span class="lbl">为什么值得关注：</span>储能系统是第二条增长曲线，交付/配置/售后数字化属应用软件类需求；独立来源已达门槛，待需求侧证据出现升级。</p>
+    <p><span class="lbl">怎么跟进：</span>从储能系统交付与返单话题切入。</p>
+  </div>
+  <div class="dir">
+    <div class="dir-head"><span class="tag s2">值得研究</span><h4>D5｜出海合规与全球化 IT</h4></div>
+    <div class="basis">依据：政策为媒体报道、敞口数据为年报披露；锦浪美国占逆变器收入 5.8%（2024），敞口小于同行</div>
+    <p><span class="lbl">为什么值得关注：</span>FCC 禁令＋关税＋海外收入占比 60.3%，合规认证数据管理与海外本地化 IT 是出海企业共性话题，属安全与合规类。</p>
+    <p><span class="lbl">怎么跟进：</span>从海外合规负担与本地化服务网络支撑切入。若锦浪宣布海外产能/区域 IT 建设，升级。</p>
+  </div>
+  <div class="dir">
+    <div class="dir-head"><span class="tag s3">持续观察</span><h4>D6｜电站资产运营平台</h4></div>
+    <div class="basis">依据：年报披露；但资产在轻资产化收缩转出，时点不紧迫</div>
+    <p><span class="lbl">为什么值得关注：</span>4,818MW 存量电站的运维外包管理与电价市场化后的收益管理精细化需求存在，属数据平台类。</p>
+    <p><span class="lbl">怎么跟进：</span>从电站运维外包管理与电价市场化收益管理话题切入。若电站资产重新扩张或运维平台招标，重新激活。</p>
+  </div>
+  <div class="export-row"><button class="export-btn" data-sec="p4" data-name="4.0IT关注方向及跟进" title="导出为 Markdown 文件">导出 MD</button></div>
+</section>
+
+<section class="page" id="p5">
+  <div class="page-title"><span class="no">5.0</span><span>来源索引与证据链</span></div>
+  <div class="page-lead">本报告基于公开信息：事实均可回溯到下方编号来源，年报/公告/官网等一手资料与媒体/交流口径已分别标明，推断内容单独标注；未证实内容不作为结论。</div>
+  <h3 class="block-title">身份怎么读</h3>
+  <div class="legend">
+    <span>企业事实：有官方/一手资料支持</span>
+    <span>来源说法：媒体或第三方口径，已标明</span>
+    <span>行业通行做法：行业机制，非本企业事实</span>
+    <span>我们的推断：假设，待验证</span>
+  </div>
+  <h3 class="block-title">来源记录（点击正文 [E#] 可跳到此表对应行）</h3>
+  <table class="t" id="src-table">
+    <tr><th>编号</th><th>主体</th><th>时间</th><th>口径</th><th>来源与层级</th><th>链接</th><th>获取日期</th><th>身份</th></tr>
+    <tr id="E1"><td class="eid">E1</td><td>锦浪科技</td><td>2005–2026</td><td>工商/沿革</td><td>天眼查＋同花顺F10（层2工具转述）</td><td class="url"><a href="https://www.tianyancha.com/company/2314463546" target="_blank">tianyancha.com/company/2314463546</a><a href="http://basic.10jqka.com.cn/300763/company.html" target="_blank">basic.10jqka.com.cn/300763/company.html</a></td><td>2026-10-19</td><td>企业事实（经聚合工具转述）</td></tr>
+    <tr id="E2"><td class="eid">E2</td><td>王一鸣</td><td>2026 快照</td><td>高管履历</td><td>新浪财经高管页（媒体转公告）</td><td class="url"><a href="https://vip.stock.finance.sina.com.cn/corp/view/vCI_CorpManagerInfo.php?stockid=300763&Pcode=30383072" target="_blank">vip.stock.finance.sina.com.cn/corp/view/vCI_CorpManagerInfo.php?stockid=300763&amp;Pcode=30383072</a></td><td>2026-10-19</td><td>企业事实</td></tr>
+    <tr id="E3"><td class="eid">E3</td><td>锦浪科技</td><td>2026-04-27</td><td>2025年报（经审计）</td><td>巨潮资讯网（一手）</td><td class="url"><a href="http://static.cninfo.com.cn/finalpage/2026-04-27/1225187516.PDF" target="_blank">static.cninfo.com.cn/finalpage/2026-04-27/1225187516.PDF</a></td><td>2026-10-19</td><td>企业事实</td></tr>
+    <tr id="E4"><td class="eid">E4</td><td>锦浪科技</td><td>2025-04-29</td><td>2024年报（经审计）</td><td>新浪财经公告页（一手）</td><td class="url"><a href="http://money.finance.sina.com.cn/corp/view/vCB_AllBulletinDetail.php?stockid=300763&id=11035092" target="_blank">money.finance.sina.com.cn/corp/view/vCB_AllBulletinDetail.php?stockid=300763&amp;id=11035092</a></td><td>2026-10-19</td><td>企业事实</td></tr>
+    <tr id="E5"><td class="eid">E5</td><td>锦浪科技</td><td>2024-04-29</td><td>2023年报（经审计）</td><td>东方财富PDF镜像（一手）</td><td class="url"><a href="https://pdf.dfcfw.com/pdf/H2_AN202404281631532389_1.pdf" target="_blank">pdf.dfcfw.com/pdf/H2_AN202404281631532389_1.pdf</a></td><td>2026-10-19</td><td>企业事实</td></tr>
+    <tr id="E6"><td class="eid">E6</td><td>锦浪科技</td><td>2026-08-27</td><td>2026半年报（未审计）</td><td>深交所披露PDF（一手）</td><td class="url"><a href="https://disc.static.szse.cn/disc/disk03/finalpage/2026-08-29/1014d909-6c3a-4e94-b1c7-9581b28e3b25.PDF" target="_blank">disc.static.szse.cn/…/1014d909-6c3a-4e94-b1c7-9581b28e3b25.PDF</a></td><td>2026-10-19</td><td>企业事实</td></tr>
+    <tr id="E7"><td class="eid">E7</td><td>锦浪科技</td><td>2026-04</td><td>2026一季报</td><td>新浪财经公告页（一手）</td><td class="url"><a href="http://money.finance.sina.com.cn/corp/view/vCB_AllBulletinDetail.php?stockid=300763&id=11035113" target="_blank">money.finance.sina.com.cn/corp/view/vCB_AllBulletinDetail.php?stockid=300763&amp;id=11035113</a></td><td>2026-10-19</td><td>企业事实</td></tr>
+    <tr id="E8"><td class="eid">E8</td><td>锦浪转02</td><td>2025-10-14</td><td>募集说明书摘要/发行公告</td><td>证券之星＋中财网转公告（一手转载）</td><td class="url"><a href="http://stock.stockstar.com/AN2025101400063836.shtml" target="_blank">stock.stockstar.com/AN2025101400063836.shtml</a></td><td>2026-10-19</td><td>企业事实</td></tr>
+    <tr id="E9"><td class="eid">E9</td><td>锦浪转02</td><td>2025-07-18</td><td>募投可研报告（修订稿）</td><td>东方财富股吧转公告PDF（一手转载）</td><td class="url"><a href="https://guba.eastmoney.com/news,300763,1573083414.html" target="_blank">guba.eastmoney.com/news,300763,1573083414.html</a></td><td>2026-10-19</td><td>企业事实</td></tr>
+    <tr id="E10"><td class="eid">E10</td><td>锦浪转02</td><td>2026-09-04</td><td>转股价下修提示公告</td><td>东方财富PDF镜像（一手）</td><td class="url"><a href="https://pdf.dfcfw.com/pdf/H2_AN202609041829015924_1.pdf" target="_blank">pdf.dfcfw.com/pdf/H2_AN202609041829015924_1.pdf</a></td><td>2026-10-19</td><td>企业事实</td></tr>
+    <tr id="E11"><td class="eid">E11</td><td>锦浪科技</td><td>2026-05-26</td><td>2026年限制性股票激励首次授予公告</td><td>巨潮资讯网（一手）</td><td class="url"><a href="http://static.cninfo.com.cn/finalpage/2026-05-27/1225331079.PDF" target="_blank">static.cninfo.com.cn/finalpage/2026-05-27/1225331079.PDF</a></td><td>2026-10-19</td><td>企业事实</td></tr>
+    <tr id="E12"><td class="eid">E12</td><td>锦浪科技</td><td>2025-07-21</td><td>可转债审核问询函回复（毛利率全链）</td><td>新浪财经公告页（一手）</td><td class="url"><a href="http://money.finance.sina.com.cn/corp/view/vCB_AllBulletinDetail.php?stockid=300763&id=11114081" target="_blank">money.finance.sina.com.cn/corp/view/vCB_AllBulletinDetail.php?stockid=300763&amp;id=11114081</a></td><td>2026-10-19</td><td>企业事实</td></tr>
+    <tr id="E13"><td class="eid">E13</td><td>锦浪科技</td><td>2025-10-15</td><td>2025三季报解读＋可转债发行报道</td><td>第一财经（媒体）</td><td class="url"><a href="https://www.yicai.com/news/102864312.html" target="_blank">yicai.com/news/102864312.html</a></td><td>2026-10-19</td><td>来源说法</td></tr>
+    <tr id="E14"><td class="eid">E14</td><td>锦浪科技</td><td>2026-04-29</td><td>2026Q1业绩报道</td><td>东方财富网（媒体）</td><td class="url"><a href="https://finance.eastmoney.com/a/202604293724163027.html" target="_blank">finance.eastmoney.com/a/202604293724163027.html</a></td><td>2026-10-19</td><td>来源说法</td></tr>
+    <tr id="E15"><td class="eid">E15</td><td>锦浪科技</td><td>2026-07-08</td><td>2026H1业绩预告拆解</td><td>搜狐“PV光圈见闻”（媒体）</td><td class="url"><a href="https://www.sohu.com/a/1047486095_121124363" target="_blank">sohu.com/a/1047486095_121124363</a></td><td>2026-10-19</td><td>来源说法（含公司业绩交流口径）</td></tr>
+    <tr id="E16"><td class="eid">E16</td><td>锦浪科技</td><td>2026-10-16</td><td>2026H1经营数据报道</td><td>网易号（自媒体）</td><td class="url"><a href="https://www.163.com/dy/article/L9BQ73EV05568W0A.html" target="_blank">163.com/dy/article/L9BQ73EV05568W0A.html</a></td><td>2026-10-19</td><td>来源说法</td></tr>
+    <tr id="E17"><td class="eid">E17</td><td>锦浪科技</td><td>2026-05-02</td><td>2025年报储能业务拆解</td><td>网易号转“储能与电力市场”（自媒体）</td><td class="url"><a href="https://www.163.com/dy/article/KRTMPEIH05568W0A.html" target="_blank">163.com/dy/article/KRTMPEIH05568W0A.html</a></td><td>2026-10-19</td><td>来源说法（含公司交流口径）</td></tr>
+    <tr id="E18"><td class="eid">E18</td><td>锦浪科技</td><td>2026-05-08</td><td>2025年度业绩说明会纪要</td><td>网易号转新浪证券（自媒体）</td><td class="url"><a href="https://www.163.com/dy/article/KSED71NM05568W0A.html" target="_blank">163.com/dy/article/KSED71NM05568W0A.html</a></td><td>2026-10-19</td><td>来源说法（企业表态）</td></tr>
+    <tr id="E19"><td class="eid">E19</td><td>储能逆变器行业</td><td>2026-09-27</td><td>行业毛利率对比</td><td>智研咨询（研究机构）</td><td class="url"><a href="https://www.chyxx.com/industry/1281780.html" target="_blank">chyxx.com/industry/1281780.html</a></td><td>2026-10-19</td><td>来源说法（行业机制）</td></tr>
+    <tr id="E20"><td class="eid">E20</td><td>户储逆变器行业</td><td>2026-07-29</td><td>毛利率梯队（弗若斯特沙利文）</td><td>证券之星（媒体）</td><td class="url"><a href="https://finance.stockstar.com/IG2026072900032882.shtml" target="_blank">finance.stockstar.com/IG2026072900032882.shtml</a></td><td>2026-10-19</td><td>来源说法</td></tr>
+    <tr id="E21"><td class="eid">E21</td><td>逆变器出海</td><td>2026-10-11</td><td>FCC禁令与出海版图</td><td>搜狐（媒体）</td><td class="url"><a href="https://m.sohu.com/a/1086399595_122945971" target="_blank">m.sohu.com/a/1086399595_122945971</a></td><td>2026-10-19</td><td>来源说法</td></tr>
+    <tr id="E22"><td class="eid">E22</td><td>光伏板块</td><td>2026-09-15</td><td>2026中报板块综述（Q2环比数据）</td><td>搜狐“时间线”（媒体）</td><td class="url"><a href="https://timeline.sohu.com/news/o4vYDmaqRl" target="_blank">timeline.sohu.com/news/o4vYDmaqRl</a></td><td>2026-10-19</td><td>来源说法</td></tr>
+    <tr id="E23"><td class="eid">E23</td><td>锦浪科技</td><td>2025-06 快照</td><td>官网产品与锦浪云介绍</td><td>公司官网（一手）</td><td class="url"><a href="https://www.ginlong.com/inverter.html" target="_blank">ginlong.com/inverter.html</a></td><td>2026-10-19</td><td>企业事实</td></tr>
+    <tr id="E24"><td class="eid">E24</td><td>锦浪科技</td><td>2026-10-19 快照</td><td>未来工厂/信息化表述</td><td>东方财富数据页（聚合转年报）</td><td class="url"><a href="https://data.eastmoney.com/stockdata/300763.html" target="_blank">data.eastmoney.com/stockdata/300763.html</a></td><td>2026-10-19</td><td>企业事实（经聚合页转述，年报原文已核 E3）</td></tr>
+    <tr id="E25"><td class="eid">E25</td><td>锦浪科技</td><td>2022-06/07</td><td>2022年定增与融资史</td><td>36氪/OFweek（媒体）</td><td class="url"><a href="https://m.36kr.com/p/1808369887511168" target="_blank">m.36kr.com/p/1808369887511168</a></td><td>2026-10-19</td><td>来源说法</td></tr>
+    <tr id="E26"><td class="eid">E26</td><td>三安光电/锦浪</td><td>2026-10-11</td><td>SiC器件批量交付</td><td>腾讯新闻转华夏能源网（媒体）</td><td class="url"><a href="https://news.qq.com/rain/a/20261011A05LWS00" target="_blank">news.qq.com/rain/a/20261011A05LWS00</a></td><td>2026-10-19</td><td>来源说法</td></tr>
+    <tr id="E27"><td class="eid">E27</td><td>锦浪科技</td><td>2025-08-15</td><td>2025半年报（136号文影响等）</td><td>新浪财经公告页（一手）</td><td class="url"><a href="https://vip.stock.finance.sina.com.cn/corp/view/vCB_AllBulletinDetail.php?stockid=300763&id=11300566" target="_blank">vip.stock.finance.sina.com.cn/corp/view/vCB_AllBulletinDetail.php?stockid=300763&amp;id=11300566</a></td><td>2026-10-19</td><td>企业事实</td></tr>
+    <tr id="E28"><td class="eid">E28</td><td>锦浪科技</td><td>2024-11 快照</td><td>公司简介/高管/员工（F10）</td><td>同花顺F10（层2工具）</td><td class="url"><a href="http://basic.10jqka.com.cn/300763/company.html" target="_blank">basic.10jqka.com.cn/300763/company.html</a></td><td>2026-10-19</td><td>企业事实（经聚合工具转述）</td></tr>
+    <tr id="E29"><td class="eid">E29</td><td>锦浪科技</td><td>2025-10-13 快照</td><td>实控人持股/全球份额</td><td>雪球公司页（聚合）</td><td class="url"><a href="https://xueqiu.com/snowman/S/SZ300763/detail" target="_blank">xueqiu.com/snowman/S/SZ300763/detail</a></td><td>2026-10-19</td><td>来源说法（聚合页）</td></tr>
+    <tr id="E30"><td class="eid">E30</td><td>锦浪科技</td><td>2025-04（法律意见书）</td><td>诉讼/处罚核查</td><td>国浩律师法律意见书（深交所披露，一手）</td><td class="url"><a href="https://reportdocs.static.szse.cn/UpFiles/rasinfodisc1/202504/RAS_202504_082105E8299C68563746A09C60925B5132AAC6.pdf" target="_blank">reportdocs.static.szse.cn/…/RAS_202504_082105E8299C68563746A09C60925B5132AAC6.pdf</a></td><td>2026-10-19</td><td>企业事实（合规核查）</td></tr>
+  </table>
+  <h3 class="block-title">同源关系说明</h3>
+  <p class="note">E3 与 E24 同源（E24 为聚合页转述年报要点，年报原文以 E3 为准，已核对）；E1 与 E28 部分同源（同花顺 F10 工商页）；E15–E18、E22 为媒体/自媒体报道，均含公司业绩交流口径，身份已分别标注，不与一手公告混用。</p>
+  <div class="export-row"><button class="export-btn" data-sec="p5" data-name="5.0来源索引与证据链" title="导出为 Markdown 文件">导出 MD</button></div>
+</section>
+</div>
+
+<footer>本报告基于公开信息整理，锚点日期 2026-10-19。</footer>
+
+<script>
+(function(){
+  /* 来源锚点跳转 */
+  document.querySelectorAll("sup.src").forEach(function(s){
+    s.addEventListener("click", function(){
+      var t=document.getElementById(s.getAttribute("data-e"));
+      if(t){ t.scrollIntoView({behavior:"smooth", block:"center"});
+        t.classList.remove("hl"); void t.offsetWidth; t.classList.add("hl"); }
+    });
+  });
+
+  /* 文档搜索：定位正文匹配位置，高亮＋上一个/下一个 */
+  var content=document.getElementById("content"),
+      q=document.getElementById("q"),
+      form=document.getElementById("searchform"),
+      status=document.getElementById("status"),
+      statusText=document.getElementById("status-text"),
+      hits=[], cur=-1;
+
+  function clearHits(){
+    content.querySelectorAll("mark.hit").forEach(function(m){
+      var p=m.parentNode; p.replaceChild(document.createTextNode(m.textContent), m);
+      p.normalize();
+    });
+    hits=[]; cur=-1; status.classList.remove("show");
+  }
+  function jump(){
+    hits.forEach(function(m){ m.classList.remove("cur"); });
+    var m=hits[cur]; m.classList.add("cur");
+    m.scrollIntoView({behavior:"smooth", block:"center"});
+    statusText.textContent="第 "+(cur+1)+" / "+hits.length+" 处";
+  }
+  function doSearch(){
+    clearHits();
+    var k=q.value.trim();
+    if(!k){ return; }
+    var lower=k.toLowerCase();
+    var walker=document.createTreeWalker(content, NodeFilter.SHOW_TEXT, {
+      acceptNode:function(n){
+        if(!n.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
+        if(n.parentElement.closest("script,style,mark")) return NodeFilter.FILTER_REJECT;
+        return n.nodeValue.toLowerCase().indexOf(lower)>=0 ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+      }});
+    var nodes=[]; while(walker.nextNode()) nodes.push(walker.currentNode);
+    nodes.forEach(function(n){
+      var el=n.parentNode, txt=n.nodeValue, ltxt=txt.toLowerCase();
+      var frag=document.createDocumentFragment(), idx=0, pos;
+      while((pos=ltxt.indexOf(lower, idx))>=0){
+        frag.appendChild(document.createTextNode(txt.slice(idx, pos)));
+        var m=document.createElement("mark");
+        m.className="hit"; m.textContent=txt.slice(pos, pos+k.length);
+        frag.appendChild(m); hits.push(m); idx=pos+k.length;
+      }
+      frag.appendChild(document.createTextNode(txt.slice(idx)));
+      el.replaceChild(frag, n);
+    });
+    if(hits.length){ cur=0; status.classList.add("show"); jump(); }
+    else { status.classList.add("show"); statusText.textContent="未找到「"+k+"」"; }
+  }
+  form.addEventListener("submit", function(e){ e.preventDefault(); doSearch(); });
+  document.getElementById("next").addEventListener("click", function(){ if(hits.length){ cur=(cur+1)%hits.length; jump(); } });
+  document.getElementById("prev").addEventListener("click", function(){ if(hits.length){ cur=(cur-1+hits.length)%hits.length; jump(); } });
+  document.getElementById("clear").addEventListener("click", function(){ q.value=""; clearHits(); });
+
+
+  /* ===== HTML→Markdown 导出 ===== */
+  function inline(el){
+    var out="";
+    el.childNodes.forEach(function(n){
+      if(n.nodeType===3){ out+=n.nodeValue; return; }
+      var t=(n.tagName||"").toLowerCase();
+      if(t==="b"||t==="strong") out+="**"+inline(n)+"**";
+      else if(t==="a") out+="["+inline(n)+"]("+n.getAttribute("href")+")";
+      else if(t==="br") out+=" ";
+      else out+=inline(n);
+    });
+    return out.replace(/\s+/g," ").trim();
+  }
+  function tableToMd(tbl){
+    var rows=[].slice.call(tbl.querySelectorAll("tr")).map(function(tr){
+      return [].slice.call(tr.children).map(function(c){ return inline(c).replace(/\|/g,"\|"); });
+    });
+    if(!rows.length) return "";
+    var out="| "+rows[0].join(" | ")+" |\n| "+"--- | ".repeat(rows[0].length)+"\n";
+    rows.slice(1).forEach(function(r){ out+="| "+r.join(" | ")+" |\n"; });
+    return out+"\n";
+  }
+  function listToMd(ul){
+    var out="";
+    [].slice.call(ul.children).forEach(function(li){ out+="- "+inline(li)+"\n"; });
+    return out+"\n";
+  }
+  function timelineToMd(tl){
+    var out="";
+    [].slice.call(tl.querySelectorAll(".tl-node")).forEach(function(n){
+      var card=n.querySelector(".tl-card"); if(!card) return;
+      var b=card.querySelector("b"), who=card.querySelector(".who");
+      var sups=[].slice.call(card.querySelectorAll("sup")).map(inline).join("");
+      var date=""; card.childNodes.forEach(function(c){ if(c.nodeType===3) date+=c.nodeValue; });
+      date=date.trim();
+      out+="- **"+inline(b)+"**（"+date+(who?"，"+inline(who):"")+"）"+sups+"\n";
+    });
+    return out+"\n";
+  }
+  function cardToMd(card, isDir){
+    var out="";
+    if(isDir){
+      var tag=card.querySelector(".tag"), h=card.querySelector("h4");
+      out+="#### 【"+inline(tag)+"】"+inline(h)+"\n\n";
+    }else{
+      var h4=card.querySelector("h4"); if(h4) out+="### "+inline(h4)+"\n\n";
+    }
+    [].slice.call(card.children).forEach(function(ch){
+      if(ch.nodeType!==1) return;
+      var cls=(typeof ch.className==="string"?ch.className:(ch.className&&ch.className.baseVal)||""), t=(ch.tagName||"").toLowerCase();
+      if(t==="h4") return;
+      if(t==="table") out+=tableToMd(ch);
+      else if(cls.indexOf("basis")>=0) out+="*"+inline(ch)+"*\n\n";
+      else if(cls.indexOf("kn")>=0){
+        var t2=inline(ch).replace(/^(已确认|未确认)：/,"**$1：**");
+        out+="- "+t2+"\n";
+      }
+      else if(cls.indexOf("evi")>=0) out+="\n*"+inline(ch)+"*\n\n";
+      else if(cls.indexOf("dir-head")>=0) return;
+      else if(t==="p") out+=inline(ch)+"\n\n";
+    });
+    return out;
+  }
+  function sectionToMd(sec){
+    var out="";
+    [].slice.call(sec.children).forEach(function(ch){
+      if(ch.nodeType!==1) return;
+      if((typeof ch.className==="string"?ch.className:(ch.className&&ch.className.baseVal)||"").indexOf("export-row")>=0) return;
+      var cls=(typeof ch.className==="string"?ch.className:(ch.className&&ch.className.baseVal)||""), t=(ch.tagName||"").toLowerCase();
+      if(cls.indexOf("page-title")>=0) out+="# "+inline(ch)+"\n\n";
+      else if(cls.indexOf("page-lead")>=0) out+="> "+inline(ch)+"\n\n";
+      else if(t==="h3") out+="## "+inline(ch)+"\n\n";
+      else if(cls.indexOf("signal")>=0) out+=cardToMd(ch,false);
+      else if(cls.indexOf("mech")>=0) out+=cardToMd(ch,false);
+      else if(cls.indexOf("dir")>=0) out+=cardToMd(ch,true);
+      else if(cls.indexOf("timeline")>=0) out+=timelineToMd(ch);
+      else if(t==="svg") out+="> 📊 "+(ch.getAttribute("aria-label")||"图表")+"（图形见网页版）\n\n";
+      else if(cls.indexOf("missing")>=0) out+="> ⚠️ "+inline(ch)+"\n\n";
+      else if(cls.indexOf("legend")>=0){
+        [].slice.call(ch.children).forEach(function(s){ out+="- "+inline(s)+"\n"; });
+        out+="\n";
+      }
+      else if(t==="p") out+=inline(ch)+"\n\n";
+      else if(t==="table") out+=tableToMd(ch);
+      else if(t==="ul") out+=listToMd(ch);
+    });
+    return out;
+  }
+  function download(name, text){
+    var blob=new Blob(["﻿"+text],{type:"text/markdown;charset=utf-8"});
+    var a=document.createElement("a");
+    a.href=URL.createObjectURL(blob); a.download=name;
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); },0);
+  }
+  document.querySelectorAll(".export-btn[data-sec]").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      var sec=document.getElementById(btn.getAttribute("data-sec"));
+      download("企业研究_锦浪_"+btn.getAttribute("data-name")+".md", sectionToMd(sec));
+    });
+  });
+  document.getElementById("export-all").addEventListener("click", function(){
+    var out="# 企业研究报告：锦浪科技股份有限公司\n\n> 锚点日期 2026-10-19；本报告基于公开信息整理。\n\n";
+    ["p1","p2","p3","p4","p5"].forEach(function(id){
+      out+=sectionToMd(document.getElementById(id))+"\n---\n\n";
+    });
+    download("企业研究_锦浪_全文.md", out);
+  });
+
+  /* 滚动高亮当前导航 */
+  var map=[];
+  document.querySelectorAll("#sidenav a").forEach(function(a){
+    var t=document.querySelector(a.getAttribute("href"));
+    if(t) map.push({a:a, t:t});
+  });
+  function spy(){
+    var cur2=map[0];
+    map.forEach(function(m){ if(m.t.getBoundingClientRect().top<140) cur2=m; });
+    map.forEach(function(m){ m.a.classList.toggle("active", m.a===cur2); });
+  }
+  window.addEventListener("scroll", spy); spy();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,226 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kimi.local/enterprise-research/report-data.schema.json",
+  "title": "企业研究报告数据契约（G4 v0.1）",
+  "type": "object",
+  "required": ["meta", "overview", "signals", "mechanisms", "directions", "sources"],
+  "additionalProperties": false,
+  "definitions": {
+    "html": { "type": "string", "description": "富文本，白名单标签：<b> <sup> <a> <br>；sup 仅允许 <sup class=\"src\" data-e=\"E#\">[E#]</sup> 形态（实际由 sources 数组生成，_html 内不得手写）" },
+    "sourceRefs": { "type": "array", "items": { "type": "string", "pattern": "^E\\d+$" }, "uniqueItems": true },
+    "lead": { "type": "string", "description": "页首结论：≤2 句、带最硬数字、回答对销售意味着什么" },
+    "navItem": {
+      "type": "object",
+      "required": ["id", "nav"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^(sig|mech|dir)\\d+$" },
+        "nav": { "type": "string", "description": "边栏导航文字，不带编号" }
+      }
+    }
+  },
+
+  "properties": {
+    "meta": {
+      "type": "object",
+ "required": ["company_name", "company_short", "anchor_date", "contract_version"],
+      "additionalProperties": false,
+      "properties": {
+        "company_name": { "type": "string" },
+        "company_short": { "type": "string", "description": "Logo 徽章文字（≤4字）" },
+        "anchor_date": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+        "contract_version": { "type": "string", "pattern": "^v\\d+\\.\\d+$" },
+        "sample_version": { "type": "string", "description": "成品样张版本号，如 v0.2" },
+        "search_hint": { "type": "string", "description": "边栏搜索框占位词（含"输入关键词，如：…"整句）" }
+      }
+    },
+
+    "overview": {
+      "type": "object",
+      "required": ["lead", "basic_info", "business", "financial"],
+      "additionalProperties": false,
+      "properties": {
+        "lead": { "$ref": "#/definitions/lead" },
+        "basic_info": {
+          "type": "array",
+          "description": "封闭字段清单：公司全称/官网/成立时间/注册地／经营地/所有制／资本状态/高管背景/员工规模/组织结构，共 8 项",
+          "minItems": 8, "maxItems": 8,
+          "items": {
+            "type": "object", "required": ["label", "value_html", "sources"], "additionalProperties": false,
+            "properties": {
+              "label": { "type": "string" },
+              "value_html": { "$ref": "#/definitions/html" },
+              "sources": { "$ref": "#/definitions/sourceRefs" }
+            }
+          }
+        },
+        "business": {
+          "type": "object",
+          "required": ["outline_title", "outline_items", "chain", "strengths_title", "strength_items", "moat"],
+          "additionalProperties": false,
+          "properties": {
+            "heading": { "type": "object", "required": ["title"], "additionalProperties": false,
+              "description": "整块 h3 标题（锦浪模式：业务与竞争力，带 id＋导航）；与三组分组标题互斥使用",
+              "properties": { "title": { "type": "string" }, "id": { "type": "string" }, "nav": { "type": "string" } } },
+            "outline_heading": { "type": "string", "description": "业务轮廓 h3（鸣石模式）；与 heading 互斥" },
+            "outline_title": { "type": "string", "description": "粗体标题行（锦浪模式），可空串——空则不渲染" },
+            "outline_items": { "type": "array", "minItems": 1, "items": { "type": "object", "required": ["text_html", "sources"], "additionalProperties": false, "properties": { "lead": { "type": "string", "description": "段内粗体领起（鸣石模式，如 核心业务：，含冒号）" }, "text_html": { "$ref": "#/definitions/html" }, "sources": { "$ref": "#/definitions/sourceRefs" } } } },
+            "chain_heading": { "type": "string", "description": "产业链位置 h3（鸣石模式）" },
+            "chain": { "type": "array", "description": "产业链位置段组：首段为中游定位，其后上游/下游/合规面等；label 可空串＝无标签段（鸣石单段模式）", "minItems": 1, "items": { "type": "object", "required": ["label", "label_bold", "text_html", "sources"], "additionalProperties": false, "properties": { "label": { "type": "string" }, "label_bold": { "type": "boolean" }, "text_html": { "$ref": "#/definitions/html" }, "sources": { "$ref": "#/definitions/sourceRefs" } } } },
+            "strengths_heading": { "type": "string", "description": "核心竞争力 h3（鸣石模式）" },
+            "strengths_title": { "type": "string", "description": "粗体标题行（锦浪模式），可空串——空则不渲染" },
+            "strength_items": { "type": "array", "minItems": 1, "items": { "type": "object", "required": ["text_html", "sources"], "additionalProperties": false, "properties": { "lead": { "type": "string", "description": "段内粗体领起（鸣石模式，含冒号）" }, "text_html": { "$ref": "#/definitions/html" }, "sources": { "$ref": "#/definitions/sourceRefs" } } } },
+            "moat": { "type": "array", "minItems": 1, "description": "护城河段＋短板段，逐段独立", "items": { "type": "object", "required": ["label", "text_html", "sources"], "additionalProperties": false, "properties": { "label": { "type": "string" }, "text_html": { "$ref": "#/definitions/html" }, "sources": { "$ref": "#/definitions/sourceRefs" } } } }
+          }
+        },
+        "financial": {
+          "type": "object",
+          "required": ["lead_note", "blocks"],
+          "additionalProperties": false,
+          "properties": {
+            "lead_note": { "type": "string", "description": "口径说明（主锚/动向分层、审计状态）" },
+            "blocks": {
+              "type": "array", "minItems": 1,
+              "items": {
+                "type": "object",
+                "required": ["type"],
+                "additionalProperties": false,
+                "properties": {
+                  "type": { "enum": ["table", "chart_bar", "timeline", "text", "note", "missing"] },
+                  "caption": { "type": "string", "description": "命名行；table/chart_bar/timeline 必填，格式 表N｜／图N｜（text 类不加编号）" },
+                  "caption_sources": { "$ref": "#/definitions/sourceRefs" },
+                  "note_sources": { "$ref": "#/definitions/sourceRefs" },
+                  "header": { "type": "array", "items": { "type": "string" }, "description": "type=table 必填" },
+                  "rows": { "type": "array", "items": { "type": "array", "items": { "type": ["string", "number"] } }, "description": "type=table 必填" },
+                  "note": { "type": "string" },
+                  "categories": { "type": "array", "items": { "type": "string" }, "description": "type=chart_bar 必填，如 [2022..2025]" },
+                  "series": { "type": "array", "minItems": 1, "description": "type=chart_bar 必填", "items": { "type": "object", "required": ["name", "values"], "additionalProperties": false, "properties": { "name": { "type": "string" }, "unit": { "type": "string" }, "color": { "enum": ["blue", "orange", "green", "gray"] }, "values": { "type": "array", "items": { "type": "number" } } } } },
+                  "chart_note": { "type": "string" },
+                  "nodes": { "type": "array", "description": "type=timeline 必填", "items": { "type": "object", "required": ["value", "date", "who", "sources"], "additionalProperties": false, "properties": { "value": { "type": "string" }, "date": { "type": "string" }, "who": { "type": "string" }, "sources": { "$ref": "#/definitions/sourceRefs" } } } },
+                  "timeline_note": { "$ref": "#/definitions/html", "description": "时间线说明，允许 <b> 等白名单标签（锦浪有加粗先例）" },
+                  "text_html": { "$ref": "#/definitions/html", "description": "type=text 必填" },
+                  "text_sources": { "$ref": "#/definitions/sourceRefs" },
+                  "blocks": { "type": "array", "items": { "type": "object", "required": ["text_html", "sources"], "additionalProperties": false, "properties": { "text_html": { "$ref": "#/definitions/html" }, "sources": { "$ref": "#/definitions/sourceRefs" } } }, "description": "type=text 多段时用" }
+                },
+                "allOf": [
+                  { "if": { "properties": { "type": { "const": "table" } } }, "then": { "required": ["type", "caption", "header", "rows"], "properties": { "caption": { "pattern": "^(表|图)\\d+｜" } } } },
+                  { "if": { "properties": { "type": { "const": "chart_bar" } } }, "then": { "required": ["type", "caption", "categories", "series"], "properties": { "caption": { "pattern": "^图\\d+｜" } } } },
+                  { "if": { "properties": { "type": { "const": "timeline" } } }, "then": { "required": ["type", "caption", "nodes"], "properties": { "caption": { "pattern": "^图\\d+｜" } } } },
+                  { "if": { "properties": { "type": { "const": "text" } } }, "then": { "required": ["type", "caption", "blocks"] } },
+                  { "if": { "properties": { "type": { "const": "missing" } } }, "then": { "required": ["type", "note"], "properties": { "note": { "description": "缺项条文案，渲染为 .missing 橙框" } } } }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "signals": {
+      "type": "object",
+      "required": ["lead", "key", "dynamic_title", "dynamic"],
+      "additionalProperties": false,
+      "properties": {
+        "lead": { "$ref": "#/definitions/lead" },
+        "key": {
+          "type": "array", "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["id", "nav", "title", "sections"],
+            "additionalProperties": false,
+            "properties": {
+              "id": { "type": "string", "pattern": "^sig\\d+$" },
+              "nav": { "type": "string" },
+              "title": { "type": "string", "description": "如：重点信号 S1｜……" },
+              "sections": { "type": "array", "minItems": 3, "maxItems": 3, "description": "固定三段：事实依据/为什么重要/对关注方向的影响", "items": { "type": "object", "required": ["label", "text_html", "sources"], "additionalProperties": false, "properties": { "label": { "type": "string", "enum": ["事实依据", "为什么重要", "对关注方向的影响"] }, "text_html": { "$ref": "#/definitions/html" }, "sources": { "$ref": "#/definitions/sourceRefs" } } } }
+            }
+          }
+        },
+        "dynamic_title": { "type": "string" },
+        "dynamic_nav": { "type": "string", "description": "有值时动态区 h3 带 id=\"sig-dyn\" 并生成边栏导航子项；缺省则不生成（鸣石模式）" },
+        "dynamic": { "type": "array", "items": { "type": "object", "required": ["id", "text_html", "sources"], "additionalProperties": false, "properties": { "id": { "type": "string" }, "text_html": { "$ref": "#/definitions/html" }, "sources": { "$ref": "#/definitions/sourceRefs" } } } }
+      }
+    },
+
+    "mechanisms": {
+      "type": "object",
+      "required": ["lead", "items"],
+      "additionalProperties": false,
+      "properties": {
+        "lead": { "$ref": "#/definitions/lead" },
+        "items": {
+          "type": "array", "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["id", "nav", "title", "rows", "confirmed", "unconfirmed", "evidence"],
+            "additionalProperties": false,
+            "properties": {
+              "id": { "type": "string", "pattern": "^mech\\d+$" },
+              "nav": { "type": "string" },
+              "title": { "type": "string", "description": "如：机制一：……" },
+              "rows": { "type": "array", "minItems": 7, "maxItems": 7, "description": "固定七行，首行必须为业务任务", "items": { "type": "object", "required": ["th", "td_html", "sources"], "additionalProperties": false, "properties": { "th": { "type": "string", "enum": ["业务任务", "业务系统", "功能需求", "负载特性", "运行方式", "对业务结果的影响", "关联的 IT 能力"] }, "td_html": { "$ref": "#/definitions/html" }, "sources": { "$ref": "#/definitions/sourceRefs" } } } },
+              "confirmed": { "type": ["string", "object"], "description": "已确认档（第一人称结论句）；对象形 {text, sources?} 用于带来源的档位", "required": ["text"], "additionalProperties": false, "properties": { "text": { "type": "string" }, "sources": { "$ref": "#/definitions/sourceRefs" } } },
+              "unconfirmed": { "type": ["string", "object"], "description": "未确认档：未公开/未披露/属推断的规范表述；对象形 {text, sources?}", "required": ["text"], "additionalProperties": false, "properties": { "text": { "type": "string" }, "sources": { "$ref": "#/definitions/sourceRefs" } } },
+              "evidence": { "type": ["string", "object"], "description": "相关信号行；对象形 {text, sources?}", "required": ["text"], "additionalProperties": false, "properties": { "text": { "type": "string" }, "sources": { "$ref": "#/definitions/sourceRefs" } } }
+            }
+          }
+        }
+      }
+    },
+
+    "directions": {
+      "type": "object",
+      "required": ["lead", "items"],
+      "additionalProperties": false,
+      "properties": {
+        "lead": { "$ref": "#/definitions/lead" },
+        "items": {
+          "type": "array", "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["id", "state", "title", "basis", "points"],
+            "additionalProperties": false,
+            "properties": {
+              "id": { "type": "string", "pattern": "^dir\\d+$" },
+              "state": { "enum": ["s1", "s2", "s3", "s4"], "description": "s1 优先跟进/s2 值得研究/s3 持续观察/s4 暂缓" },
+              "title": { "type": "string", "description": "如：D1｜……" },
+              "basis": { "type": "string", "description": "依据一句话（身份＋信心）" },
+              "points": { "type": "array", "minItems": 1, "items": { "type": "object", "required": ["label", "text_html"], "additionalProperties": false, "properties": { "label": { "type": "string", "enum": ["为什么值得关注", "怎么跟进", "说明", "改变条件"] }, "text_html": { "$ref": "#/definitions/html" } } } }
+            }
+          }
+        }
+      }
+    },
+
+    "sources": {
+      "type": "object",
+      "required": ["lead", "items", "homology_note"],
+      "additionalProperties": false,
+      "properties": {
+        "lead": { "$ref": "#/definitions/lead" },
+        "legend": { "type": "array", "items": { "type": "string" }, "description": "身份图例，固定四条" },
+        "items": {
+          "type": "array", "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["id", "entity", "time", "caliber", "source", "url", "url_display", "fetched", "identity"],
+            "additionalProperties": false,
+            "properties": {
+              "id": { "type": "string", "pattern": "^E\\d+$" },
+              "entity": { "type": "string" },
+              "time": { "type": "string" },
+              "caliber": { "type": "string" },
+              "source": { "type": "string", "description": "来源与层级（读者语言）" },
+              "url": { "type": "string", "format": "uri", "description": "完整 URL，交付前须验证可打开（D-57）" },
+              "url_display": { "type": "string", "description": "链接显示文本（域名/路径短式）" },
+              "url2": { "type": "string", "format": "uri", "description": "第二链接（可选，同源双入口时用，如 E1 天眼查＋同花顺）" },
+              "url2_display": { "type": "string" },
+              "fetched": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+              "identity": { "type": "string", "description": "身份标注（企业事实/来源说法/…）" }
+            }
+          }
+        },
+        "homology_note": { "type": "string", "description": "同源关系说明" }
+      }
+    }
+  }
+}

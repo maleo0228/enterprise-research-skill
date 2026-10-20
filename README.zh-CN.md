@@ -18,7 +18,6 @@ v2.0 是对 v1.x 的**完全重写**（v1.x 产出 Markdown＋CSV＋Excel，已�
 ## 样张（可直接打开，无需服务器）
 
 - **锦浪科技（Ginlong/Solis）**——[ginlong-solis_2026-10-19.html](https://maleo0228.github.io/enterprise-research-skill/samples/ginlong-solis_2026-10-19.html)
-- 鸣石投资（Mingshi Investment）——[mingshi-investment_2026-10-14.html](https://maleo0228.github.io/enterprise-research-skill/samples/mingshi-investment_2026-10-14.html)
 
 ## 工作原理
 

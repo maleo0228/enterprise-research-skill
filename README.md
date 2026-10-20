@@ -20,7 +20,6 @@ Reports are navigable, searchable, and exportable to Markdown from the page (per
 Open the sample directly in your browser — no server needed:
 
 - **Ginlong (Solis) Technologies 锦浪科技** — [ginlong-solis_2026-10-19.html](https://maleo0228.github.io/enterprise-research-skill/samples/ginlong-solis_2026-10-19.html)
-- Mingshi Investment 鸣石投资 — [mingshi-investment_2026-10-14.html](https://maleo0228.github.io/enterprise-research-skill/samples/mingshi-investment_2026-10-14.html)
 
 ## How it works
 

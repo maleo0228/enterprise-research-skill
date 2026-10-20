@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>企业研究报告：上海鸣石私募基金管理有限公司（销售成品样张 v0.9）</title>
+<style>
+  :root{
+    --ink:#1f2733; --ink2:#5b6675; --line:#e3e8ef; --bg:#f6f8fa; --card:#ffffff;
+    --side:#1a56a0; --side-deep:#0f3d75; --side-soft:#f0f4fa;
+    --s1:#c2410c; --s1bg:#fdf0e8;
+    --s2:#1a56a0; --s2bg:#eaf1fa;
+    --s3:#4d7c0f; --s3bg:#f1f6e6;
+    --s4:#6b7280; --s4bg:#f1f2f4;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+  body{font-family:-apple-system,"Segoe UI","Microsoft YaHei","PingFang SC",sans-serif;
+       color:var(--ink); background:var(--bg); line-height:1.75; font-size:15px;}
+  a{color:var(--side); text-decoration:none;}
+  a:hover{text-decoration:none;}
+
+  /* ===== 左侧边栏（参照 seths.blog：白底边栏＋左上双色横道） ===== */
+  .sidebar{position:fixed; top:0; left:0; bottom:0; width:300px; background:#fff;
+           border-right:1px solid var(--line); display:flex; flex-direction:column; overflow-y:auto; z-index:50;}
+  .band-deep{height:8px; background:var(--side-deep);}
+  .band-light{height:10px; background:var(--side);}
+  .logo-area{padding:18px 20px 12px; display:flex; gap:12px; align-items:center; border-bottom:1px solid var(--line);}
+  .logo-badge{width:46px; height:46px; border-radius:10px; background:var(--side); color:#fff;
+              font-weight:800; font-size:20px; display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+  .logo-name{font-size:14.5px; font-weight:700; line-height:1.4; color:var(--ink);}
+  .logo-sub{font-size:11.5px; color:var(--ink2); margin-top:2px;}
+
+  .widget-title{font-size:13px; font-weight:700; color:var(--ink2); margin:16px 20px 6px;}
+
+  /* 搜索（照参考页样式：圆角边框框＋实心按钮） */
+  .searchform{margin:0 20px;}
+  .searchform>div{border:1.5px solid var(--ink); border-radius:5px; display:flex; overflow:hidden; background:#fff;}
+  .searchform input[type=text]{flex:1; min-width:0; border:none; padding:8px 10px; font-size:13.5px; outline:none; color:var(--ink);}
+  .searchform input[type=submit]{width:58px; border:none; cursor:pointer; background:var(--side);
+    background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.6"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.8-3.8"/></svg>');
+    background-repeat:no-repeat; background-position:center;}
+  .searchform input[type=submit]:hover{background-color:var(--side-deep);}
+  .search-status{margin:6px 20px 0; font-size:12px; color:var(--ink2); display:none; align-items:center; gap:8px; flex-wrap:wrap;}
+  .search-status.show{display:flex;}
+  .search-status button{border:1px solid var(--line); background:#fff; border-radius:4px; padding:1px 8px; font-size:12px; cursor:pointer; color:var(--side);}
+  .search-status button:hover{background:var(--side-soft);}
+
+  .sidenav{padding:4px 10px 30px; font-size:13.5px;}
+  .sidenav .grp{display:block; padding:7px 12px; border-radius:6px; color:var(--ink); font-weight:600;}
+  .sidenav .sub{display:block; padding:4px 12px 4px 30px; border-radius:6px; color:var(--ink2); font-size:12.5px; font-weight:400;}
+  .sidenav .grp:hover,.sidenav .sub:hover{background:var(--side-soft); color:var(--side);}
+  .sidenav .grp.active{background:var(--side); color:#fff;}
+  .sidenav .sub.active{background:var(--side-soft); color:var(--side); font-weight:700;}
+
+  /* ===== 右侧内容 ===== */
+  .content{margin-left:300px; padding:26px 34px 80px; max-width:980px;}
+  section.page{background:var(--card); border:1px solid var(--line); border-radius:12px;
+               padding:26px 30px; margin-bottom:26px; scroll-margin-top:16px;}
+  .page-title{font-size:20px; font-weight:700; margin-bottom:4px; display:flex; align-items:baseline; gap:10px;}
+  .page-title .no{color:var(--side); font-variant-numeric:tabular-nums;}
+  .page-lead{color:var(--ink2); font-size:14px; border-left:3px solid var(--side);
+             padding:8px 14px; background:#f0f5fc; border-radius:0 8px 8px 0; margin:12px 0 20px;}
+  h3.block-title{font-size:16px; margin:26px 0 10px; padding-bottom:6px; border-bottom:1px solid var(--line); scroll-margin-top:16px;}
+
+  table.t{width:100%; border-collapse:collapse; font-size:13.5px;}
+  table.t th,table.t td{border:1px solid var(--line); padding:7px 10px; text-align:left; vertical-align:top;}
+  table.t th{background:#f2f5f9; font-weight:600; white-space:nowrap;}
+  table.kv th{width:120px;}
+
+  sup.src{cursor:pointer; color:var(--side); font-size:11px; font-weight:600; padding:0 2px;}
+  sup.src:hover{color:var(--side-deep);}
+
+  mark.hit{background:#ffe9a8; padding:0;}
+  mark.hit.cur{background:#ffb900;}
+
+  .signal{border:1px solid var(--line); border-radius:10px; padding:16px 18px; margin-bottom:14px; scroll-margin-top:16px;}
+  .signal h4{font-size:15px; margin-bottom:8px;}
+  .signal p{margin-bottom:6px; font-size:14px;}
+  .signal .lbl{font-weight:700; color:var(--side); margin-right:6px;}
+  .dyn-list li{font-size:13.5px; color:var(--ink2); margin:6px 0 6px 18px;}
+
+  .mech{border:1px solid var(--line); border-radius:10px; padding:16px 18px; margin-bottom:16px; scroll-margin-top:16px;}
+  .mech h4{font-size:15px; margin-bottom:8px;}
+  .kn{font-size:13.5px; margin-top:8px;}
+  .kn .k1{color:#4d7c0f; font-weight:700; margin-right:4px;}
+  .kn .k2{color:#b45309; font-weight:700; margin-right:4px;}
+  .mech .evi{font-size:13.5px; color:var(--ink2); margin-top:8px; border-top:1px dashed var(--line); padding-top:8px;}
+
+  .dir{border:1px solid var(--line); border-radius:10px; padding:16px 18px; margin-bottom:14px; scroll-margin-top:16px;}
+  .dir-head{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:8px;}
+  .dir-head h4{font-size:15px;}
+  .tag{font-size:12px; font-weight:700; padding:3px 10px; border-radius:20px; white-space:nowrap;}
+  .tag.s1{color:var(--s1); background:var(--s1bg); border:1px solid var(--s1);}
+  .tag.s2{color:var(--s2); background:var(--s2bg); border:1px solid var(--s2);}
+  .tag.s3{color:var(--s3); background:var(--s3bg); border:1px solid var(--s3);}
+  .tag.s4{color:var(--s4); background:var(--s4bg); border:1px solid var(--s4);}
+  .dir .basis{font-size:12.5px; color:var(--ink2); margin-bottom:6px;}
+  .dir p{font-size:14px; margin-bottom:5px;}
+  .dir .lbl{font-weight:700; color:var(--side); margin-right:6px;}
+
+  .timeline{display:flex; gap:0; overflow-x:auto; padding:18px 4px 8px;}
+  .tl-node{flex:1; min-width:150px; position:relative; padding:0 10px;}
+  .tl-node::before{content:""; position:absolute; top:7px; left:0; right:0; height:2px; background:var(--line);}
+  .tl-node:first-child::before{left:50%;}
+  .tl-node:last-child::before{right:50%;}
+  .tl-dot{width:12px; height:12px; border-radius:50%; background:var(--side); margin:2px auto 8px; position:relative; z-index:1; border:2px solid #fff; box-shadow:0 0 0 1px var(--side);}
+  .tl-card{background:#f2f5f9; border-radius:8px; padding:8px 10px; font-size:12.5px; text-align:center;}
+  .tl-card b{display:block; font-size:15px; color:var(--ink);}
+  .tl-card .who{color:var(--ink2); font-size:11.5px;}
+
+  .missing{border:1px dashed #c2410c; background:#fdf7f2; color:#9a3412; border-radius:8px;
+           padding:10px 14px; font-size:13.5px; margin:10px 0;}
+
+  .note{font-size:12.5px; color:var(--ink2);}
+  .hl{animation:hl 2s;}
+  @keyframes hl{0%{background:#fff3c4;}100%{background:transparent;}}
+
+  #src-table td{font-size:12.5px;}
+  #src-table td.eid{font-weight:700; color:var(--side); white-space:nowrap;}
+  #src-table td.url a{word-break:break-all;}
+  .legend{display:flex; gap:10px; flex-wrap:wrap; margin:10px 0;}
+  .legend span{font-size:12.5px; border:1px solid var(--line); border-radius:6px; padding:3px 10px; background:#f2f5f9;}
+
+  footer{margin:0 34px 40px 334px; color:var(--ink2); font-size:12px;}
+
+  @media(max-width:920px){
+    .sidebar{position:static; width:100%; max-height:none;}
+    .content{margin-left:0; padding:18px 16px 60px;}
+    footer{margin:0 16px 30px;}
+  }
+
+  /* 导出按钮 */
+  .export-row{text-align:right; margin-top:14px;}
+  .export-btn{border:1px solid var(--side); color:var(--side); background:#fff; border-radius:6px;
+              padding:4px 12px; font-size:12.5px; cursor:pointer; font-family:inherit;}
+  .export-btn:hover{background:var(--side); color:#fff;}
+  .export-fixed{position:fixed; top:14px; right:16px; z-index:60;}
+</style>
+</head>
+<body>
+
+<button id="export-all" class="export-btn export-fixed" title="导出全篇为 Markdown 文件">导出全文 MD</button>
+
+<!-- ===== 左侧边栏 ===== -->
+<aside class="sidebar">
+  <div class="band-deep"></div>
+  <div class="band-light"></div>
+  <div class="logo-area">
+    <div class="logo-badge">鸣石</div>
+    <div>
+      <div class="logo-name">上海鸣石私募基金管理有限公司</div>
+      <div class="logo-sub">企业研究报告 · 锚点 2026-10-14</div>
+    </div>
+  </div>
+
+  <div class="widget-title">搜索</div>
+  <form class="searchform" id="searchform" action="javascript:void(0)">
+    <div>
+      <input type="text" id="q" placeholder="输入关键词，如：超算、备案、风控……">
+      <input type="submit" id="searchsubmit" value="">
+    </div>
+  </form>
+  <div class="search-status" id="status">
+    <span id="status-text"></span>
+    <button type="button" id="prev">上一个</button>
+    <button type="button" id="next">下一个</button>
+    <button type="button" id="clear">清除</button>
+  </div>
+
+  <nav class="sidenav" id="sidenav">
+    <a class="grp" href="#p1" data-t="企业概览">企业概览</a>
+    <a class="sub" href="#s1-base" data-t="基础信息">基础信息</a>
+    <a class="sub" href="#s1-fin" data-t="财务数据">财务数据</a>
+    <a class="grp" href="#p2" data-t="经营事件与信号">经营事件与信号</a>
+    <a class="sub" href="#sig1" data-t="超算三期建设中">超算三期建设中</a>
+    <a class="sub" href="#sig2" data-t="规模连级跳">规模连级跳</a>
+    <a class="sub" href="#sig3" data-t="七月极端行情回撤">七月极端行情回撤</a>
+    <a class="sub" href="#sig4" data-t="AI 深度绑定表态">AI 深度绑定表态</a>
+    <a class="grp" href="#p3" data-t="业务及技术解析">业务及技术解析</a>
+    <a class="sub" href="#mech1" data-t="策略研发与回测">策略研发与回测</a>
+    <a class="sub" href="#mech2" data-t="行情接入与交易执行">行情接入与交易执行</a>
+    <a class="sub" href="#mech3" data-t="风险控制与合规报送">风险控制与合规报送</a>
+    <a class="sub" href="#mech4" data-t="产品运营与中后台">产品运营与中后台</a>
+    <a class="grp" href="#p4" data-t="IT关注方向及跟进">IT关注方向及跟进</a>
+    <a class="grp" href="#p5" data-t="来源索引与证据链">来源索引与证据链</a>
+  </nav>
+</aside>
+
+<!-- ===== 右侧内容 ===== -->
+<div class="content" id="content">
+<section class="page" id="p1">
+  <div class="page-title"><span class="no">1.0</span><span>企业概览</span></div>
+  <div class="page-lead">鸣石靠量化模型做股票、期货投资赚钱（收入为管理费＋业绩报酬），2026 年管理规模从约 350 亿增至 700 亿以上、产品备案数量屡居行业第一；它的生产方式本身就跑在自有超算上——对 IT 供应商而言，最明确的切入点是正在建设的三期超算扩容。</div>
+  <h3 class="block-title" id="s1-base">基础信息</h3>
+  <table class="t kv">
+    <tr><th>公司全称</th><td>上海鸣石私募基金管理有限公司（曾用名：上海鸣石投资管理有限公司）<sup class="src" data-e="E1">[E1]</sup><sup class="src" data-e="E2">[E2]</sup></td></tr>
+    <tr><th>官网</th><td>mingshiim.com（官方校招平台域名 mingshiim.zhiye.com 佐证）<sup class="src" data-e="E5">[E5]</sup><sup class="src" data-e="E6">[E6]</sup></td></tr>
+    <tr><th>成立时间</th><td>2010-12-09；中基协登记 2014-12-24，编号 P1005659<sup class="src" data-e="E1">[E1]</sup></td></tr>
+    <tr><th>注册地／经营地</th><td>上海市虹口区公平路168号西塔32层（注册地与主要经营地一致）<sup class="src" data-e="E1">[E1]</sup></td></tr>
+    <tr><th>所有制／资本状态</th><td>民营；未上市（私募证券基金管理人，无公开财报）<sup class="src" data-e="E1">[E1]</sup></td></tr>
+    <tr><th>高管背景</th><td>实控人、法定代表人、总经理袁宇——宾夕法尼亚大学沃顿商学院金融学博士，曾任沃顿商学院教授、上海高级金融学院教授，行为金融与资产错误定价方向，2010 年创立鸣石；以学术驱动的“五环多核”工业化投研模式管理公司。<sup class="src" data-e="E8">[E8]</sup><sup class="src" data-e="E19">[E19]</sup></td></tr>
+    <tr><th>员工规模</th><td>中基协口径：全职员工 94 人、取得基金从业资格 91 人（数据时点 2026-10，经私募排排网转中基协公示）。路演材料口径“100 余人、70% 为投研”（2026-04，企业自述）。以中基协最新公示为准。<sup class="src" data-e="E1">[E1]</sup><sup class="src" data-e="E8">[E8]</sup></td></tr>
+    <tr><th>组织结构</th><td>袁宇（实控人／法定代表人／总经理／执行董事）；许吉、王晓晗（副总经理）；王悦（合规风控负责人）——据中基协公示（2026-09，经私募排排网转述）。投研按五环流水线分工：因子、AI、优化、风控、交易（据官网）。完整高管名单未公开。<sup class="src" data-e="E3">[E3]</sup><sup class="src" data-e="E5">[E5]</sup></td></tr>
+  </table>
+  <h3 class="block-title">业务轮廓</h3>
+  <p><b>核心业务：</b>量化私募证券投资管理——模型驱动的股票、期货、期权投资；策略线含指数增强（沪深300/中证1000）、量化选股、择时对冲、股指多空、量化对冲（中波）、季季红低波系列（据 2026-04 路演材料）。<sup class="src" data-e="E8">[E8]</sup></p>
+  <p><b>运营模式：</b>“五环多核”流水线投研（因子→AI→优化→风控→交易五环节，十三个核心投研团队，据官网与公司简介）；收入为管理费＋业绩报酬（行业通行模式）。<sup class="src" data-e="E5">[E5]</sup><sup class="src" data-e="E4">[E4]</sup></p>
+  <p><b>规模与成熟度：</b>成熟期。规模轨迹见下方“财务数据”时间线（各口径时点与身份已标注，不并列混用）；中基协仅披露“100 亿以上”区间。2026 年产品发行大幅放量：上半年备案 104 只居行业第三，6 月 51 只居全行业首位，7 月 64 只，8 月 34 只再度居首；前三季度累计超 200 只，与平方和、明汯并列年内前三。截至 2026-10-14 在管产品约 505 只。<sup class="src" data-e="E1">[E1]</sup><sup class="src" data-e="E12">[E12]</sup><sup class="src" data-e="E10">[E10]</sup><sup class="src" data-e="E11">[E11]</sup><sup class="src" data-e="E13">[E13]</sup><sup class="src" data-e="E14">[E14]</sup></p>
+  <h3 class="block-title">产业链位置</h3>
+  <p>鸣石处于“资产管理”环节：上游为交易所行情数据、数据供应商、券商 PB/托管与经纪通道；下游为高净值个人与机构渠道（代销/直销）。IT 需求集中在自身投研与交易基础设施（超算、低延时系统、风控报送、运营中后台），不对外交付 IT 服务。</p>
+  <h3 class="block-title">核心竞争力与护城河</h3>
+  <p><b>核心竞争力：</b>①学术驱动的因子研发体系——袁宇及创始团队将资产定价研究直接工程化，公司自述对标 Citadel/Two Sigma 的流水线研发模式；②AI 与投研全链条的深度绑定——据袁宇 2026-06 公开演讲，AI 已应用于因子生成、组合优化、交易执行等几乎所有量化链条；③工业化“五环多核”组织——策略不依赖单一明星经理，迭代速度被公司置于竞争力首位。<sup class="src" data-e="E24">[E24]</sup><sup class="src" data-e="E19">[E19]</sup><sup class="src" data-e="E5">[E5]</sup><sup class="src" data-e="E8">[E8]</sup></p>
+  <p><b>护城河：</b>①自有超算“星座计划”——一期仙女座（2022）、二期英仙座（2023）已投运，三期建设中（2026 校招材料两处佐证）；②15 年本土市场数据与实盘积累；③组织稳定性——2021 年控制权之争解决后投研团队签长期锁定合同，实控人结构稳定至今。<sup class="src" data-e="E6">[E6]</sup><sup class="src" data-e="E7">[E7]</sup><sup class="src" data-e="E24">[E24]</sup><sup class="src" data-e="E25">[E25]</sup></p>
+  <p><b>值得注意的结构特征：</b>其核心竞争力的载体（算力、低延时工程、AI 平台）本身就是 IT 基础设施——这是 IT 供应商视角下最重要的观察点，详见 3.0。</p>
+  <h3 class="block-title" id="s1-fin">财务数据</h3>
+  <p class="note">本企业未上市、无公开财务信息，以下以公开经营口径代替财务数据，不估算收入。</p>
+  <p style="margin-top:14px"><b>图1｜管理规模公开口径时间线（AUM，2026-04 至 2026-08，四口径并列呈现）</b><sup class="src" data-e="E8">[E8]</sup><sup class="src" data-e="E9">[E9]</sup><sup class="src" data-e="E15">[E15]</sup><sup class="src" data-e="E7">[E7]</sup></p>
+  <div class="timeline">
+    <div class="tl-node"><div class="tl-dot"></div><div class="tl-card"><b>约 350 亿</b>2026-04<span class="who">路演材料（企业自述）</span><sup class="src" data-e="E8">[E8]</sup></div></div>
+    <div class="tl-node"><div class="tl-dot"></div><div class="tl-card"><b>500–600 亿梯队</b>2026Q1 末<span class="who">AUM 图谱（媒体报道）</span><sup class="src" data-e="E9">[E9]</sup></div></div>
+    <div class="tl-node"><div class="tl-dot"></div><div class="tl-card"><b>700–800 亿</b>2026-08<span class="who">媒体调查报道</span><sup class="src" data-e="E15">[E15]</sup></div></div>
+    <div class="tl-node"><div class="tl-dot"></div><div class="tl-card"><b>超 700 亿</b>2026-08<span class="who">官方校招材料（企业官方）</span><sup class="src" data-e="E7">[E7]</sup></div></div>
+  </div>
+  <p class="note">说明：各口径时点与出处身份不同，并列呈现、不混用取舍；2026-04 同月出现“350 亿”与“500–600 亿梯队”两个口径，属来源间差异，如实保留。备案放量与管理规模跃迁可视为资金净流入的间接证据。</p>
+  <div class="missing">本企业无公开财务信息（未上市、私募管理人无披露义务）。真实管理规模、收入结构、IT 预算均无公开数据。</div>
+  <div class="export-row"><button class="export-btn" data-sec="p1" data-name="1.0企业概览" title="导出为 Markdown 文件">导出 MD</button></div>
+</section>
+
+<section class="page" id="p2">
+  <div class="page-title"><span class="no">2.0</span><span>经营事件与信号</span></div>
+  <div class="page-lead">过去 12 个月四件值得重点看的事：超算三期建设中（官方材料写明）、规模连级跳但 9 月发行现放缓迹象、7 月极端行情出现深度回撤、AI 与投研深度绑定的表态密集出现。</div>
+  <div class="signal" id="sig1">
+    <h4>重点信号 S1｜超算“星座计划”三期建设中，算力持续扩容</h4>
+    <p><span class="lbl">事实依据：</span>一期仙女座（2022）、二期英仙座（2023）已投运；2025 年超算系列扩容并迁至上海浦东；2026 年官方校招材料两处明确“三期建设中”（2026-01-28、2026-08-11）；路演材料称现有算力约 15,000 核、计划每年提升 50–80%、三期搭载 H200 芯片（媒体报道，未经官方回溯）。<sup class="src" data-e="E22">[E22]</sup><sup class="src" data-e="E6">[E6]</sup><sup class="src" data-e="E7">[E7]</sup><sup class="src" data-e="E8">[E8]</sup></p>
+    <p><span class="lbl">为什么重要：</span>AI 全流程参与因子、优化、风控、交易之后，训练与回测算力需求持续增长；三期建设是算力需求的直接公开印证。官方把“星座计划三期”写进招聘卖点，说明算力已成为其人才竞争的一部分。</p>
+    <p><span class="lbl">对关注方向的影响：</span>算力扩容（GPU/CPU 混合、高速互联、机房配套）与超算运维是最明确的切入点；“建设中”意味着采购与扩容窗口可能仍开着。</p>
+  </div>
+  <div class="signal" id="sig2">
+    <h4>重点信号 S2｜管理规模连级跳，发行放量后 9 月现放缓迹象</h4>
+    <p><span class="lbl">事实依据：</span>规模轨迹见 1.0 财务数据时间线；备案：上半年 104 只居行业第三、6 月 51 只居全行业首位、7 月 64 只、8 月 34 只再居首；9 月全行业备案放缓至 1055 只，当月榜首易主他家。<sup class="src" data-e="E8">[E8]</sup><sup class="src" data-e="E9">[E9]</sup><sup class="src" data-e="E15">[E15]</sup><sup class="src" data-e="E7">[E7]</sup><sup class="src" data-e="E12">[E12]</sup><sup class="src" data-e="E10">[E10]</sup><sup class="src" data-e="E11">[E11]</sup><sup class="src" data-e="E13">[E13]</sup><sup class="src" data-e="E14">[E14]</sup></p>
+    <p><span class="lbl">为什么重要：</span>规模与产品数倍增直接放大行情数据量、回测任务量、估值清算与合规报送量；9 月放缓提示行业正从“量的扩张”切向“质的出清”（媒体判断）。</p>
+    <p><span class="lbl">对关注方向的影响：</span>承载压力决定运营中后台与数据架构需求是否从“够用”变“瓶颈”，这是验证的核心不确定性；9 月放缓是一剂冷静剂，防止把放量线性外推。</p>
+  </div>
+  <div class="signal" id="sig3">
+    <h4>重点信号 S3｜2026-07 极端行情：6 只产品单月回撤超 30%</h4>
+    <p><span class="lbl">事实依据：</span>7 月全行业超 9 成量化产品负收益、平均回报 -15.23%；鸣石 6 只产品 7 月回撤超 30%（最深 -32.40%），年内收益回落至 +19.37%（截至 2026-08-07）；7 月第三周宽墨七号单周跌 15.6%。前 5 个月鸣石平均超额曾居百亿量化首位（近 20%，媒体口径）。<sup class="src" data-e="E17">[E17]</sup><sup class="src" data-e="E26">[E26]</sup><sup class="src" data-e="E16">[E16]</sup><sup class="src" data-e="E18">[E18]</sup><sup class="src" data-e="E15">[E15]</sup></p>
+    <p><span class="lbl">为什么重要：</span>回撤暴露了风控模型在风格极速切换下的脆弱性；回撤深度居前仍构成管理人加强压力测试、实时风控与归因系统的动机。</p>
+    <p><span class="lbl">对关注方向的影响：</span>风控算力与实时归因是潜在需求方向；但属行业性事件＋公司未披露整改动作，方向时点不明，定为“持续观察”。</p>
+  </div>
+  <div class="signal" id="sig4">
+    <h4>重点信号 S4｜AI 与投研“深度绑定”的公开表态密集出现</h4>
+    <p><span class="lbl">事实依据：</span>袁宇 2026-06 金长江论坛演讲称“中国量化和 AI 的结合已非常深入，因子生成、组合优化、交易执行等几乎所有量化链条都有 AI 应用”，并预判未来 3–5 年国内量化机构跻身全球资管第一梯队；2026-05 公开论坛提出“量化行业将与 AI 技术深度绑定”；G-Lab（创世纪 AI 实验室，2021 年成立）持续全球招聘 AI 科学家。<sup class="src" data-e="E19">[E19]</sup><sup class="src" data-e="E20">[E20]</sup><sup class="src" data-e="E22">[E22]</sup><sup class="src" data-e="E23">[E23]</sup></p>
+    <p><span class="lbl">为什么重要：</span>从“AI 辅助投研”向“AI 深度参与全流程”演进，对训练算力、数据管线、模型工程平台的要求上台阶。</p>
+    <p><span class="lbl">对关注方向的影响：</span>AI 工程平台（训练调度、数据版本、模型管理）是区别于单纯算力销售的第二层切入点；表态密集但无公开落地成果（对比同行九坤已开源代码大模型），保持媒体报道身份，需落地证据跟进。</p>
+  </div>
+  <h3 class="block-title">顺带知道（动态信息）</h3>
+  <ul class="dyn-list">
+    <li><b>D1</b>｜2026-05：旗下展示产品 4 月全部创历史新高（业绩叙事材料，无 IT 含义）<sup class="src" data-e="E21">[E21]</sup></li>
+    <li><b>D2</b>｜2026-09：中基协公示高管名单更新（副总许吉、王晓晗；合规风控负责人王悦）——组织层底档校准，窗口内无实质变动<sup class="src" data-e="E3">[E3]</sup></li>
+  </ul>
+  <div class="export-row"><button class="export-btn" data-sec="p2" data-name="2.0经营事件与信号" title="导出为 Markdown 文件">导出 MD</button></div>
+</section>
+
+<section class="page" id="p3">
+  <div class="page-title"><span class="no">3.0</span><span>业务及技术解析</span></div>
+  <div class="page-lead">鸣石的 IT 需求分两层：算力与低延时工程确定性最高（自有、持续、写在官方材料里）；AI 工程平台与风控归因真实存在，但时点与自建/外购未知。</div>
+  <div class="mech" id="mech1">
+    <h4>机制一：策略研发与回测（AI 驱动的因子与模型生产）</h4>
+    <table class="t">
+      <tr><th>业务任务</th><td>因子挖掘、策略回测、模型训练迭代</td></tr>
+      <tr><th>业务系统</th><td>策略回测平台＋G-Lab AI 研发管线（行业通行＋企业自研延伸）</td></tr>
+      <tr><th>功能需求</th><td>大规模并行历史回测；AI 辅助因子生成；模型版本管理</td></tr>
+      <tr><th>负载特性</th><td>批量计算密集；算力据路演材料约 15,000 核并年增 50–80%（媒体报道）；CPU/GPU 混合、高速随机读存储</td></tr>
+      <tr><th>运行方式</th><td>自有超算中心（星座计划，一期/二期已投运、三期建设中——校招材料佐证）；云使用情况未公开<sup class="src" data-e="E6">[E6]</sup><sup class="src" data-e="E7">[E7]</sup></td></tr>
+      <tr><th>对业务结果的影响</th><td>回测吞吐决定策略迭代速度；公司自述“模型与算法迭代速度”为竞争力核心（媒体报道）<sup class="src" data-e="E8">[E8]</sup></td></tr>
+      <tr><th>关联的 IT 能力</th><td>回测/训练集群、GPU 扩容（三期 H200）、高速存储、作业调度平台、训练回测一体化平台</td></tr>
+    </table>
+    <p class="kn"><span class="k1">已确认：</span>三期建设中（官方校招材料两处佐证）。<sup class="src" data-e="E6">[E6]</sup><sup class="src" data-e="E7">[E7]</sup></p>
+    <p class="kn"><span class="k2">未确认：</span>三期规模与采购方式未公开；15,000 核 / H200 / 年增 50–80% 均为媒体报道，未经官方回溯。</p>
+    <p class="evi">相关信号：超算三期建设中（S1）直接印证算力扩张；AI 全链条表态（S4）印证 AI 管线负载真实性。</p>
+  </div>
+  <div class="mech" id="mech2">
+    <h4>机制二：行情数据接入、清洗与实盘交易执行</h4>
+    <table class="t">
+      <tr><th>业务任务</th><td>行情数据接入与清洗；实盘订单执行</td></tr>
+      <tr><th>业务系统</th><td>数据接入清洗管线＋低延迟交易系统（行业通行）</td></tr>
+      <tr><th>功能需求</th><td>多源行情实时接入、清洗去噪、特征库维护；微秒级端到端订单执行、AI 智能拆单（公司表述，媒体报道）<sup class="src" data-e="E8">[E8]</sup><sup class="src" data-e="E19">[E19]</sup></td></tr>
+      <tr><th>负载特性</th><td>高吞吐实时流（全市场 Level-2 行情＋约 505 只产品共用）；微秒级延迟敏感；换手据路演材料沪深300指增约 60–100 倍（媒体报道）<sup class="src" data-e="E1">[E1]</sup><sup class="src" data-e="E8">[E8]</sup></td></tr>
+      <tr><th>运行方式</th><td>推断为交易所托管机房邻近部署＋自有网络（行业通行做法；企业未披露托管安排）</td></tr>
+      <tr><th>对业务结果的影响</th><td>延迟与冲击成本直接侵蚀超额；规模翻倍后冲击成本管理权重上升（S2 相关）</td></tr>
+      <tr><th>关联的 IT 能力</th><td>低延迟网络/交换机、FPGA/硬件加速、交易所邻近托管、行情接入网关、实时数据管道</td></tr>
+    </table>
+    <p class="kn"><span class="k1">已确认：</span>校招设“量化开发工程师（C++）”岗且标注低延迟方向（官方材料）。<sup class="src" data-e="E6">[E6]</sup><sup class="src" data-e="E7">[E7]</sup></p>
+    <p class="kn"><span class="k2">未确认：</span>托管机房与硬件细节未公开。</p>
+    <p class="evi">相关信号：规模放量（S2）→ 行情数据量与冲击成本压力上升。</p>
+  </div>
+  <div class="mech" id="mech3">
+    <h4>机制三：风险控制与合规报送</h4>
+    <table class="t">
+      <tr><th>业务任务</th><td>实时风控、交易留痕、压力测试与监管报送</td></tr>
+      <tr><th>业务系统</th><td>风控与合规系统（行业通行）</td></tr>
+      <tr><th>功能需求</th><td>实时流处理风控、数据不可篡改留存、极端情景压力测试、归因分析</td></tr>
+      <tr><th>负载特性</th><td>实时流处理；全产品级留痕（在管约 505 只）；报送时效刚性<sup class="src" data-e="E1">[E1]</sup></td></tr>
+      <tr><th>运行方式</th><td>未公开</td></tr>
+      <tr><th>对业务结果的影响</th><td>2026-07 极端行情暴露风格极速切换下的模型脆弱性 → 归因与压力测试升级动机；监管趋严下报送错误直接构成合规风险<sup class="src" data-e="E16">[E16]</sup><sup class="src" data-e="E17">[E17]</sup></td></tr>
+      <tr><th>关联的 IT 能力</th><td>实时计算/流处理、归因分析平台、容灾与数据留存基础设施</td></tr>
+    </table>
+    <p class="kn"><span class="k1">已确认：</span>7 月回撤事件为媒体多源统计；合规风控负责人为中基协公示常设岗位。</p>
+    <p class="kn"><span class="k2">未确认：</span>回撤后是否有整改动作无公开信息；“升级动机”是我们的推断（基于事件的合理推断，待验证）。</p>
+    <p class="evi">相关信号：回撤事件（S3）为背景压力。</p>
+  </div>
+  <div class="mech" id="mech4">
+    <h4>机制四：产品运营与中后台（规模膨胀承载）</h4>
+    <table class="t">
+      <tr><th>业务任务</th><td>产品成立备案、估值清算、渠道报告与客户服务</td></tr>
+      <tr><th>业务系统</th><td>产品运营与报送中后台</td></tr>
+      <tr><th>功能需求</th><td>高频备案材料生成、批量估值、渠道报告自动化、适当性与信披管理</td></tr>
+      <tr><th>负载特性</th><td>前三季度备案超 200 只、在管约 505 只 → 单量同比数倍增长；时效刚性<sup class="src" data-e="E1">[E1]</sup><sup class="src" data-e="E14">[E14]</sup></td></tr>
+      <tr><th>运行方式</th><td>未公开；行业通行部分外包券商 PB/外包服务商（行业通行做法）</td></tr>
+      <tr><th>对业务结果的影响</th><td>运营与报送能力决定放量能否持续；9 月发行放缓后，运营效率竞争替代发行速度竞争（推断，据媒体报道）<sup class="src" data-e="E14">[E14]</sup></td></tr>
+      <tr><th>关联的 IT 能力</th><td>运营自动化平台、报送接口、数据中台</td></tr>
+    </table>
+    <p class="kn"><span class="k1">已确认：</span>备案数量与在管产品数为协会登记口径。</p>
+    <p class="kn"><span class="k2">未确认：</span>中后台自建/外购未知。</p>
+    <p class="evi">相关信号：备案放量＋9 月放缓（S2）为本机制核心佐证。</p>
+  </div>
+  <div class="export-row"><button class="export-btn" data-sec="p3" data-name="3.0业务及技术解析" title="导出为 Markdown 文件">导出 MD</button></div>
+</section>
+
+<section class="page" id="p4">
+  <div class="page-title"><span class="no">4.0</span><span>IT关注方向及跟进</span></div>
+  <div class="page-lead">五个方向按优先级排列：1 个优先跟进（超算三期扩容）、2 个值得研究（AI 工程平台、规模翻倍后的数据中台与运营自动化）、1 个持续观察（风控算力与实时归因）、1 个暂缓（出海基础设施，无实质证据）。</div>
+  <div class="dir">
+    <div class="dir-head"><span class="tag s1">优先跟进</span><h4>D1｜超算三期扩容的算力与机房配套</h4></div>
+    <div class="basis">依据：官方校招材料两处佐证＋官网体系，独立来源×2</div>
+    <p><span class="lbl">为什么值得关注：</span>三期建设中，承载核心生产任务，涉及算力/网络/存储全链路；时点明确，窗口可能仍开着。</p>
+    <p><span class="lbl">怎么跟进：</span>从“星座计划三期”进入话题——H200 选型、机房配套、扩容节奏。</p>
+  </div>
+  <div class="dir">
+    <div class="dir-head"><span class="tag s2">值得研究</span><h4>D2｜AI 工程平台（训练调度 / 数据管线 / 模型管理）</h4></div>
+    <div class="basis">依据：公开表态（演讲/论坛）为主，尚无落地成果回溯，信心弱于 D1</div>
+    <p><span class="lbl">为什么值得关注：</span>G-Lab 覆盖 AI 全流程；平台层合作粘性高于单次设备销售。</p>
+    <p><span class="lbl">怎么跟进：</span>观察触发——G-Lab 公开发布、论文、开源动作；交流切入 AI 工程化痛点。</p>
+  </div>
+  <div class="dir">
+    <div class="dir-head"><span class="tag s2">值得研究</span><h4>D3｜规模翻倍后的承载：数据中台与运营自动化</h4></div>
+    <div class="basis">依据：备案数为协会口径＋规模为媒体口径（未回溯）；中后台自建/外购未知</div>
+    <p><span class="lbl">为什么值得关注：</span>约 505 只在管产品带来放量刚需；运营效率正在成为竞争点。</p>
+    <p><span class="lbl">怎么跟进：</span>从备案节奏与在管产品数量切入运营压力话题。</p>
+  </div>
+  <div class="dir">
+    <div class="dir-head"><span class="tag s3">持续观察</span><h4>D4｜风控算力与实时归因系统升级</h4></div>
+    <div class="basis">依据：媒体多源统计（回撤事件）＋行业背景；公司未披露整改动作</div>
+    <p><span class="lbl">为什么值得关注：</span>7 月极端行情构成升级动机，但时点不明。</p>
+    <p><span class="lbl">怎么跟进：</span>观察触发——风控/压力测试相关招聘、极端行情后的公开表态。</p>
+  </div>
+  <div class="dir">
+    <div class="dir-head"><span class="tag s4">暂缓</span><h4>D5｜香港/出海投研基础设施</h4></div>
+    <div class="basis">依据：近 12 个月未检索到实质证据；业务关联弱</div>
+    <p><span class="lbl">说明：</span>窗口内无实质证据，暂缓。重新触发条件：出海产品备案、海外办公室实据。</p>
+  </div>
+  <div class="export-row"><button class="export-btn" data-sec="p4" data-name="4.0IT关注方向及跟进" title="导出为 Markdown 文件">导出 MD</button></div>
+</section>
+
+<section class="page" id="p5">
+  <div class="page-title"><span class="no">5.0</span><span>来源索引与证据链</span></div>
+  <div class="page-lead">本报告基于公开信息：事实均可回溯到下方编号来源，媒体报道与企业自述均已标明，我们的推断已单独标注；未证实内容不作为结论。</div>
+  <h3 class="block-title">身份怎么读</h3>
+  <div class="legend">
+    <span>企业事实：有官方/一手资料支持</span>
+    <span>来源说法：媒体或第三方口径，已标明</span>
+    <span>行业通行做法：行业机制，非本企业事实</span>
+    <span>我们的推断：假设，待验证</span>
+  </div>
+  <h3 class="block-title">来源记录（点击正文 [E#] 可跳到此表对应行）</h3>
+  <table class="t" id="src-table">
+    <tr><th>编号</th><th>主体</th><th>时间</th><th>口径</th><th>来源与层级</th><th>链接</th><th>获取日期</th><th>身份</th></tr>
+    <tr id="E1"><td class="eid">E1</td><td>鸣石私募</td><td>2026-10</td><td>中基协公示</td><td>私募排排网机构页（聚合转述）</td><td class="url"><a href="https://dc.simuwang.com/company/CO000003IH.html" target="_blank">dc.simuwang.com/company/CO000003IH.html</a></td><td>2026-10-14</td><td>企业事实（官方口径经聚合页转述）</td></tr>
+    <tr id="E2"><td class="eid">E2</td><td>鸣石私募</td><td>2023-06（较老）</td><td>工商</td><td>水滴信用（聚合）</td><td class="url"><a href="https://m.shuidi.cn/" target="_blank" title="该来源链接在研究记录中不完整，溯源至网站首页">m.shuidi.cn/company-efa25c5e…</a></td><td>2026-10-14</td><td>待核线索</td></tr>
+    <tr id="E3"><td class="eid">E3</td><td>鸣石私募</td><td>2026-09</td><td>中基协公示</td><td>私募排排网资讯（聚合）</td><td class="url"><a href="https://simuwang.com/news/287503.html" target="_blank">simuwang.com/news/287503.html</a></td><td>2026-10-14</td><td>企业事实（官方口径经聚合页转述）</td></tr>
+    <tr id="E4"><td class="eid">E4</td><td>王晓晗</td><td>2025-11/2026-09</td><td>从业履历</td><td>私募排排网经理页（聚合）</td><td class="url"><a href="https://dc.simuwang.com/manager/PL0000076B.html" target="_blank">dc.simuwang.com/manager/PL0000076B.html</a></td><td>2026-10-14</td><td>来源说法</td></tr>
+    <tr id="E5"><td class="eid">E5</td><td>鸣石基金</td><td>2026-06 快照</td><td>官网</td><td>鸣石官网（一手）</td><td class="url"><a href="https://mingshiim.com" target="_blank">mingshiim.com</a></td><td>2026-10-14</td><td>企业事实</td></tr>
+    <tr id="E6"><td class="eid">E6</td><td>鸣石基金</td><td>2026-01-28</td><td>官方校招公告</td><td>聚合页转官方校招页</td><td class="url"><a href="https://upcv.tech/" target="_blank" title="该来源链接在研究记录中不完整，溯源至网站首页">upcv.tech/xiaozhao/cmlg8ffqh…</a></td><td>2026-10-14</td><td>企业事实（官方材料经聚合页转述）</td></tr>
+    <tr id="E7"><td class="eid">E7</td><td>鸣石基金</td><td>2026-08-11</td><td>官方校招公告</td><td>聚合页转官方校招页</td><td class="url"><a href="https://wondercv.com/" target="_blank" title="该来源链接在研究记录中不完整，溯源至网站首页">wondercv.com/xiaozhao/mingshi…</a></td><td>2026-10-14</td><td>企业事实（官方材料经聚合页转述）</td></tr>
+    <tr id="E8"><td class="eid">E8</td><td>鸣石量化</td><td>2026-04</td><td>路演纪要</td><td>雪球专栏转载（聚合）</td><td class="url"><a href="https://xueqiu.com/1074284097/384768957" target="_blank">xueqiu.com/1074284097/384768957</a></td><td>2026-10-14</td><td>来源说法（企业自述口径；其中“五环流水线”与官网互证，算力数字未回溯）</td></tr>
+    <tr id="E9"><td class="eid">E9</td><td>量化行业</td><td>2026-04-13</td><td>AUM 图谱</td><td>每经网（媒体）</td><td class="url"><a href="https://nbd.com.cn/articles/2026-04-13/4337223.html" target="_blank">nbd.com.cn/articles/2026-04-13/4337223.html</a></td><td>2026-10-14</td><td>来源说法</td></tr>
+    <tr id="E10"><td class="eid">E10</td><td>鸣石基金</td><td>2026-07-21</td><td>备案统计</td><td>财联社（媒体）</td><td class="url"><a href="https://cls.cn/detail/2432071" target="_blank">cls.cn/detail/2432071</a></td><td>2026-10-14</td><td>来源说法（统计口径）</td></tr>
+    <tr id="E11"><td class="eid">E11</td><td>鸣石基金</td><td>2026-08-21</td><td>备案统计</td><td>第一财经（媒体）</td><td class="url"><a href="https://yicai.com/news/103328693.html" target="_blank">yicai.com/news/103328693.html</a></td><td>2026-10-14</td><td>来源说法（统计口径）</td></tr>
+    <tr id="E12"><td class="eid">E12</td><td>鸣石基金</td><td>2026-07-07</td><td>备案统计</td><td>财经网（媒体）</td><td class="url"><a href="https://finance.caijing.com.cn/20260707/5169396.shtml" target="_blank">finance.caijing.com.cn/20260707/5169396.shtml</a></td><td>2026-10-14</td><td>来源说法（统计口径）</td></tr>
+    <tr id="E13"><td class="eid">E13</td><td>鸣石基金</td><td>2026-09-07</td><td>备案统计</td><td>新浪财经（媒体）</td><td class="url"><a href="https://k.sina.com.cn/" target="_blank" title="该来源链接在研究记录中不完整，溯源至网站首页">k.sina.com.cn/article_5953740931…</a></td><td>2026-10-14</td><td>来源说法（统计口径）</td></tr>
+    <tr id="E14"><td class="eid">E14</td><td>私募行业</td><td>2026-10-09</td><td>备案统计</td><td>网易号（自媒体）</td><td class="url"><a href="https://www.163.com/" target="_blank" title="该来源链接在研究记录中不完整，溯源至网站首页">163.com/dy/article/L8QBNJIQ…</a></td><td>2026-10-14</td><td>来源说法</td></tr>
+    <tr id="E15"><td class="eid">E15</td><td>鸣石基金</td><td>2026-08-07</td><td>媒体调查</td><td>网易号（自媒体，含批评性内容）</td><td class="url"><a href="https://www.163.com/" target="_blank" title="该来源链接在研究记录中不完整，溯源至网站首页">163.com/dy/article/L3MLCK55…</a></td><td>2026-10-14</td><td>来源说法</td></tr>
+    <tr id="E16"><td class="eid">E16</td><td>鸣石基金</td><td>2026-08-12</td><td>回撤统计</td><td>中国经济网转蓝鲸（媒体）</td><td class="url"><a href="https://finance.ce.cn/jjpd/jjpdgd/202608/t20260812_3144319.shtml" target="_blank">finance.ce.cn/jjpd/jjpdgd/202608/t20260812_3144319.shtml</a></td><td>2026-10-14</td><td>来源说法（多源交叉）</td></tr>
+    <tr id="E17"><td class="eid">E17</td><td>量化行业</td><td>2026-08-06</td><td>回撤统计</td><td>蓝鲸/凤凰（媒体）</td><td class="url"><a href="https://h5.ifeng.com/" target="_blank" title="该来源链接在研究记录中不完整，溯源至网站首页">h5.ifeng.com/c/vivo/v002Zmz2…</a></td><td>2026-10-14</td><td>来源说法（行业背景）</td></tr>
+    <tr id="E18"><td class="eid">E18</td><td>鸣石基金</td><td>2026-07-20</td><td>净值报道</td><td>每经/腾讯新闻（媒体）</td><td class="url"><a href="https://view.inews.qq.com/a/20260720A0BDRV00" target="_blank">view.inews.qq.com/a/20260720A0BDRV00</a></td><td>2026-10-14</td><td>来源说法</td></tr>
+    <tr id="E19"><td class="eid">E19</td><td>袁宇</td><td>2026-06-11/16</td><td>论坛演讲</td><td>证券时报/同花顺（媒体）</td><td class="url"><a href="https://stcn.com/article/detail/3956645.html" target="_blank">stcn.com/article/detail/3956645.html</a></td><td>2026-10-14</td><td>来源说法（演讲表态）</td></tr>
+    <tr id="E20"><td class="eid">E20</td><td>袁宇</td><td>2026-05-28</td><td>论坛发言</td><td>东方财富财富号（自媒体）</td><td class="url"><a href="https://emcreative.eastmoney.com/" target="_blank" title="该来源链接在研究记录中不完整，溯源至网站首页">emcreative.eastmoney.com/…artCode=20260528174856277376880</a></td><td>2026-10-14</td><td>来源说法</td></tr>
+    <tr id="E21"><td class="eid">E21</td><td>鸣石基金</td><td>2026-05-13</td><td>业绩叙事</td><td>知乎专栏（自媒体）</td><td class="url"><a href="https://zhuanlan.zhihu.com/p/2037911986961372595" target="_blank">zhuanlan.zhihu.com/p/2037911986961372595</a></td><td>2026-10-14</td><td>来源说法</td></tr>
+    <tr id="E22"><td class="eid">E22</td><td>G-Lab/超算</td><td>2025-03-08</td><td>实验室介绍</td><td>东方财富财富号（自媒体）</td><td class="url"><a href="https://caifuhao.eastmoney.com/news/20250308230832519783300" target="_blank">caifuhao.eastmoney.com/news/20250308230832519783300</a></td><td>2026-10-14</td><td>来源说法（历史信息）</td></tr>
+    <tr id="E23"><td class="eid">E23</td><td>量化行业</td><td>2026-02-14</td><td>行业综述</td><td>搜狐（媒体）</td><td class="url"><a href="https://sohu.com/a/987420503_122014422" target="_blank">sohu.com/a/987420503_122014422</a></td><td>2026-10-14</td><td>来源说法（行业背景）</td></tr>
+    <tr id="E24"><td class="eid">E24</td><td>鸣石投资</td><td>2021-10-18</td><td>历史报道</td><td>华尔街见闻（媒体）</td><td class="url"><a href="https://wallstreetcn.com/articles/3642620" target="_blank">wallstreetcn.com/articles/3642620</a></td><td>2026-10-14</td><td>来源说法（历史信息）</td></tr>
+    <tr id="E25"><td class="eid">E25</td><td>鸣石系</td><td>2021-10/2023-05</td><td>历史报道</td><td>新京报/网易（媒体）</td><td class="url"><a href="https://m.bjnews.com.cn/detail/163421439314020.html" target="_blank">m.bjnews.com.cn/detail/163421439314020.html</a></td><td>2026-10-14</td><td>来源说法（历史信息）</td></tr>
+    <tr id="E26"><td class="eid">E26</td><td>私募行业</td><td>2026-08-04</td><td>行业综述</td><td>东方财富（媒体）</td><td class="url"><a href="https://finance.eastmoney.com/a/202608043831534981.html" target="_blank">finance.eastmoney.com/a/202608043831534981.html</a></td><td>2026-10-14</td><td>来源说法（行业背景）</td></tr>
+  </table>
+  <h3 class="block-title">同源关系说明</h3>
+  <p class="note">E10–E14 均为私募排排网备案统计的转载/衍生报道，互为同源，正文引用时已合并口径、不重复计数；E16–E18 为同一回撤事件的多源报道，互为独立印证。</p>
+  <div class="export-row"><button class="export-btn" data-sec="p5" data-name="5.0来源索引与证据链" title="导出为 Markdown 文件">导出 MD</button></div>
+</section>
+</div>
+
+<footer>本报告基于公开信息整理，锚点日期 2026-10-14。</footer>
+
+<script>
+(function(){
+  /* 来源锚点跳转 */
+  document.querySelectorAll("sup.src").forEach(function(s){
+    s.addEventListener("click", function(){
+      var t=document.getElementById(s.getAttribute("data-e"));
+      if(t){ t.scrollIntoView({behavior:"smooth", block:"center"});
+        t.classList.remove("hl"); void t.offsetWidth; t.classList.add("hl"); }
+    });
+  });
+
+  /* 文档搜索：定位正文匹配位置，高亮＋上一个/下一个 */
+  var content=document.getElementById("content"),
+      q=document.getElementById("q"),
+      form=document.getElementById("searchform"),
+      status=document.getElementById("status"),
+      statusText=document.getElementById("status-text"),
+      hits=[], cur=-1;
+
+  function clearHits(){
+    content.querySelectorAll("mark.hit").forEach(function(m){
+      var p=m.parentNode; p.replaceChild(document.createTextNode(m.textContent), m);
+      p.normalize();
+    });
+    hits=[]; cur=-1; status.classList.remove("show");
+  }
+  function jump(){
+    hits.forEach(function(m){ m.classList.remove("cur"); });
+    var m=hits[cur]; m.classList.add("cur");
+    m.scrollIntoView({behavior:"smooth", block:"center"});
+    statusText.textContent="第 "+(cur+1)+" / "+hits.length+" 处";
+  }
+  function doSearch(){
+    clearHits();
+    var k=q.value.trim();
+    if(!k){ return; }
+    var lower=k.toLowerCase();
+    var walker=document.createTreeWalker(content, NodeFilter.SHOW_TEXT, {
+      acceptNode:function(n){
+        if(!n.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
+        if(n.parentElement.closest("script,style,mark")) return NodeFilter.FILTER_REJECT;
+        return n.nodeValue.toLowerCase().indexOf(lower)>=0 ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+      }});
+    var nodes=[]; while(walker.nextNode()) nodes.push(walker.currentNode);
+    nodes.forEach(function(n){
+      var el=n.parentNode, txt=n.nodeValue, ltxt=txt.toLowerCase();
+      var frag=document.createDocumentFragment(), idx=0, pos;
+      while((pos=ltxt.indexOf(lower, idx))>=0){
+        frag.appendChild(document.createTextNode(txt.slice(idx, pos)));
+        var m=document.createElement("mark");
+        m.className="hit"; m.textContent=txt.slice(pos, pos+k.length);
+        frag.appendChild(m); hits.push(m); idx=pos+k.length;
+      }
+      frag.appendChild(document.createTextNode(txt.slice(idx)));
+      el.replaceChild(frag, n);
+    });
+    if(hits.length){ cur=0; status.classList.add("show"); jump(); }
+    else { status.classList.add("show"); statusText.textContent="未找到「"+k+"」"; }
+  }
+  form.addEventListener("submit", function(e){ e.preventDefault(); doSearch(); });
+  document.getElementById("next").addEventListener("click", function(){ if(hits.length){ cur=(cur+1)%hits.length; jump(); } });
+  document.getElementById("prev").addEventListener("click", function(){ if(hits.length){ cur=(cur-1+hits.length)%hits.length; jump(); } });
+  document.getElementById("clear").addEventListener("click", function(){ q.value=""; clearHits(); });
+
+
+  /* ===== HTML→Markdown 导出 ===== */
+  function inline(el){
+    var out="";
+    el.childNodes.forEach(function(n){
+      if(n.nodeType===3){ out+=n.nodeValue; return; }
+      var t=(n.tagName||"").toLowerCase();
+      if(t==="b"||t==="strong") out+="**"+inline(n)+"**";
+      else if(t==="a") out+="["+inline(n)+"]("+n.getAttribute("href")+")";
+      else if(t==="br") out+=" ";
+      else out+=inline(n);
+    });
+    return out.replace(/\s+/g," ").trim();
+  }
+  function tableToMd(tbl){
+    var rows=[].slice.call(tbl.querySelectorAll("tr")).map(function(tr){
+      return [].slice.call(tr.children).map(function(c){ return inline(c).replace(/\|/g,"\|"); });
+    });
+    if(!rows.length) return "";
+    var out="| "+rows[0].join(" | ")+" |\n| "+"--- | ".repeat(rows[0].length)+"\n";
+    rows.slice(1).forEach(function(r){ out+="| "+r.join(" | ")+" |\n"; });
+    return out+"\n";
+  }
+  function listToMd(ul){
+    var out="";
+    [].slice.call(ul.children).forEach(function(li){ out+="- "+inline(li)+"\n"; });
+    return out+"\n";
+  }
+  function timelineToMd(tl){
+    var out="";
+    [].slice.call(tl.querySelectorAll(".tl-node")).forEach(function(n){
+      var card=n.querySelector(".tl-card"); if(!card) return;
+      var b=card.querySelector("b"), who=card.querySelector(".who");
+      var sups=[].slice.call(card.querySelectorAll("sup")).map(inline).join("");
+      var date=""; card.childNodes.forEach(function(c){ if(c.nodeType===3) date+=c.nodeValue; });
+      date=date.trim();
+      out+="- **"+inline(b)+"**（"+date+(who?"，"+inline(who):"")+"）"+sups+"\n";
+    });
+    return out+"\n";
+  }
+  function cardToMd(card, isDir){
+    var out="";
+    if(isDir){
+      var tag=card.querySelector(".tag"), h=card.querySelector("h4");
+      out+="#### 【"+inline(tag)+"】"+inline(h)+"\n\n";
+    }else{
+      var h4=card.querySelector("h4"); if(h4) out+="### "+inline(h4)+"\n\n";
+    }
+    [].slice.call(card.children).forEach(function(ch){
+      if(ch.nodeType!==1) return;
+      var cls=(typeof ch.className==="string"?ch.className:(ch.className&&ch.className.baseVal)||""), t=(ch.tagName||"").toLowerCase();
+      if(t==="h4") return;
+      if(t==="table") out+=tableToMd(ch);
+      else if(cls.indexOf("basis")>=0) out+="*"+inline(ch)+"*\n\n";
+      else if(cls.indexOf("kn")>=0){
+        var t2=inline(ch).replace(/^(已确认|未确认)：/,"**$1：**");
+        out+="- "+t2+"\n";
+      }
+      else if(cls.indexOf("evi")>=0) out+="\n*"+inline(ch)+"*\n\n";
+      else if(cls.indexOf("dir-head")>=0) return;
+      else if(t==="p") out+=inline(ch)+"\n\n";
+    });
+    return out;
+  }
+  function sectionToMd(sec){
+    var out="";
+    [].slice.call(sec.children).forEach(function(ch){
+      if(ch.nodeType!==1) return;
+      if((typeof ch.className==="string"?ch.className:(ch.className&&ch.className.baseVal)||"").indexOf("export-row")>=0) return;
+      var cls=(typeof ch.className==="string"?ch.className:(ch.className&&ch.className.baseVal)||""), t=(ch.tagName||"").toLowerCase();
+      if(cls.indexOf("page-title")>=0) out+="# "+inline(ch)+"\n\n";
+      else if(cls.indexOf("page-lead")>=0) out+="> "+inline(ch)+"\n\n";
+      else if(t==="h3") out+="## "+inline(ch)+"\n\n";
+      else if(cls.indexOf("signal")>=0) out+=cardToMd(ch,false);
+      else if(cls.indexOf("mech")>=0) out+=cardToMd(ch,false);
+      else if(cls.indexOf("dir")>=0) out+=cardToMd(ch,true);
+      else if(cls.indexOf("timeline")>=0) out+=timelineToMd(ch);
+      else if(t==="svg") out+="> 📊 "+(ch.getAttribute("aria-label")||"图表")+"（图形见网页版）\n\n";
+      else if(cls.indexOf("missing")>=0) out+="> ⚠️ "+inline(ch)+"\n\n";
+      else if(cls.indexOf("legend")>=0){
+        [].slice.call(ch.children).forEach(function(s){ out+="- "+inline(s)+"\n"; });
+        out+="\n";
+      }
+      else if(t==="p") out+=inline(ch)+"\n\n";
+      else if(t==="table") out+=tableToMd(ch);
+      else if(t==="ul") out+=listToMd(ch);
+    });
+    return out;
+  }
+  function download(name, text){
+    var blob=new Blob(["﻿"+text],{type:"text/markdown;charset=utf-8"});
+    var a=document.createElement("a");
+    a.href=URL.createObjectURL(blob); a.download=name;
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); },0);
+  }
+  document.querySelectorAll(".export-btn[data-sec]").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      var sec=document.getElementById(btn.getAttribute("data-sec"));
+      download("企业研究_鸣石_"+btn.getAttribute("data-name")+".md", sectionToMd(sec));
+    });
+  });
+  document.getElementById("export-all").addEventListener("click", function(){
+    var out="# 企业研究报告：上海鸣石私募基金管理有限公司\n\n> 锚点日期 2026-10-14；本报告基于公开信息整理。\n\n";
+    ["p1","p2","p3","p4","p5"].forEach(function(id){
+      out+=sectionToMd(document.getElementById(id))+"\n---\n\n";
+    });
+    download("企业研究_鸣石_全文.md", out);
+  });
+
+  /* 滚动高亮当前导航 */
+  var map=[];
+  document.querySelectorAll("#sidenav a").forEach(function(a){
+    var t=document.querySelector(a.getAttribute("href"));
+    if(t) map.push({a:a, t:t});
+  });
+  function spy(){
+    var cur2=map[0];
+    map.forEach(function(m){ if(m.t.getBoundingClientRect().top<140) cur2=m; });
+    map.forEach(function(m){ m.a.classList.toggle("active", m.a===cur2); });
+  }
+  window.addEventListener("scroll", spy); spy();
+})();
+</script>
+</body>
+</html>

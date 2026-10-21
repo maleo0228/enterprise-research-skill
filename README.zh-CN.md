@@ -39,10 +39,28 @@ v2.0 是对 v1.x 的**完全重写**（v1.x 产出 Markdown＋CSV＋Excel，已�
 
 | 路径 | 内容 |
 |---|---|
+| `SKILL.md` | Skill 入口文件（报告生成段） |
 | `samples/` | 成品单文件 HTML 样张（离线可开、可自由分享） |
 | `renderer/` | `render.py`、`skeleton.html`（冻结页面骨架）、`compare.py`、`make_skeleton.py` |
 | `data-contract/` | `report-data.schema.json` 数据契约 |
 | `examples/` | 两个通过校验的数据实例（鸣石／锦浪） |
+
+## 安装
+
+本仓库是标准 agent skill 包（入口：`SKILL.md`）。克隆或复制到您所用 agent 的技能目录即可：
+
+```bash
+git clone https://github.com/maleo0228/enterprise-research-skill.git
+```
+
+- **Codex**：复制到 `~/.agents/skills/enterprise-research-skill/`（或 `~/.codex/skills/`）
+- **Claude Code**：复制到 `~/.claude/skills/enterprise-research-skill/`
+- **WorkBuddy / CodeBuddy**：复制到项目内 `.codebuddy/skills/enterprise-research-skill/`（或用图形化技能管理页导入）
+- **Kimi 及其他 agent**：将技能搜索路径指向本目录；平台不支持自动发现时，直接阅读 `SKILL.md` 并手动执行渲染命令——渲染器是零依赖 CLI（仅需 Python 3.8+ 标准库），独立可用。
+
+安装后重启或刷新 agent 使其重新发现技能。
+
+**范围说明**：本 skill 覆盖"报告生成段"（合规 JSON → 校验过的 HTML 报告）；产出数据集的研究段由使用者自己的研究工作流完成。
 
 ## 协议
 

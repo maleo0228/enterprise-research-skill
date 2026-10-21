@@ -41,10 +41,28 @@ research notes → report.json (per data contract) → render.py → report HTML
 
 | Path | Contents |
 |---|---|
+| `SKILL.md` | Skill entry point (report generation stage) |
 | `samples/` | Finished single-file HTML report samples (open offline, share freely) |
 | `renderer/` | `render.py`, `skeleton.html` (frozen page skeleton), `compare.py`, `make_skeleton.py` |
 | `data-contract/` | `report-data.schema.json` — the JSON data contract |
 | `examples/` | Two validated example data files (Mingshi / Ginlong) |
+
+## Installation
+
+The repository is a standard agent skill package (entry: `SKILL.md`). Copy or clone it into your agent's skill directory:
+
+```bash
+git clone https://github.com/maleo0228/enterprise-research-skill.git
+```
+
+- **Codex**: copy to `~/.agents/skills/enterprise-research-skill/` (or `~/.codex/skills/`)
+- **Claude Code**: copy to `~/.claude/skills/enterprise-research-skill/`
+- **WorkBuddy / CodeBuddy**: copy to `.codebuddy/skills/enterprise-research-skill/` in your project (or import via the GUI skill manager)
+- **Kimi / other agents**: point the skill search path at this directory; if the platform does not auto-discover skills, read `SKILL.md` directly and run the render command manually — the renderer is a zero-dependency CLI (Python 3.8+ stdlib) and works standalone.
+
+After installing, restart or refresh the agent so it re-discovers skills.
+
+**Scope note**: this skill covers the *report generation* stage (contract-conformant JSON → validated HTML report). The research stage that produces the dataset is performed by your own research workflow.
 
 ## License
 

@@ -1,12 +1,12 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://kimi.local/enterprise-research/report-data.schema.json",
-  "title": "企业研究报告数据契约（G4 v0.1）",
+  "$id": "https://github.com/maleo0228/enterprise-research-skill/data-contract/report-data.schema.json",
+  "title": "企业研究报告数据契约（G4 v0.1，含 v0.2 渲染器对齐修订）",
   "type": "object",
   "required": ["meta", "overview", "signals", "mechanisms", "directions", "sources"],
   "additionalProperties": false,
   "definitions": {
-    "html": { "type": "string", "description": "富文本，白名单标签：<b> <sup> <a> <br>；sup 仅允许 <sup class=\"src\" data-e=\"E#\">[E#]</sup> 形态（实际由 sources 数组生成，_html 内不得手写）" },
+    "html": { "type": "string", "description": "富文本，白名单标签仅 <b> <br> <a href=\"http(s)://…\">，其余标签一律转义、危险 href 剥离；不得手写 <sup>（引用标记由 sources 数组自动生成）" },
     "sourceRefs": { "type": "array", "items": { "type": "string", "pattern": "^E\\d+$" }, "uniqueItems": true },
     "lead": { "type": "string", "description": "页首结论：≤2 句、带最硬数字、回答对销售意味着什么" },
     "navItem": {
@@ -84,9 +84,15 @@
                 "type": "object",
                 "required": ["type"],
                 "additionalProperties": false,
+                "allOf": [
+                  { "if": { "properties": { "type": { "const": "table" } }, "required": ["type"] },
+                    "then": { "required": ["caption"], "properties": { "caption": { "pattern": "^表\\d+｜" } } } },
+                  { "if": { "properties": { "type": { "enum": ["chart_bar", "timeline"] } }, "required": ["type"] },
+                    "then": { "required": ["caption"], "properties": { "caption": { "pattern": "^图\\d+｜" } } } }
+                ],
                 "properties": {
-                  "type": { "enum": ["table", "chart_bar", "timeline", "text", "note", "missing"] },
-                  "caption": { "type": "string", "description": "命名行；table/chart_bar/timeline 必填，格式 表N｜／图N｜（text 类不加编号）" },
+                  "type": { "enum": ["table", "chart_bar", "timeline", "text", "missing"] },
+                  "caption": { "type": "string", "description": "命名行；table 必填「表N｜」，chart_bar/timeline 必填「图N｜」（text 类不加编号）" },
                   "caption_sources": { "$ref": "#/definitions/sourceRefs" },
                   "note_sources": { "$ref": "#/definitions/sourceRefs" },
                   "header": { "type": "array", "items": { "type": "string" }, "description": "type=table 必填" },

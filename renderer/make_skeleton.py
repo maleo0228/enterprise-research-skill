@@ -1,8 +1,15 @@
 # -*- coding: utf-8 -*-
-"""从鸣石 v0.8 提取冻结骨架，替换公司特定内容为令牌，生成 skeleton.html"""
+"""从鸣石 v0.8 提取冻结骨架，替换公司特定内容为令牌，生成 skeleton.html
+注意：本脚本依赖工作区私有基线样张（鸣石 v0.8），公开仓库环境不可运行——
+skeleton.html 是冻结产物；版式变更须在持有基线的工作区内执行本流程。"""
 import re, pathlib
 
-src = pathlib.Path("企业研究Skill_G3样张_上海鸣石销售成品_v0.8.html").read_text(encoding="utf-8")
+_SRC = pathlib.Path("企业研究Skill_G3样张_上海鸣石销售成品_v0.8.html")
+if not _SRC.exists():
+    raise SystemExit(
+        "缺少基线样张：企业研究Skill_G3样张_上海鸣石销售成品_v0.8.html（工作区私有文件，公开仓库不提供）。\n"
+        "skeleton.html 为冻结产物，请勿在公开环境再生骨架；版式变更请在持有基线的工作区内执行本脚本。")
+src = _SRC.read_text(encoding="utf-8")
 
 s = src
 s = s.replace("<title>企业研究报告：上海鸣石私募基金管理有限公司（销售成品样张 v0.8）</title>",

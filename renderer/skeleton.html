@@ -260,7 +260,7 @@
   }
   function tableToMd(tbl){
     var rows=[].slice.call(tbl.querySelectorAll("tr")).map(function(tr){
-      return [].slice.call(tr.children).map(function(c){ return inline(c).replace(/\|/g,"\|"); });
+      return [].slice.call(tr.children).map(function(c){ return inline(c).replace(/\|/g,"\\|"); });
     });
     if(!rows.length) return "";
     var out="| "+rows[0].join(" | ")+" |\n| "+"--- | ".repeat(rows[0].length)+"\n";

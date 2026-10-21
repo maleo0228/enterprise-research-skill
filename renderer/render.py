@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-G5 渲染器 v0.2（无第三方依赖，Python 3.8+ 标准库）
+G5 渲染器 v0.3（无第三方依赖，Python 3.8+ 标准库）
 用法: python render.py <report.json> <skeleton.html> <输出.html>
 规则依据：《企业研究Skill_G4数据契约与模板规格 v0.1（含增补）》§四/§五
+v0.3 变更（2026-10-21，D-75）：
+ - Logo 徽章短名超 2 字自适应缩字号（4 字如"词元无限"不再裁切；两字输出与 v0.1/v0.2 逐字节一致）
 v0.2 变更（2026-10-21，外部审计 14 项修复，D-72）：
  - rich() 白名单真实落地（b/br/a[href http(s)]，其余标签转义；a 仅放行 https?://）
  - chart_bar 支持负值（含零线；非负数据路径与 v0.1 输出逐字节一致）
@@ -397,9 +399,15 @@ def main():
     meta = d["meta"]
     skel = pathlib.Path(skel_p).read_text(encoding="utf-8")
     body = "\n\n".join([render_p1(d), render_p2(d), render_p3(d), render_p4(d), render_p5(d)])
+    # Logo 徽章：短名超 2 字时按行数自适应缩字号（两字输出与历史基线逐字节一致）
+    short = meta["company_short"]
+    lines = -(-len(short) // 2)  # 每行最多 2 字
+    fs = min(20, max(9, int(40 // (1.15 * lines))))
+    badge = (f'<div class="logo-badge" style="font-size:{fs}px; line-height:1.15;">{esc(short)}</div>'
+             if fs < 20 else f'<div class="logo-badge">{esc(short)}</div>')
     out = (skel.replace("{{COMPANY_NAME}}", meta["company_name"])
               .replace("{{SAMPLE_VERSION}}", meta.get("sample_version", ""))
-              .replace("{{SHORT}}", meta["company_short"])
+              .replace('<div class="logo-badge">{{SHORT}}</div>', badge)
               .replace("{{ANCHOR_DATE}}", meta["anchor_date"])
               .replace("{{SEARCH_HINT}}", meta.get("search_hint", "输入关键词……"))
               .replace("{{SIDENAV}}", render_sidenav(d))

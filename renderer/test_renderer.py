@@ -134,6 +134,12 @@ def main():
     r, html = run_render(t)
     check("H3 _html 内危险 href 剥离", r.returncode == 0 and 'href="javascript:' not in html and "<a>链</a>" in html)
 
+    t = copy.deepcopy(base_data); t["meta"]["company_short"] = "词元无限"
+    r, html = run_render(t)
+    m = re.search(r'logo-badge[^>]*style="font-size:(\d+)px', html)
+    ok = r.returncode == 0 and m and int(m.group(1)) < 20
+    check("Logo 徽章 4 字短名自适应缩字号", ok, f"font-size={m.group(1) if m else '无 style'}")
+
     print("\n== 结构自检（完整渲染） ==")
     r, html = run_render(base_data)
     check("完整渲染成功", r.returncode == 0, (r.stderr or "")[-120:])

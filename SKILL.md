@@ -30,6 +30,25 @@ python renderer/render.py <report.json> renderer/skeleton.html <output.html>
 
 Then hand the output HTML to the user — it opens directly in any browser, works offline, and can be shared as a single file.
 
+## Financial block types (overview.financial.blocks)
+
+Supported `type` values:
+
+| type | use for | caption |
+|---|---|---|
+| `table` | structured figures | required, `表N｜…` |
+| `chart_bar` | year/period series (negatives supported since renderer v0.2) | required, `图N｜…` |
+| `timeline` | dated event sequences (financing rounds, milestones) | required, `图N｜…` |
+| `text` | free-form multi-paragraph blocks | no numbering |
+| `missing` | explicit data-gap placeholder | — |
+
+## Delivery checklist
+
+1. `python renderer/test_renderer.py` — attack-surface & regression suite (19+ items) must pass.
+2. `python renderer/check_urls.py report.json` — every source URL reachable; manually re-check any flagged 403/202 (anti-crawler/JS pages may still open in a browser).
+3. Open the HTML once in a browser: navigation, search, MD export, charts render.
+4. Confirm no leftover `{{...}}` tokens in the output.
+
 ## Regression checking (only when modifying the renderer or skeleton)
 
 ```bash

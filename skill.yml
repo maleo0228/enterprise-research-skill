@@ -1,5 +1,5 @@
 name: enterprise-research-skill
-version: 2.0.3
+version: 2.0.4
 description: 将符合数据契约的企业研究数据（report.json）渲染为单文件、可离线、可溯源的交互式 HTML 报告。Turn a contract-conformant company-research dataset into a validated single-file interactive HTML report.
 entry: SKILL.md
 triggers:

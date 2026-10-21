@@ -140,6 +140,26 @@ def main():
     ok = r.returncode == 0 and m and int(m.group(1)) < 20
     check("Logo 徽章 4 字短名自适应缩字号", ok, f"font-size={m.group(1) if m else '无 style'}")
 
+    # ---- 二次实测修复项（N1/N2/N8） ----
+    t = copy.deepcopy(base_data)
+    t["directions"]["items"][0]["basis_sources"] = ["E1"]
+    t["directions"]["items"][0]["points"][0]["sources"] = ["E2"]
+    t["signals"]["dynamic"][0]["date"] = "2025-07"
+    r, html = run_render(t)
+    ok = (r.returncode == 0 and html.count('class="src"') >= 2
+          and "2025-07｜" in html)
+    check("N1 directions 挂来源＋N8 dynamic date 渲染", ok, (r.stderr or "")[-120:])
+
+    t = copy.deepcopy(base_data)
+    t["overview"]["basic_info"].append({"label": "注册资本", "value_html": "326.4082 万元", "sources": ["E1"]})
+    r, html = run_render(t)
+    check("N2 basic_info 追加尽调扩展项", r.returncode == 0 and "326.4082 万元" in html, (r.stderr or "")[-120:])
+
+    t = copy.deepcopy(base_data)
+    t["overview"]["basic_info"] = t["overview"]["basic_info"][1:]
+    r, _ = run_render(t)
+    check("N2 核心 8 项缺项仍拒绝", r.returncode != 0 and "basic_info" in (r.stderr or ""), (r.stderr or "")[-120:])
+
     print("\n== 结构自检（完整渲染） ==")
     r, html = run_render(base_data)
     check("完整渲染成功", r.returncode == 0, (r.stderr or "")[-120:])
@@ -148,6 +168,33 @@ def main():
         check("含 [E#] 来源标记", 'class="src"' in html)
         check("侧边导航非空", html.count('class="sub"') >= 3)
         check("导出按钮齐全", html.count("export-btn") >= 6)
+
+    print("\n== Markdown 导出（N10，需 node；无 node 自动跳过） ==")
+    import shutil
+    node = shutil.which("node")
+    if node and r.returncode == 0:
+        js = r"""
+const fs=require("fs");
+const skel=fs.readFileSync(process.argv[2],"utf8");
+const m=skel.match(/function inline\(el\)\{[\s\S]*?\r?\n  \}\r?\n  function cardToMd/);
+if(!m){console.error("NO_MATCH");process.exit(2);}
+var src=m[0].replace(/\r?\n  \}\r?\n  function cardToMd/,"\n  }");
+function C(x){return {nodeType:3,nodeValue:x};}
+function cell(x){return {childNodes:[C(x)],children:[]};}
+function row(cs){return {children:cs,querySelectorAll:function(){return [];}};}
+var tbl={querySelectorAll:function(){return [row([cell("项目"),cell("数值")]),row([cell("a|b"),cell("c")])];}};
+var md=(new Function(src+";return tableToMd;"))()(tbl);
+if(md.indexOf("a\\|b")>=0 && (md.match(/\|/g)||[]).length===10){console.log("MD_OK");}
+else{console.error("BAD_MD:\n"+md);process.exit(1);}
+"""
+        with tempfile.TemporaryDirectory() as td:
+            jp = pathlib.Path(td) / "md_test.js"
+            jp.write_text(js, encoding="utf-8")
+            rn = subprocess.run([node, str(jp), str(SKEL)], capture_output=True, text=True,
+                                encoding="utf-8", errors="replace")
+        check("表格管道符转义生效", rn.returncode == 0 and "MD_OK" in rn.stdout, (rn.stderr or "")[-160:])
+    else:
+        print("  - 跳过（未找到 node 或无渲染产物）")
 
     baselines = find_baselines(sys.argv[1:])
     if baselines and len(baselines) == len(files):

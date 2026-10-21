@@ -1,8 +1,14 @@
 # -*- coding: utf-8 -*-
 """
-G5 渲染器 v0.1（无第三方依赖，Python 3.8+ 标准库）
+G5 渲染器 v0.2（无第三方依赖，Python 3.8+ 标准库）
 用法: python render.py <report.json> <skeleton.html> <输出.html>
 规则依据：《企业研究Skill_G4数据契约与模板规格 v0.1（含增补）》§四/§五
+v0.2 变更（2026-10-21，外部审计 14 项修复，D-72）：
+ - rich() 白名单真实落地（b/br/a[href http(s)]，其余标签转义；a 仅放行 https?://）
+ - chart_bar 支持负值（含零线；非负数据路径与 v0.1 输出逐字节一致）
+ - validate() 增补：meta 必填、块类型枚举、图表 categories 非空/数值/长度一致
+ - sources.url/url2 仅 http(s) 生成链接，其余降级为纯文本
+ - 结构缺失统一走"校验失败"干净报错，不再裸 traceback
 """
 import json, re, sys, html, pathlib
 
@@ -16,8 +22,26 @@ def esc_href(t):  # 与基线一致：& 不转义（浏览器兼容，基线即�
 def sups(sources):
     return "".join(f'<sup class="src" data-e="{e}">[{e}]</sup>' for e in (sources or []))
 
-def rich(t):  # _html 字段：白名单标签直通（校验阶段已禁手写 sup）
-    return t
+_TAG_RE = re.compile(r'<(/?)(b|br|a)(?:\s+href="([^"]*)")?\s*(/?)>', re.I)
+
+def rich(t):  # _html 字段白名单：仅 <b> <br> <a href="http(s)://...">，其余标签一律转义
+    s = str(t)
+    out, last = [], 0
+    for m in _TAG_RE.finditer(s):
+        seg = s[last:m.start()]
+        out.append(seg.replace("<", "&lt;").replace(">", "&gt;"))
+        tag = m.group(2).lower()
+        if tag == "a":
+            if m.group(1):
+                out.append("</a>")
+            else:
+                href = m.group(3) or ""
+                out.append(f'<a href="{esc_href(href)}" target="_blank">' if re.match(r"^https?://", href) else "<a>")
+        else:
+            out.append(f"<{m.group(1) or ''}{tag}>")
+        last = m.end()
+    out.append(s[last:].replace("<", "&lt;").replace(">", "&gt;"))
+    return "".join(out)
 
 def kn_field(v):  # 机制档位：str 或 {text, sources}
     if isinstance(v, dict):
@@ -65,13 +89,32 @@ def validate(d):
         navs.append(bh["id"])
     if len(navs) != len(set(navs)):
         errs.append("导航 id 重复")
+    meta = d.get("meta") or {}
+    for k in ("company_name", "company_short", "anchor_date"):
+        if not (isinstance(meta.get(k), str) and meta[k].strip()):
+            errs.append(f"meta.{k} 缺失或为空")
+    BLOCK_TYPES = {"table", "chart_bar", "timeline", "text", "missing"}
     for i, b in enumerate(d["overview"]["financial"]["blocks"]):
-        t = b["type"]
+        t = b.get("type")
+        if t not in BLOCK_TYPES:
+            errs.append(f"财务块#{i} 未知块类型：{t!r}（合法：{'/'.join(sorted(BLOCK_TYPES))}）")
+            continue
         if t in ("table", "chart_bar", "timeline"):
             cap = b.get("caption", "")
             pat = r"^表\d+｜" if t == "table" else r"^图\d+｜"
             if not re.match(pat, cap):
                 errs.append(f"财务块#{i}({t}) 命名行不合规：{cap!r}")
+        if t == "chart_bar":
+            cats = b.get("categories")
+            if not isinstance(cats, list) or not cats:
+                errs.append(f"财务块#{i}(chart_bar) categories 缺失或为空")
+                cats = []
+            for j, sr in enumerate(b.get("series") or []):
+                vals = sr.get("values") if isinstance(sr, dict) else None
+                if not isinstance(vals, list) or not all(isinstance(v, (int, float)) and not isinstance(v, bool) for v in vals):
+                    errs.append(f"财务块#{i} 序列#{j} values 非数值数组")
+                elif cats and len(vals) != len(cats):
+                    errs.append(f"财务块#{i} 序列#{j} 长度({len(vals)})与 categories({len(cats)})不一致")
     def scan_sup(o, loc):
         if isinstance(o, dict):
             for k, v in o.items():
@@ -140,8 +183,7 @@ def chart_svg(n, b):
     cats, series = b["categories"], b["series"]
     base_y, plot_h, x0, gw, bw, bg = 200, 168, 70, 140, 30, 6
     maxv = max(max(s["values"]) for s in series)
-    ceil = max(10, -(-int(maxv) // 10) * 10)
-    k = plot_h / ceil
+    minv = min(min(s["values"]) for s in series)
     names = [s["name"] for s in series]
     aria = f"图{n} {'与'.join(names)}柱状图（{cats[0]}–{cats[-1]}）"
     el = [f'<svg width="660" height="250" viewBox="0 0 660 250" role="img" aria-label="{esc(aria)}" style="margin:6px 0 4px; max-width:100%;">']
@@ -152,15 +194,43 @@ def chart_svg(n, b):
         el.append(f'    <rect x="{lx}" y="10" width="10" height="10" fill="{c}" rx="2"/>')
         el.append(f'    <text x="{lx+16}" y="19" font-size="12" fill="#1f2733">{esc(s["name"]+unit)}</text>')
         lx += 150
-    for i, _ in enumerate(cats):
-        gx = x0 + gw * i
-        for j, s in enumerate(series):
-            v = s["values"][i]
-            h = round(v * k, 1)
-            y = round(base_y - h, 1)
-            el.append(f'    <rect x="{gx + j*(bw+bg)}" y="{y}" width="{bw}" height="{h}" fill="{COLORS[s.get("color","blue")]}" rx="2"/>')
-            el.append(f'    <text x="{gx + j*(bw+bg)}" y="{round(y-6)}" font-size="12" fill="{COLORS[s.get("color","blue")]}">{v:.2f}</text>')
-    el.append(f'    <line x1="50" y1="{base_y}" x2="640" y2="{base_y}" stroke="#e3e8ef" stroke-width="1.5"/>')
+    if minv >= 0:
+        # 非负路径：与 v0.1 输出逐字节一致（基线等价比对依赖）
+        ceil = max(10, -(-int(maxv) // 10) * 10)
+        k = plot_h / ceil
+        for i, _ in enumerate(cats):
+            gx = x0 + gw * i
+            for j, s in enumerate(series):
+                v = s["values"][i]
+                h = round(v * k, 1)
+                y = round(base_y - h, 1)
+                el.append(f'    <rect x="{gx + j*(bw+bg)}" y="{y}" width="{bw}" height="{h}" fill="{COLORS[s.get("color","blue")]}" rx="2"/>')
+                el.append(f'    <text x="{gx + j*(bw+bg)}" y="{round(y-6)}" font-size="12" fill="{COLORS[s.get("color","blue")]}">{v:.2f}</text>')
+        el.append(f'    <line x1="50" y1="{base_y}" x2="640" y2="{base_y}" stroke="#e3e8ef" stroke-width="1.5"/>')
+    else:
+        # 负值路径：零线基准双向柱（v0.2 新增，仅数据含负值时启用）
+        hi = max(10, -(-int(maxv) // 10) * 10)
+        lo = min(-10, (int(minv) // 10) * 10)
+        k = plot_h / (hi - lo)
+        top_y = 32
+        zero_y = round(top_y + hi * k, 1)
+        el.append(f'    <line x1="50" y1="{top_y}" x2="640" y2="{top_y}" stroke="#e3e8ef" stroke-width="1"/>')
+        for i, _ in enumerate(cats):
+            gx = x0 + gw * i
+            for j, s in enumerate(series):
+                v = s["values"][i]
+                c = COLORS[s.get("color", "blue")]
+                if v >= 0:
+                    h = round(v * k, 1)
+                    y = round(zero_y - h, 1)
+                    ly = round(y - 6)
+                else:
+                    h = round(-v * k, 1)
+                    y = zero_y
+                    ly = round(y + h + 13)
+                el.append(f'    <rect x="{gx + j*(bw+bg)}" y="{y}" width="{bw}" height="{h}" fill="{c}" rx="2"/>')
+                el.append(f'    <text x="{gx + j*(bw+bg)}" y="{ly}" font-size="12" fill="{c}">{v:.2f}</text>')
+        el.append(f'    <line x1="50" y1="{zero_y}" x2="640" y2="{zero_y}" stroke="#1f2733" stroke-width="1.5"/>')
     for i, c in enumerate(cats):
         el.append(f'    <text x="{x0 + gw*i}" y="222" font-size="12.5" fill="#1f2733">{esc(c)}</text>')
     el.append("  </svg>")
@@ -272,18 +342,22 @@ def render_p5(d):
          f'  <div class="page-lead">{esc(s["lead"])}</div>',
          '  <h3 class="block-title">身份怎么读</h3>',
          '  <div class="legend">']
-    for x in s["legend"]:
+    for x in s.get("legend", []):
         L.append(f'    <span>{esc(x)}</span>')
     L += ["  </div>",
           '  <h3 class="block-title">来源记录（点击正文 [E#] 可跳到此表对应行）</h3>',
           '  <table class="t" id="src-table">',
           "    <tr><th>编号</th><th>主体</th><th>时间</th><th>口径</th><th>来源与层级</th><th>链接</th><th>获取日期</th><th>身份</th></tr>"]
+    def src_link(url, display, title=""):
+        if url and re.match(r"^https?://", url):
+            return f'<a href="{esc_href(url)}" target="_blank"{title}>{esc(display)}</a>'
+        return esc(display)
     for it in s["items"]:
         title = ' title="该来源链接在研究记录中不完整，溯源至网站首页"' \
             if ("…" in it["url_display"] and re.match(r"^https?://[^/?#]+/?$", it["url"])) else ""
-        href = f'<a href="{esc_href(it["url"])}" target="_blank"{title}>{esc(it["url_display"])}</a>'
+        href = src_link(it["url"], it["url_display"], title)
         if it.get("url2"):
-            href += f'<a href="{esc_href(it["url2"])}" target="_blank">{esc(it["url2_display"])}</a>'
+            href += src_link(it["url2"], it["url2_display"])
         L.append(f'    <tr id="{it["id"]}"><td class="eid">{it["id"]}</td><td>{esc(it["entity"])}</td>'
                  f'<td>{esc(it["time"])}</td><td>{esc(it["caliber"])}</td><td>{esc(it["source"])}</td>'
                  f'<td class="url">{href}</td>'

@@ -1,8 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-G5 渲染器 v0.3（无第三方依赖，Python 3.8+ 标准库）
+G5 渲染器 v0.4（无第三方依赖，Python 3.8+ 标准库）
 用法: python render.py <report.json> <skeleton.html> <输出.html>
 规则依据：《企业研究Skill_G4数据契约与模板规格 v0.1（含增补）》§四/§五
+v0.4 变更（2026-10-21，外部审计二次实测 N1/N2/N8 修复，D-76）：
+ - directions 支持挂来源：basis_sources 与 points[].sources 渲染 [E#] 标记
+ - basic_info 允许 8 项核心之后追加尽调扩展项（注册资本/信用代码等）
+ - signals.dynamic 支持可选 date 字段（日期不再塞进 id）
 v0.3 变更（2026-10-21，D-75）：
  - Logo 徽章短名超 2 字自适应缩字号（4 字如"词元无限"不再裁切；两字输出与 v0.1/v0.2 逐字节一致）
 v0.2 变更（2026-10-21，外部审计 14 项修复，D-72）：
@@ -61,7 +65,7 @@ PAGES = [("p1", "1.0", "企业概览", "1.0企业概览"),
 # ---------- 业务校验（不过即失败，不出 HTML） ----------
 def validate(d):
     errs = []
-    SRC_KEYS = ("sources", "caption_sources", "note_sources", "text_sources")
+    SRC_KEYS = ("sources", "caption_sources", "note_sources", "text_sources", "basis_sources")
     refs = []
     def walk(o, loc):
         if isinstance(o, dict):
@@ -130,8 +134,11 @@ def validate(d):
     scan_sup(d, "$")
     bi = d["overview"]["basic_info"]
     exp = ["公司全称", "官网", "成立时间", "注册地／经营地", "所有制／资本状态", "高管背景", "员工规模", "组织结构"]
-    if [x["label"] for x in bi] != exp:
-        errs.append("basic_info 字段清单不合规")
+    labels = [x["label"] for x in bi]
+    if labels[:len(exp)] != exp:
+        errs.append("basic_info 前 8 项核心清单不合规（须按序）")
+    if len(set(labels)) != len(labels):
+        errs.append("basic_info 存在重复 label")
     order = ["业务任务", "业务系统", "功能需求", "负载特性", "运行方式", "对业务结果的影响", "关联的 IT 能力"]
     for m in d["mechanisms"]["items"]:
         if [r["th"] for r in m["rows"]] != order:
@@ -297,7 +304,8 @@ def render_p2(d):
     L.append(f'  <h3 class="block-title"{dyn_id}>{esc(s["dynamic_title"])}</h3>')
     L.append('  <ul class="dyn-list">')
     for it in s["dynamic"]:
-        L.append(f'    <li><b>{esc(it["id"])}</b>｜{rich(it["text_html"])}{sups(it["sources"])}</li>')
+        date = f'{esc(it["date"])}｜' if it.get("date") else ""
+        L.append(f'    <li><b>{esc(it["id"])}</b>｜{date}{rich(it["text_html"])}{sups(it["sources"])}</li>')
     L.append("  </ul>")
     L.append('  <div class="export-row"><button class="export-btn" data-sec="p2" data-name="2.0经营事件与信号" title="导出为 Markdown 文件">导出 MD</button></div>')
     L.append("</section>")
@@ -329,9 +337,9 @@ def render_p4(d):
     for it in d["directions"]["items"]:
         L.append('  <div class="dir">')
         L.append(f'    <div class="dir-head"><span class="tag {it["state"]}">{STATE_LABEL[it["state"]]}</span><h4>{esc(it["title"])}</h4></div>')
-        L.append(f'    <div class="basis">{esc(it["basis"])}</div>')
+        L.append(f'    <div class="basis">{esc(it["basis"])}{sups(it.get("basis_sources"))}</div>')
         for p in it["points"]:
-            L.append(f'    <p><span class="lbl">{esc(p["label"])}：</span>{rich(p["text_html"])}</p>')
+            L.append(f'    <p><span class="lbl">{esc(p["label"])}：</span>{rich(p["text_html"])}{sups(p.get("sources"))}</p>')
         L.append("  </div>")
     L.append('  <div class="export-row"><button class="export-btn" data-sec="p4" data-name="4.0IT关注方向及跟进" title="导出为 Markdown 文件">导出 MD</button></div>')
     L.append("</section>")

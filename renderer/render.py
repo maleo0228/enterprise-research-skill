@@ -1,8 +1,15 @@
 # -*- coding: utf-8 -*-
 """
-G5 渲染器 v0.6（无第三方依赖，Python 3.8+ 标准库）
+G5 渲染器 v0.7（无第三方依赖，Python 3.8+ 标准库）
 用法: python render.py <report.json> <skeleton.html> <输出.html>
 规则依据：《企业研究Skill_G4数据契约与模板规格 v0.1（含增补）》§四/§五
+v0.7 变更（2026-10-22，红队 M1 修复，D-88）：
+- meta 令牌按语境转义（红队 A4 发现：company_name/anchor_date/search_hint 等
+  原先无转义直通 HTML 文本/属性/JS 字符串三种语境）：
+  JS 串语境（下载文件名/MD 导出头）用 esc_js 转义（防 </script> 突破与串内注入），
+  HTML 属性语境 esc_attr，HTML 文本语境 esc
+- URL scheme 大小写兼容（HTTPS:// 不再降级为纯文本；红队 A5）
+- 对 v0.6 及以前全部合法输入输出逐字节兼容（双样张等价比对回归锁定）
 v0.6 变更（2026-10-22，第三轮审计 6 项修复 F13/F1/F2/F3/F8，D-86，契约/测试/代码同源交付）：
 - validate() 新增结构完整性自查（schema 无人执行，渲染器兜底）：渲染所需全部必填路径
   缺失时统一"校验失败"干净报错，不再裸 traceback（F3，七类场景回归锁定）
@@ -33,6 +40,11 @@ def esc(t):
 def esc_attr(t):  # 属性位转义：双引号一并转义（F2：aria-label/data-t 等属性注入防护）
     return html.escape(str(t), quote=True)
 
+def esc_js(t):  # JS 字符串字面量转义（红队 A4：下载文件名/MD 导出头，防串内注入与 </script> 突破）
+    return (str(t).replace("\\", "\\\\").replace('"', '\\"')
+            .replace("\n", "\\n").replace("\r", "\\r")
+            .replace("<", "\\u003c").replace(">", "\\u003e"))
+
 def esc_href(t):  # 与基线一致：& 不转义（浏览器兼容，基线即为 raw &）
     return str(t).replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
 
@@ -53,7 +65,7 @@ def rich(t):  # _html 字段白名单：仅 <b> <br> <a href="http(s)://...">（
                 out.append("</a>")
             else:
                 href = m.group(3) if m.group(3) is not None else (m.group(4) or "")
-                out.append(f'<a href="{esc_href(href)}" target="_blank">' if re.match(r"^https?://", href) else "<a>")
+                out.append(f'<a href="{esc_href(href)}" target="_blank">' if re.match(r"^https?://", href, re.I) else "<a>")
         else:
             out.append(f"<{m.group(1) or ''}{tag}>")
         last = m.end()
@@ -490,7 +502,7 @@ def render_p5(d):
           '  <table class="t" id="src-table">',
           "    <tr><th>编号</th><th>主体</th><th>时间</th><th>口径</th><th>来源与层级</th><th>链接</th><th>获取日期</th><th>身份</th></tr>"]
     def src_link(url, display, title=""):
-        if url and re.match(r"^https?://", url):
+        if url and re.match(r"^https?://", url, re.I):
             return f'<a href="{esc_href(url)}" target="_blank"{title}>{esc(display)}</a>'
         return esc(display)
     for it in s["items"]:
@@ -544,13 +556,17 @@ def main():
     fs = min(20, max(9, int(40 // (1.15 * lines))))
     badge = (f'<div class="logo-badge" style="font-size:{fs}px; line-height:1.15;">{esc(short)}</div>'
              if fs < 20 else f'<div class="logo-badge">{esc(short)}</div>')
-    out = (skel.replace("{{COMPANY_NAME}}", meta["company_name"])
-              .replace("{{SAMPLE_VERSION}}", meta.get("sample_version", ""))
+    # 红队 A4：骨架含 JS 字符串语境的令牌，先做精确替换（esc_js），其余按 HTML 语境转义
+    skel = (skel.replace("企业研究_{{SHORT}}_", "企业研究_" + esc_js(short) + "_")
+                .replace("企业研究报告：{{COMPANY_NAME}}", "企业研究报告：" + esc_js(meta["company_name"]))
+                .replace("锚点日期 {{ANCHOR_DATE}}；", "锚点日期 " + esc_js(meta["anchor_date"]) + "；"))
+    out = (skel.replace("{{COMPANY_NAME}}", esc(meta["company_name"]))
+              .replace("{{SAMPLE_VERSION}}", esc(meta.get("sample_version", "")))
               .replace('<div class="logo-badge">{{SHORT}}</div>', badge)
               # JS 导出文件名等处仍残留 {{SHORT}}，需全局兜净（D-82 模思试跑发现）
               .replace("{{SHORT}}", esc(short))
-              .replace("{{ANCHOR_DATE}}", meta["anchor_date"])
-              .replace("{{SEARCH_HINT}}", meta.get("search_hint", "输入关键词……"))
+              .replace("{{ANCHOR_DATE}}", esc(meta["anchor_date"]))
+              .replace("{{SEARCH_HINT}}", esc_attr(meta.get("search_hint", "输入关键词……")))
               .replace("{{SIDENAV}}", render_sidenav(d))
               .replace("{{BODY}}", body))
     pathlib.Path(out_p).write_text(out, encoding="utf-8")

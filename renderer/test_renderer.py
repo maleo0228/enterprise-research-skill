@@ -245,6 +245,62 @@ def main():
     r, html = run_render(t)
     check("F8 _html 单引号 href 兼容", r.returncode == 0 and '<a href="https://example.com/a" target="_blank">链</a>' in html)
 
+    # ---- 红队 M1（D-88 批准）：A4 属性/文本/JS 三语境注入 · A3 白名单变形 · A5 scheme 变体 ----
+    INJ = 'x" onmouseover="PWNED(1)'
+    a4_cases = []
+    t0 = copy.deepcopy(base_data); t0["meta"]["company_name"] = INJ + "</title><script>PWNED(1)</script>"
+    a4_cases.append(("meta.company_name（标题/正文/JS 三语境）", t0, ["<script>PWNED(1)</script>", ' onmouseover="PWNED(1)"']))
+    t0 = copy.deepcopy(base_data); t0["meta"]["company_short"] = INJ
+    a4_cases.append(("meta.company_short（徽章/JS 文件名词境）", t0, [' onmouseover="PWNED(1)"']))
+    t0 = copy.deepcopy(base_data); t0["meta"]["search_hint"] = INJ
+    a4_cases.append(("meta.search_hint（placeholder 属性语境）", t0, [' onmouseover="PWNED(1)"']))
+    t0 = copy.deepcopy(base_data); t0["signals"]["key"][0]["nav"] = INJ
+    a4_cases.append(("signals.key[0].nav（data-t 属性语境）", t0, [' onmouseover="PWNED(1)"']))
+    t0 = copy.deepcopy(base_data); t0["mechanisms"]["items"][0]["nav"] = INJ
+    a4_cases.append(("mechanisms.items[0].nav（data-t 属性语境）", t0, [' onmouseover="PWNED(1)"']))
+    t0 = copy.deepcopy(base_data); t0["sources"]["items"][0]["entity"] = INJ
+    a4_cases.append(("sources.items[0].entity（表格单元格）", t0, [' onmouseover="PWNED(1)"']))
+    t0 = copy.deepcopy(base_data); t0["directions"]["items"][0]["title"] = INJ
+    a4_cases.append(("directions.items[0].title", t0, [' onmouseover="PWNED(1)"']))
+    a4_bad = []
+    for name, t, raw_tokens in a4_cases:
+        r, html = run_render(t)
+        if r.returncode != 0 or any(tok in html for tok in raw_tokens):
+            a4_bad.append(name)
+    check("A4 注入八字段扫描（属性/文本/JS 三语境）", not a4_bad, "；".join(a4_bad)[:160])
+
+    t = copy.deepcopy(base_data); t["meta"]["company_short"] = 'x";PWNED(1);//'
+    r, html = run_render(t)
+    check("A4 JS 字符串语境转义（下载文件名/MD 导出头）",
+          r.returncode == 0 and 'x\\";PWNED(1);//' in html)
+
+    t = copy.deepcopy(base_data); t["meta"]["anchor_date"] = '2026-01-01";PWNED(1);//'
+    r, html = run_render(t)
+    check("A4 anchor_date JS 串转义",
+          r.returncode == 0 and '2026-01-01\\";PWNED(1);//' in html)
+
+    a3_cases = [
+        ("大写标签", "正常<B>加粗</B>直通", "<b>加粗</b>"),
+        ("href 多空格", 'x<a  href="https://example.com">链</a>', '<a href="https://example.com" target="_blank">链</a>'),
+        ("未知标签转义", "x<img src=x onerror=PWNED(1)>尾", "&lt;img"),
+        ("危险 href 剥离", 'x<a href="javascript:PWNED(1)">链</a>', "<a>链</a>"),
+        ("白名单嵌套", 'x<a href="https://example.com"><b>粗</b></a>', '<a href="https://example.com" target="_blank"><b>粗</b></a>'),
+    ]
+    for name, payload, expect in a3_cases:
+        t = rich_probe(copy.deepcopy(base_data), payload)
+        r, html = run_render(t)
+        check("A3 白名单变形：%s" % name, r.returncode == 0 and expect in html)
+
+    t = copy.deepcopy(base_data)
+    t["sources"]["items"][0]["url"] = "HTTPS://EXAMPLE.COM/A"
+    r, html = run_render(t)
+    check("A5 scheme 大小写兼容（HTTPS 大写不降级）", r.returncode == 0 and 'href="HTTPS://EXAMPLE.COM/A"' in html)
+
+    t = copy.deepcopy(base_data)
+    t["sources"]["items"][0]["url"] = 'https://example.com/"onmouseover="PWNED(1)'
+    r, html = run_render(t)
+    check("A5 URL 内嵌引号不突破属性", r.returncode == 0 and 'onmouseover="PWNED(1)"' not in html)
+
     print("\n== 结构自检（完整渲染） ==")
     r, html = run_render(base_data)
     check("完整渲染成功", r.returncode == 0, (r.stderr or "")[-120:])

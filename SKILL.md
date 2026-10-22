@@ -44,7 +44,7 @@ Supported `type` values:
 
 ## Delivery checklist
 
-1. `python renderer/test_renderer.py` — attack-surface & regression suite (38 items) must pass.
+1. `python renderer/test_renderer.py` — attack-surface & regression suite (48 items) must pass.
 2. `python renderer/check_urls.py report.json` — every source URL reachable; manually re-check any flagged 403/202 (anti-crawler/JS pages may still open in a browser).
 3. Open the HTML once in a browser: navigation, search, MD export, charts render.
 4. Confirm no leftover `{{...}}` tokens in the output.

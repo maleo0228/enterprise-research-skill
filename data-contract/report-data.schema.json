@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/maleo0228/enterprise-research-skill/data-contract/report-data.schema.json",
-  "title": "企业研究报告数据契约（G4 v0.1，含 v0.2 渲染器对齐修订）",
+  "title": "企业研究报告数据契约（G4 v0.1，含渲染器对齐修订 v0.3：2026-10-22 第三轮审计 F13/F1 契约对齐）",
   "type": "object",
   "required": ["meta", "overview", "signals", "mechanisms", "directions", "sources"],
   "additionalProperties": false,
@@ -42,8 +42,8 @@
         "lead": { "$ref": "#/definitions/lead" },
         "basic_info": {
           "type": "array",
-          "description": "封闭字段清单：公司全称/官网/成立时间/注册地／经营地/所有制／资本状态/高管背景/员工规模/组织结构，共 8 项",
-          "minItems": 8, "maxItems": 8,
+          "description": "前 8 项为封闭核心清单（公司全称/官网/成立时间/注册地／经营地/所有制／资本状态/高管背景/员工规模/组织结构，须按序）；核心 8 项之后可追加尽调扩展项（如注册资本/统一社会信用代码），渲染器放行（D-76 N2、F1 对齐）",
+          "minItems": 8,
           "items": {
             "type": "object", "required": ["label", "value_html", "sources"], "additionalProperties": false,
             "properties": {
@@ -84,12 +84,6 @@
                 "type": "object",
                 "required": ["type"],
                 "additionalProperties": false,
-                "allOf": [
-                  { "if": { "properties": { "type": { "const": "table" } }, "required": ["type"] },
-                    "then": { "required": ["caption"], "properties": { "caption": { "pattern": "^表\\d+｜" } } } },
-                  { "if": { "properties": { "type": { "enum": ["chart_bar", "timeline"] } }, "required": ["type"] },
-                    "then": { "required": ["caption"], "properties": { "caption": { "pattern": "^图\\d+｜" } } } }
-                ],
                 "properties": {
                   "type": { "enum": ["table", "chart_bar", "timeline", "text", "missing"] },
                   "caption": { "type": "string", "description": "命名行；table 必填「表N｜」，chart_bar/timeline 必填「图N｜」（text 类不加编号）" },
@@ -108,7 +102,7 @@
                   "blocks": { "type": "array", "items": { "type": "object", "required": ["text_html", "sources"], "additionalProperties": false, "properties": { "text_html": { "$ref": "#/definitions/html" }, "sources": { "$ref": "#/definitions/sourceRefs" } } }, "description": "type=text 多段时用" }
                 },
                 "allOf": [
-                  { "if": { "properties": { "type": { "const": "table" } } }, "then": { "required": ["type", "caption", "header", "rows"], "properties": { "caption": { "pattern": "^(表|图)\\d+｜" } } } },
+                  { "if": { "properties": { "type": { "const": "table" } } }, "then": { "required": ["type", "caption", "header", "rows"], "properties": { "caption": { "pattern": "^表\\d+｜" } } } },
                   { "if": { "properties": { "type": { "const": "chart_bar" } } }, "then": { "required": ["type", "caption", "categories", "series"], "properties": { "caption": { "pattern": "^图\\d+｜" } } } },
                   { "if": { "properties": { "type": { "const": "timeline" } } }, "then": { "required": ["type", "caption", "nodes"], "properties": { "caption": { "pattern": "^图\\d+｜" } } } },
                   { "if": { "properties": { "type": { "const": "text" } } }, "then": { "required": ["type", "caption", "blocks"] } },

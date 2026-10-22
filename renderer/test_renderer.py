@@ -72,11 +72,23 @@ def main():
     r, _ = run_render(t)
     check("H2 未知块类型(note) 干净拒绝", r.returncode != 0 and "未知块类型" in (r.stderr or ""), (r.stderr or "")[-120:])
 
+    def find_chart(t):
+        for b in t["overview"]["financial"]["blocks"]:
+            if b.get("type") == "chart_bar":
+                return b
+        return None
+
+    def add_chart(t, cats, series, caption="图9｜攻击面测试"):
+        t["overview"]["financial"]["blocks"].append(
+            {"type": "chart_bar", "caption": caption, "categories": cats, "series": series})
+
     t = copy.deepcopy(base_data)
-    for b in t["overview"]["financial"]["blocks"]:
-        if b.get("type") == "chart_bar":
-            for s in b["series"]:
-                s["values"] = [-abs(v) for v in s["values"]]
+    cb = find_chart(t)
+    if cb is None:
+        add_chart(t, ["2023", "2024"], [{"name": "净利", "values": [-1.5, -2.5]}])
+    else:
+        for s in cb["series"]:
+            s["values"] = [-abs(v) for v in s["values"]]
     r, html = run_render(t)
     check("H1 负值图表正常渲染", r.returncode == 0 and 'height="-' not in html,
           "崩溃或仍有负高度" if r.returncode == 0 else (r.stderr or "")[-120:])
@@ -96,23 +108,30 @@ def main():
     check("M1 缺 meta 干净拒绝", r.returncode != 0 and "meta.company_name" in (r.stderr or ""), (r.stderr or "")[-120:])
 
     t = copy.deepcopy(base_data)
-    for b in t["overview"]["financial"]["blocks"]:
-        if b.get("type") == "chart_bar":
-            b["series"][0]["values"] = b["series"][0]["values"][:-1]
+    cb = find_chart(t)
+    if cb is None:
+        add_chart(t, ["2024", "2025"], [{"name": "营收", "values": [1.0, 1.0]}])
+        t["overview"]["financial"]["blocks"][-1]["series"][0]["values"] = [1.0]
+    else:
+        cb["series"][0]["values"] = cb["series"][0]["values"][:-1]
     r, _ = run_render(t)
     check("M2 序列长度不一致拒绝", r.returncode != 0 and "长度" in (r.stderr or ""), (r.stderr or "")[-120:])
 
     t = copy.deepcopy(base_data)
-    for b in t["overview"]["financial"]["blocks"]:
-        if b.get("type") == "chart_bar":
-            b["categories"] = []
+    cb = find_chart(t)
+    if cb is None:
+        add_chart(t, [], [{"name": "营收", "values": [1.0]}])
+    else:
+        cb["categories"] = []
     r, _ = run_render(t)
     check("M2 categories 为空拒绝", r.returncode != 0 and "categories" in (r.stderr or ""), (r.stderr or "")[-120:])
 
     t = copy.deepcopy(base_data)
-    for b in t["overview"]["financial"]["blocks"]:
-        if b.get("type") == "chart_bar":
-            b["series"][0]["values"] = ["abc"] * len(b["categories"])
+    cb = find_chart(t)
+    if cb is None:
+        add_chart(t, ["2024", "2025"], [{"name": "营收", "values": ["abc", "abc"]}])
+    else:
+        cb["series"][0]["values"] = ["abc"] * len(cb["categories"])
     r, _ = run_render(t)
     check("M2 values 非数值拒绝", r.returncode != 0 and "数值" in (r.stderr or ""), (r.stderr or "")[-120:])
 
@@ -151,14 +170,80 @@ def main():
     check("N1 directions 挂来源＋N8 dynamic date 渲染", ok, (r.stderr or "")[-120:])
 
     t = copy.deepcopy(base_data)
-    t["overview"]["basic_info"].append({"label": "注册资本", "value_html": "326.4082 万元", "sources": ["E1"]})
+    # 扩展项 label 须在任意基准实例中唯一（模思实例已含 注册资本/统一社会信用代码 扩展项）
+    t["overview"]["basic_info"].append({"label": "参保人数", "value_html": "120 人", "sources": ["E1"]})
     r, html = run_render(t)
-    check("N2 basic_info 追加尽调扩展项", r.returncode == 0 and "326.4082 万元" in html, (r.stderr or "")[-120:])
+    check("N2 basic_info 追加尽调扩展项", r.returncode == 0 and "参保人数" in html, (r.stderr or "")[-120:])
 
     t = copy.deepcopy(base_data)
     t["overview"]["basic_info"] = t["overview"]["basic_info"][1:]
     r, _ = run_render(t)
     check("N2 核心 8 项缺项仍拒绝", r.returncode != 0 and "basic_info" in (r.stderr or ""), (r.stderr or "")[-120:])
+
+    # ---- 第三轮审计修复项（F13/F1/F2/F3/F8，2026-10-22，契约/测试/代码同源交付）----
+    t = copy.deepcopy(base_data)
+    for b in t["overview"]["financial"]["blocks"]:
+        if b.get("type") == "table":
+            b["caption"] = re.sub(r"^表(\d+)｜", r"图\1｜", b["caption"])
+            break
+    else:
+        t["overview"]["financial"]["blocks"].append({"type": "table", "caption": "图9｜测试", "header": ["项目", "数值"], "rows": [["a", "b"]]})
+    r, _ = run_render(t)
+    check("F13 table 命名行 图N｜ 干净拒绝（契约对齐渲染器）", r.returncode != 0 and "命名行" in (r.stderr or ""), (r.stderr or "")[-120:])
+
+    t = copy.deepcopy(base_data)
+    # 扩展项 label 须在任意基准实例中唯一（模思实例已含 注册资本/统一社会信用代码 扩展项）
+    t["overview"]["basic_info"].append({"label": "股东／实控人", "value_html": "公开披露未显示实控人变更", "sources": ["E1"]})
+    t["overview"]["basic_info"].append({"label": "变更记录", "value_html": "2026-03 注册资本变更一次", "sources": ["E1"]})
+    r, html = run_render(t)
+    check("F1 basic_info 核心 8 项后可追加多条尽调扩展项", r.returncode == 0 and "股东／实控人" in html, (r.stderr or "")[-120:])
+
+    f3_cases = []
+    t0 = copy.deepcopy(base_data); t0.pop("signals")
+    f3_cases.append(("signals 缺失", t0))
+    t0 = copy.deepcopy(base_data); t0["overview"].pop("basic_info")
+    f3_cases.append(("basic_info 缺失", t0))
+    t0 = copy.deepcopy(base_data); t0["sources"].pop("homology_note")
+    f3_cases.append(("sources.homology_note 缺失", t0))
+    t0 = copy.deepcopy(base_data); t0["signals"].pop("dynamic_title")
+    f3_cases.append(("signals.dynamic_title 缺失", t0))
+    t0 = copy.deepcopy(base_data)
+    t0["overview"]["financial"]["blocks"].append({"type": "text", "blocks": [{"text_html": "段落", "sources": ["E1"]}]})
+    f3_cases.append(("text 块缺 caption", t0))
+    t0 = copy.deepcopy(base_data)
+    t0["overview"]["financial"]["blocks"].append({"type": "timeline", "caption": "图9｜测试", "nodes": [{"value": "v", "date": "2026-01", "sources": ["E1"]}]})
+    f3_cases.append(("timeline 节点缺 who", t0))
+    t0 = copy.deepcopy(base_data)
+    for b in t0["overview"]["financial"]["blocks"]:
+        if b.get("type") == "chart_bar" and b.get("series"):
+            b["series"][0].pop("name")
+            break
+    else:
+        t0["overview"]["financial"]["blocks"].append({"type": "chart_bar", "caption": "图9｜测试", "categories": ["2024"], "series": [{"values": [1]}]})
+    f3_cases.append(("chart 序列缺 name", t0))
+    for name, t in f3_cases:
+        r, _ = run_render(t)
+        err = r.stderr or ""
+        ok = r.returncode != 0 and "校验失败" in err and "Traceback" not in err
+        check("F3 结构缺失干净拒绝：%s" % name, ok, err[-160:])
+
+    t = copy.deepcopy(base_data)
+    injected = False
+    for b in t["overview"]["financial"]["blocks"]:
+        if b.get("type") == "chart_bar" and b.get("series"):
+            b["series"][0]["name"] = 'x" onmouseover="alert(1)'
+            injected = True
+            break
+    if not injected:
+        t["overview"]["financial"]["blocks"].append({"type": "chart_bar", "caption": "图9｜测试", "categories": ["2024"], "series": [{"name": 'x" onmouseover="alert(1)', "values": [1]}]})
+    r, html = run_render(t)
+    check("F2 属性位双引号转义（aria-label/data-t 注入防护）",
+          r.returncode == 0 and 'onmouseover="alert(1)"' not in html and "&quot;" in html,
+          (r.stderr or "")[-120:] if r.returncode != 0 else "属性突破未转义")
+
+    t = rich_probe(copy.deepcopy(base_data), "x<a href='https://example.com/a'>链</a>")
+    r, html = run_render(t)
+    check("F8 _html 单引号 href 兼容", r.returncode == 0 and '<a href="https://example.com/a" target="_blank">链</a>' in html)
 
     print("\n== 结构自检（完整渲染） ==")
     r, html = run_render(base_data)
@@ -218,6 +303,22 @@ else{console.error("BAD_MD:\n"+md);process.exit(1);}
     else:
         json_ok = bool(copies)
     check("schema 合法 JSON（D-71 回归）", json_ok, json_err or "未找到任何 schema 副本")
+
+    dup_ok, dup_err = True, ""
+    def no_dup(pairs):
+        seen = {}
+        for k, v in pairs:
+            if k in seen:
+                raise ValueError("重复键: " + k)
+            seen[k] = v
+        return seen
+    for l, p in copies:
+        try:
+            json.loads(p.read_text(encoding="utf-8"), object_pairs_hook=no_dup)
+        except ValueError as e:
+            dup_ok, dup_err = False, "%s: %s" % (l, str(e)[:100])
+            break
+    check("schema 无重复键（F13 回归：重复键后者生效会静默吞约束）", dup_ok, dup_err)
     uniq = {p.resolve(): l for l, p in copies}
     if len(uniq) >= 2:
         payloads = {p.read_bytes() for p in uniq}

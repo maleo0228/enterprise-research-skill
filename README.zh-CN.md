@@ -1,7 +1,7 @@
 # Enterprise Research Skill｜企业深度研究 Skill
 
 **基于公开证据的企业研究 → 单文件交互式 HTML 报告。**
-**当前版本：v2.0.7** ·[更新日志](https://github.com/maleo0228/enterprise-research-skill/releases)
+**当前版本：v2.0.8** ·[更新日志](https://github.com/maleo0228/enterprise-research-skill/releases)
 v2.0 是对 v1.x 的**完全重写**（v1.x 产出 Markdown＋CSV＋Excel，已归档，见 [Releases](https://github.com/maleo0228/enterprise-research-skill/releases)）。
 
 ## 它做什么

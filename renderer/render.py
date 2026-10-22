@@ -1,8 +1,13 @@
 # -*- coding: utf-8 -*-
 """
-G5 渲染器 v0.7（无第三方依赖，Python 3.8+ 标准库）
+G5 渲染器 v0.8（无第三方依赖，Python 3.8+ 标准库）
 用法: python render.py <report.json> <skeleton.html> <输出.html>
 规则依据：《企业研究Skill_G4数据契约与模板规格 v0.1（含增补）》§四/§五
+v0.8 变更（2026-10-22，红队 M2 修复，D-91）：
+- 结构容器类型校验（need_list：sections/rows/points 等容器字段非数组显式报错，红队 A6）
+- meta 根类型校验（非对象干净拒绝）
+- 图表数值有限性校验（NaN/Inf 干净拒绝，红队 A7）
+- 对 v0.7 及以前全部合法输入输出逐字节兼容（双样张等价比对回归锁定）
 v0.7 变更（2026-10-22，红队 M1 修复，D-88）：
 - meta 令牌按语境转义（红队 A4 发现：company_name/anchor_date/search_hint 等
   原先无转义直通 HTML 文本/属性/JS 字符串三种语境）：
@@ -31,7 +36,7 @@ v0.2 变更（2026-10-21，外部审计 14 项修复，D-72）：
  - sources.url/url2 仅 http(s) 生成链接，其余降级为纯文本
  - 结构缺失统一走"校验失败"干净报错，不再裸 traceback
 """
-import json, re, sys, html, pathlib
+import json, re, sys, html, pathlib, math
 
 # ---------- 基础工具 ----------
 def esc(t):
@@ -105,10 +110,18 @@ def validate(d):
             if k not in obj:
                 errs.append(f"{loc} 缺字段 {k}")
 
+    def need_list(obj, key, loc):
+        # 容器字段存在但类型非数组（红队 A6 结构破坏）：显式报错，防渲染期裸崩
+        if isd(obj) and key in obj and not isl(obj[key]):
+            errs.append(f"{loc}.{key} 须为数组")
+            return False
+        return True
+
     need(isd(d), "根节点须为 JSON 对象")
     if errs:
         raise SystemExit("校验失败：\n" + "\n".join(" - " + e for e in errs))
     ov, sg, mc, dr, so = (d.get(k) for k in ("overview", "signals", "mechanisms", "directions", "sources"))
+    need(isd(d.get("meta")), "meta 缺失或非对象")
     need(isd(ov), "overview 缺失或非对象")
     need(isd(sg), "signals 缺失或非对象")
     need(isd(mc), "mechanisms 缺失或非对象")
@@ -159,22 +172,22 @@ def validate(d):
     if isd(sg):
         for i, s in enumerate(sg.get("key") or []):
             req_item(s, ("id", "nav", "title", "sections"), f"signals.key[{i}]")
-            if isd(s) and isl(s.get("sections")):
-                for j, sec in enumerate(s["sections"]):
+            if isd(s) and need_list(s, "sections", f"signals.key[{i}]"):
+                for j, sec in enumerate(s.get("sections") or []):
                     req_item(sec, ("label", "text_html", "sources"), f"signals.key[{i}].sections[{j}]")
         for i, it in enumerate(sg.get("dynamic") or []):
             req_item(it, ("id", "text_html", "sources"), f"signals.dynamic[{i}]")
     if isd(mc):
         for i, m in enumerate(mc.get("items") or []):
             req_item(m, ("id", "nav", "title", "rows", "confirmed", "unconfirmed", "evidence"), f"mechanisms.items[{i}]")
-            if isd(m) and isl(m.get("rows")):
-                for j, r in enumerate(m["rows"]):
+            if isd(m) and need_list(m, "rows", f"mechanisms.items[{i}]"):
+                for j, r in enumerate(m.get("rows") or []):
                     req_item(r, ("th", "td_html", "sources"), f"mechanisms.items[{i}].rows[{j}]")
     if isd(dr):
         for i, it in enumerate(dr.get("items") or []):
             req_item(it, ("id", "state", "title", "basis", "points"), f"directions.items[{i}]")
-            if isd(it) and isl(it.get("points")):
-                for j, p in enumerate(it["points"]):
+            if isd(it) and need_list(it, "points", f"directions.items[{i}]"):
+                for j, p in enumerate(it.get("points") or []):
                     req_item(p, ("label", "text_html"), f"directions.items[{i}].points[{j}]")
     if isd(so) and isl(so.get("items")):
         for i, it in enumerate(so.get("items") or []):
@@ -260,8 +273,8 @@ def validate(d):
                 cats = []
             for j, sr in enumerate(b.get("series") or []):
                 vals = sr.get("values") if isinstance(sr, dict) else None
-                if not isinstance(vals, list) or not all(isinstance(v, (int, float)) and not isinstance(v, bool) for v in vals):
-                    errs.append(f"财务块#{i} 序列#{j} values 非数值数组")
+                if not isinstance(vals, list) or not all(isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v) for v in vals):
+                    errs.append(f"财务块#{i} 序列#{j} values 非有限数值数组")
                 elif cats and len(vals) != len(cats):
                     errs.append(f"财务块#{i} 序列#{j} 长度({len(vals)})与 categories({len(cats)})不一致")
     def scan_sup(o, loc):

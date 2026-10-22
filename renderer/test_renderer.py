@@ -196,6 +196,36 @@ else{console.error("BAD_MD:\n"+md);process.exit(1);}
     else:
         print("  - 跳过（未找到 node 或无渲染产物）")
 
+    print("\n== 发布纪律（schema 合法性与多副本一致性，D-71/D-80 回归） ==")
+    cands = [("仓库", ROOT.parent / "data-contract" / "report-data.schema.json")]
+    ws = ROOT
+    for _ in range(5):
+        ws = ws.parent
+        if (ws / "企业研究Skill_进度看板.md").is_file():
+            cands += [("工作区根目录", ws / "report-data.schema.json"),
+                      ("发布暂存", ws / "_发布_GitHub_v2.0" / "data-contract" / "report-data.schema.json"),
+                      ("仓库克隆", ws / "_build" / "github-v2" / "data-contract" / "report-data.schema.json")]
+            break
+    copies = [(l, p) for l, p in cands if p.is_file()]
+    json_ok, json_err = None, ""
+    for l, p in copies:
+        try:
+            json.loads(p.read_text(encoding="utf-8"))
+        except ValueError as e:
+            json_ok, json_err = False, "%s: %s" % (l, str(e)[:100])
+            break
+    else:
+        json_ok = bool(copies)
+    check("schema 合法 JSON（D-71 回归）", json_ok, json_err or "未找到任何 schema 副本")
+    uniq = {p.resolve(): l for l, p in copies}
+    if len(uniq) >= 2:
+        payloads = {p.read_bytes() for p in uniq}
+        check("schema 多副本一致（%s）" % "、".join(uniq.values()),
+              len(payloads) == 1,
+              "副本内容不一致——按《版本管理规范 v0.2》§三.6，推送前必须 diff 对齐（反面教材：v2.0.4 schema 漏推）")
+    else:
+        print("  - 多副本一致性跳过（仅单副本，外部独立运行环境）")
+
     baselines = find_baselines(sys.argv[1:])
     if baselines and len(baselines) == len(files):
         print("\n== 等价比对回归 ==")

@@ -143,7 +143,7 @@
         },
         "dynamic_title": { "type": "string" },
         "dynamic_nav": { "type": "string", "description": "有值时动态区 h3 带 id=\"sig-dyn\" 并生成边栏导航子项；缺省则不生成（鸣石模式）" },
-        "dynamic": { "type": "array", "items": { "type": "object", "required": ["id", "text_html", "sources"], "additionalProperties": false, "properties": { "id": { "type": "string" }, "text_html": { "$ref": "#/definitions/html" }, "sources": { "$ref": "#/definitions/sourceRefs" } } } }
+        "dynamic": { "type": "array", "items": { "type": "object", "required": ["id", "text_html", "sources"], "additionalProperties": false, "properties": { "id": { "type": "string" }, "date": { "type": "string", "description": "事件日期（如 2025-07），有值时渲染在正文前，勿再塞进 id" }, "text_html": { "$ref": "#/definitions/html" }, "sources": { "$ref": "#/definitions/sourceRefs" } } } }
       }
     },
 
@@ -190,7 +190,8 @@
               "state": { "enum": ["s1", "s2", "s3", "s4"], "description": "s1 优先跟进/s2 值得研究/s3 持续观察/s4 暂缓" },
               "title": { "type": "string", "description": "如：D1｜……" },
               "basis": { "type": "string", "description": "依据一句话（身份＋信心）" },
-              "points": { "type": "array", "minItems": 1, "items": { "type": "object", "required": ["label", "text_html"], "additionalProperties": false, "properties": { "label": { "type": "string", "enum": ["为什么值得关注", "怎么跟进", "说明", "改变条件"] }, "text_html": { "$ref": "#/definitions/html" } } } }
+              "basis_sources": { "$ref": "#/definitions/sourceRefs", "description": "basis 的引用（可选，建议尽调场景必挂）" },
+              "points": { "type": "array", "minItems": 1, "items": { "type": "object", "required": ["label", "text_html"], "additionalProperties": false, "properties": { "label": { "type": "string", "enum": ["为什么值得关注", "怎么跟进", "说明", "改变条件"] }, "text_html": { "$ref": "#/definitions/html" }, "sources": { "$ref": "#/definitions/sourceRefs", "description": "该条结论的引用（可选，建议必挂）" } } } }
             }
           }
         }
@@ -203,7 +204,7 @@
       "additionalProperties": false,
       "properties": {
         "lead": { "$ref": "#/definitions/lead" },
-        "legend": { "type": "array", "items": { "type": "string" }, "description": "身份图例，固定四条" },
+        "legend": { "type": "array", "items": { "type": "string" }, "description": "身份图例；建议四档（企业事实/来源说法/政府与学术/推断），可按需扩展（如'存疑源'）" },
         "items": {
           "type": "array", "minItems": 1,
           "items": {

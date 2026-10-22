@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-G5 渲染器 v0.4（无第三方依赖，Python 3.8+ 标准库）
+G5 渲染器 v0.5（无第三方依赖，Python 3.8+ 标准库）
 用法: python render.py <report.json> <skeleton.html> <输出.html>
 规则依据：《企业研究Skill_G4数据契约与模板规格 v0.1（含增补）》§四/§五
-v0.4 变更（2026-10-21，外部审计二次实测 N1/N2/N8 修复，D-76）：
+v0.5 变更（2026-10-22，{{SHORT}} 全局兜净修复＋令牌残留测试，D-82/D-83）：
+- v0.4 变更（2026-10-21，外部审计二次实测 N1/N2/N8 修复，D-76）：
  - directions 支持挂来源：basis_sources 与 points[].sources 渲染 [E#] 标记
  - basic_info 允许 8 项核心之后追加尽调扩展项（注册资本/信用代码等）
  - signals.dynamic 支持可选 date 字段（日期不再塞进 id）
@@ -416,6 +417,8 @@ def main():
     out = (skel.replace("{{COMPANY_NAME}}", meta["company_name"])
               .replace("{{SAMPLE_VERSION}}", meta.get("sample_version", ""))
               .replace('<div class="logo-badge">{{SHORT}}</div>', badge)
+              # JS 导出文件名等处仍残留 {{SHORT}}，需全局兜净（D-82 模思试跑发现）
+              .replace("{{SHORT}}", esc(short))
               .replace("{{ANCHOR_DATE}}", meta["anchor_date"])
               .replace("{{SEARCH_HINT}}", meta.get("search_hint", "输入关键词……"))
               .replace("{{SIDENAV}}", render_sidenav(d))

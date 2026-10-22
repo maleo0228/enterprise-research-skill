@@ -1,7 +1,7 @@
 # Enterprise Research Skill
 
 **Evidence-grounded company research → single-file interactive HTML reports.**
-**Current version: v2.0.8** · [Changelog](https://github.com/maleo0228/enterprise-research-skill/releases)
+**Current version: v2.0.9** · [Changelog](https://github.com/maleo0228/enterprise-research-skill/releases)
 v2.0 is a **complete rewrite** of v1.x (which produced Markdown + CSV + Excel; see [Releases](https://github.com/maleo0228/enterprise-research-skill/releases) for the archived v1.0.x line).
 
 ## What it does
@@ -24,19 +24,37 @@ Open the sample directly in your browser — no server needed:
 
 ## How it works
 
+This repo covers the **report generation stage** only: your research produces a dataset, the renderer turns it into the report. Three steps:
+
 ```
-research notes → report.json (per data contract) → render.py → report HTML
+your research  →  report.json (conform to the data contract)  →  render.py  →  report.html
 ```
 
-1. Fill in `report.json` following the data contract ([`data-contract/report-data.schema.json`](data-contract/report-data.schema.json)); two validated examples are in [`examples/`](examples/).
-2. Render — one command, zero third-party dependencies (Python 3.8+ standard library only):
+**1. Prepare the dataset.** Structure your research findings into one `report.json` conforming to [`data-contract/report-data.schema.json`](data-contract/report-data.schema.json). Two validated examples ([`examples/`](examples/)) show the full shape: five modules, a numbered source table, and per-claim `sources` arrays. Hard rules enforced by the contract:
 
-   ```bash
-   python renderer/render.py report.json renderer/skeleton.html report.html
-   ```
+- **Source closure** — every claim is cited as `[E#]`, every `[E#]` is declared in the source table, and every declared source is actually cited. Nothing is traceable to nothing.
+- **Citations are generated, never hand-written** — you supply `sources` arrays; the renderer emits the `[E#]` marks. Hand-written citation markup is rejected.
+- **Named financial blocks** — financial content is typed blocks (`table` / `chart_bar` / `timeline` / `text` / `missing`), each with a `表N｜` or `图N｜` caption; gaps are declared explicitly with `missing`, never silently dropped.
 
-   The renderer validates the data first (source closure, navigation uniqueness, naming, no hand-written citation marks) and **fails instead of emitting a broken report**.
-3. Regression-check layout changes with `renderer/compare.py` (equivalence comparison against a baseline report).
+If your data doesn't fit the contract, reshape the data — do not patch the renderer to accept non-conformant input.
+
+**2. Render.** One command; zero third-party dependencies (Python 3.8+ standard library only, no network, no build step):
+
+```bash
+python renderer/render.py report.json renderer/skeleton.html report.html
+```
+
+`render.py` validates first — structural completeness, source closure, unique navigation anchors, naming, chart data sanity — and **aborts with a plain, itemized "validation failed" list instead of emitting a broken report**. On success it fills the frozen `skeleton.html` and produces a fully self-contained page: sidebar navigation, full-text search, SVG charts (negative values supported), clickable `[E#]` anchors jumping to the source table, and per-section plus full-report Markdown export.
+
+**3. Verify before delivery.**
+
+```bash
+python renderer/check_urls.py report.json   # every source URL reachable; manually re-check any 403/202 flags
+```
+
+Then open the HTML once in a browser (navigation, search, MD export, charts) and confirm no leftover `{{...}}` tokens.
+
+**For maintainers** (renderer or skeleton changes only): `python renderer/test_renderer.py` runs the 48-item attack-surface & regression suite — all green before any release; `python renderer/compare.py <rendered.html> <baseline.html>` checks equivalence against a frozen baseline sample.
 
 ## Repository layout
 

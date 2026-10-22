@@ -1,8 +1,15 @@
 # -*- coding: utf-8 -*-
 """
-G5 渲染器 v0.5（无第三方依赖，Python 3.8+ 标准库）
+G5 渲染器 v0.6（无第三方依赖，Python 3.8+ 标准库）
 用法: python render.py <report.json> <skeleton.html> <输出.html>
 规则依据：《企业研究Skill_G4数据契约与模板规格 v0.1（含增补）》§四/§五
+v0.6 变更（2026-10-22，第三轮审计 6 项修复 F13/F1/F2/F3/F8，D-86，契约/测试/代码同源交付）：
+- validate() 新增结构完整性自查（schema 无人执行，渲染器兜底）：渲染所需全部必填路径
+  缺失时统一"校验失败"干净报错，不再裸 traceback（F3，七类场景回归锁定）
+- esc_attr() 属性位转义双引号：aria-label/data-t/id/href 等属性插值防突破（F2）
+- rich() 白名单 a 标签兼容单引号 href，输出统一双引号（F8）
+- 命名行/扩展项校验口径与 schema v0.3 对齐（table 强制 表N｜；basic_info 核心 8 项后放行扩展）
+- 对 v0.5 及以前全部合法输入输出逐字节兼容（双样张等价比对回归锁定）
 v0.5 变更（2026-10-22，{{SHORT}} 全局兜净修复＋令牌残留测试，D-82/D-83）：
 - v0.4 变更（2026-10-21，外部审计二次实测 N1/N2/N8 修复，D-76）：
  - directions 支持挂来源：basis_sources 与 points[].sources 渲染 [E#] 标记
@@ -23,15 +30,18 @@ import json, re, sys, html, pathlib
 def esc(t):
     return html.escape(str(t), quote=False)
 
+def esc_attr(t):  # 属性位转义：双引号一并转义（F2：aria-label/data-t 等属性注入防护）
+    return html.escape(str(t), quote=True)
+
 def esc_href(t):  # 与基线一致：& 不转义（浏览器兼容，基线即为 raw &）
     return str(t).replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
 
 def sups(sources):
     return "".join(f'<sup class="src" data-e="{e}">[{e}]</sup>' for e in (sources or []))
 
-_TAG_RE = re.compile(r'<(/?)(b|br|a)(?:\s+href="([^"]*)")?\s*(/?)>', re.I)
+_TAG_RE = re.compile(r'<(/?)(b|br|a)(?:\s+href\s*=\s*(?:"([^"]*)"|\'([^\']*)\'))?\s*(/?)>', re.I)
 
-def rich(t):  # _html 字段白名单：仅 <b> <br> <a href="http(s)://...">，其余标签一律转义
+def rich(t):  # _html 字段白名单：仅 <b> <br> <a href="http(s)://...">（单引号 href 亦认，F8），其余标签一律转义
     s = str(t)
     out, last = [], 0
     for m in _TAG_RE.finditer(s):
@@ -42,7 +52,7 @@ def rich(t):  # _html 字段白名单：仅 <b> <br> <a href="http(s)://...">，
             if m.group(1):
                 out.append("</a>")
             else:
-                href = m.group(3) or ""
+                href = m.group(3) if m.group(3) is not None else (m.group(4) or "")
                 out.append(f'<a href="{esc_href(href)}" target="_blank">' if re.match(r"^https?://", href) else "<a>")
         else:
             out.append(f"<{m.group(1) or ''}{tag}>")
@@ -66,6 +76,126 @@ PAGES = [("p1", "1.0", "企业概览", "1.0企业概览"),
 # ---------- 业务校验（不过即失败，不出 HTML） ----------
 def validate(d):
     errs = []
+
+    # ---- 结构完整性自查（F3，2026-10-22 第三轮审计）----
+    # schema 无人执行，渲染器兜底自检全部直接索引路径；结构缺失统一"校验失败"干净报错，不裸 traceback。
+    def need(cond, msg):
+        if not cond:
+            errs.append(msg)
+    def isd(x): return isinstance(x, dict)
+    def isl(x): return isinstance(x, list)
+    def iss(x): return isinstance(x, str)
+    def req_item(obj, keys, loc):
+        if not isd(obj):
+            errs.append(f"{loc} 须为对象")
+            return
+        for k in keys:
+            if k not in obj:
+                errs.append(f"{loc} 缺字段 {k}")
+
+    need(isd(d), "根节点须为 JSON 对象")
+    if errs:
+        raise SystemExit("校验失败：\n" + "\n".join(" - " + e for e in errs))
+    ov, sg, mc, dr, so = (d.get(k) for k in ("overview", "signals", "mechanisms", "directions", "sources"))
+    need(isd(ov), "overview 缺失或非对象")
+    need(isd(sg), "signals 缺失或非对象")
+    need(isd(mc), "mechanisms 缺失或非对象")
+    need(isd(dr), "directions 缺失或非对象")
+    need(isd(so), "sources 缺失或非对象")
+    bu = fi = None
+    if isd(ov):
+        need(iss(ov.get("lead")), "overview.lead 缺失或非字符串")
+        need(isl(ov.get("basic_info")), "overview.basic_info 缺失或非数组")
+        need(isd(ov.get("business")), "overview.business 缺失或非对象")
+        need(isd(ov.get("financial")), "overview.financial 缺失或非对象")
+        bu, fi = ov.get("business"), ov.get("financial")
+    if isd(bu):
+        need(iss(bu.get("outline_title")), "overview.business.outline_title 缺失或非字符串")
+        need(iss(bu.get("strengths_title")), "overview.business.strengths_title 缺失或非字符串")
+        for k in ("outline_items", "chain", "strength_items", "moat"):
+            need(isl(bu.get(k)), f"overview.business.{k} 缺失或非数组")
+    if isd(fi):
+        need(iss(fi.get("lead_note")), "overview.financial.lead_note 缺失或非字符串")
+        need(isl(fi.get("blocks")), "overview.financial.blocks 缺失或非数组")
+    if isd(sg):
+        need(iss(sg.get("lead")), "signals.lead 缺失或非字符串")
+        need(iss(sg.get("dynamic_title")), "signals.dynamic_title 缺失或非字符串")
+        need(isl(sg.get("key")), "signals.key 缺失或非数组")
+        need(isl(sg.get("dynamic")), "signals.dynamic 缺失或非数组")
+    if isd(mc):
+        need(iss(mc.get("lead")), "mechanisms.lead 缺失或非字符串")
+        need(isl(mc.get("items")), "mechanisms.items 缺失或非数组")
+    if isd(dr):
+        need(iss(dr.get("lead")), "directions.lead 缺失或非字符串")
+        need(isl(dr.get("items")), "directions.items 缺失或非数组")
+    if isd(so):
+        need(iss(so.get("lead")), "sources.lead 缺失或非字符串")
+        need(iss(so.get("homology_note")), "sources.homology_note 缺失或非字符串")
+        need(isl(so.get("items")), "sources.items 缺失或非数组")
+    # 逐项必填（渲染直接索引的字段；缺任一即干净拒绝）
+    if isd(ov) and isl(ov.get("basic_info")):
+        for i, it in enumerate(ov["basic_info"]):
+            req_item(it, ("label", "value_html", "sources"), f"basic_info[{i}]")
+    if isd(bu):
+        for k in ("outline_items", "strength_items"):
+            for i, it in enumerate(bu.get(k) or []):
+                req_item(it, ("text_html", "sources"), f"business.{k}[{i}]")
+        for i, it in enumerate(bu.get("chain") or []):
+            req_item(it, ("label", "label_bold", "text_html", "sources"), f"business.chain[{i}]")
+        for i, it in enumerate(bu.get("moat") or []):
+            req_item(it, ("label", "text_html", "sources"), f"business.moat[{i}]")
+    if isd(sg):
+        for i, s in enumerate(sg.get("key") or []):
+            req_item(s, ("id", "nav", "title", "sections"), f"signals.key[{i}]")
+            if isd(s) and isl(s.get("sections")):
+                for j, sec in enumerate(s["sections"]):
+                    req_item(sec, ("label", "text_html", "sources"), f"signals.key[{i}].sections[{j}]")
+        for i, it in enumerate(sg.get("dynamic") or []):
+            req_item(it, ("id", "text_html", "sources"), f"signals.dynamic[{i}]")
+    if isd(mc):
+        for i, m in enumerate(mc.get("items") or []):
+            req_item(m, ("id", "nav", "title", "rows", "confirmed", "unconfirmed", "evidence"), f"mechanisms.items[{i}]")
+            if isd(m) and isl(m.get("rows")):
+                for j, r in enumerate(m["rows"]):
+                    req_item(r, ("th", "td_html", "sources"), f"mechanisms.items[{i}].rows[{j}]")
+    if isd(dr):
+        for i, it in enumerate(dr.get("items") or []):
+            req_item(it, ("id", "state", "title", "basis", "points"), f"directions.items[{i}]")
+            if isd(it) and isl(it.get("points")):
+                for j, p in enumerate(it["points"]):
+                    req_item(p, ("label", "text_html"), f"directions.items[{i}].points[{j}]")
+    if isd(so) and isl(so.get("items")):
+        for i, it in enumerate(so.get("items") or []):
+            req_item(it, ("id", "entity", "time", "caliber", "source", "url", "url_display", "fetched", "identity"),
+                     f"sources.items[{i}]")
+    if isd(fi) and isl(fi.get("blocks")):
+        REQ = {"table": ("caption", "header", "rows"),
+               "chart_bar": ("caption", "categories", "series"),
+               "timeline": ("caption", "nodes"),
+               "text": ("caption", "blocks"),
+               "missing": ("note",)}
+        for i, b in enumerate(fi["blocks"]):
+            if not isd(b) or "type" not in b:
+                errs.append(f"财务块#{i} 缺字段 type")
+                continue
+            bt = b["type"]
+            if bt not in REQ:
+                continue  # 未知类型由业务校验段报"未知块类型"
+            for k in REQ[bt]:
+                if k not in b:
+                    errs.append(f"财务块#{i}({bt}) 缺字段 {k}")
+            if bt == "chart_bar":
+                for j, sr in enumerate(b.get("series") or []):
+                    req_item(sr, ("name", "values"), f"财务块#{i}.series[{j}]")
+            if bt == "timeline":
+                for j, nd in enumerate(b.get("nodes") or []):
+                    req_item(nd, ("value", "date", "who", "sources"), f"财务块#{i}.nodes[{j}]")
+            if bt == "text":
+                for j, blk in enumerate(b.get("blocks") or []):
+                    req_item(blk, ("text_html", "sources"), f"财务块#{i}.blocks[{j}]")
+    if errs:
+        raise SystemExit("校验失败：\n" + "\n".join(" - " + e for e in errs))
+
     SRC_KEYS = ("sources", "caption_sources", "note_sources", "text_sources", "basis_sources")
     refs = []
     def walk(o, loc):
@@ -196,7 +326,7 @@ def chart_svg(n, b):
     minv = min(min(s["values"]) for s in series)
     names = [s["name"] for s in series]
     aria = f"图{n} {'与'.join(names)}柱状图（{cats[0]}–{cats[-1]}）"
-    el = [f'<svg width="660" height="250" viewBox="0 0 660 250" role="img" aria-label="{esc(aria)}" style="margin:6px 0 4px; max-width:100%;">']
+    el = [f'<svg width="660" height="250" viewBox="0 0 660 250" role="img" aria-label="{esc_attr(aria)}" style="margin:6px 0 4px; max-width:100%;">']
     lx = x0
     for s in series:
         c = COLORS[s.get("color", "blue")]
@@ -258,7 +388,7 @@ def render_p1(d):
     L.append("  </table>")
     if b.get("heading"):
         h = b["heading"]
-        L.append(f'  <h3 class="block-title" id="{h["id"]}">{esc(h["title"])}</h3>')
+        L.append(f'  <h3 class="block-title" id="{esc_attr(h["id"])}">{esc(h["title"])}</h3>')
     if b.get("outline_heading"):
         L.append(f'  <h3 class="block-title">{esc(b["outline_heading"])}</h3>')
     if b.get("outline_title"):
@@ -296,7 +426,7 @@ def render_p2(d):
          '  <div class="page-title"><span class="no">2.0</span><span>经营事件与信号</span></div>',
          f'  <div class="page-lead">{esc(s["lead"])}</div>']
     for sig in s["key"]:
-        L.append(f'  <div class="signal" id="{sig["id"]}">')
+        L.append(f'  <div class="signal" id="{esc_attr(sig["id"])}">')
         L.append(f'    <h4>{esc(sig["title"])}</h4>')
         for sec in sig["sections"]:
             L.append(f'    <p><span class="lbl">{esc(sec["label"])}：</span>{rich(sec["text_html"])}{sups(sec["sources"])}</p>')
@@ -317,7 +447,7 @@ def render_p3(d):
          '  <div class="page-title"><span class="no">3.0</span><span>业务及技术解析</span></div>',
          f'  <div class="page-lead">{esc(d["mechanisms"]["lead"])}</div>']
     for m in d["mechanisms"]["items"]:
-        L.append(f'  <div class="mech" id="{m["id"]}">')
+        L.append(f'  <div class="mech" id="{esc_attr(m["id"])}">')
         L.append(f'    <h4>{esc(m["title"])}</h4>')
         L.append('    <table class="t">')
         for r in m["rows"]:
@@ -369,7 +499,7 @@ def render_p5(d):
         href = src_link(it["url"], it["url_display"], title)
         if it.get("url2"):
             href += src_link(it["url2"], it["url2_display"])
-        L.append(f'    <tr id="{it["id"]}"><td class="eid">{it["id"]}</td><td>{esc(it["entity"])}</td>'
+        L.append(f'    <tr id="{esc_attr(it["id"])}"><td class="eid">{it["id"]}</td><td>{esc(it["entity"])}</td>'
                  f'<td>{esc(it["time"])}</td><td>{esc(it["caliber"])}</td><td>{esc(it["source"])}</td>'
                  f'<td class="url">{href}</td>'
                  f'<td>{esc(it["fetched"])}</td><td>{esc(it["identity"])}</td></tr>')
@@ -386,16 +516,16 @@ def render_sidenav(d):
          '    <a class="sub" href="#s1-base" data-t="基础信息">基础信息</a>']
     bh = o["business"].get("heading")
     if bh and bh.get("nav"):
-        L.append(f'    <a class="sub" href="#{bh["id"]}" data-t="{esc(bh["nav"])}">{esc(bh["nav"])}</a>')
+        L.append(f'    <a class="sub" href="#{esc_attr(bh["id"])}" data-t="{esc_attr(bh["nav"])}">{esc(bh["nav"])}</a>')
     L.append('    <a class="sub" href="#s1-fin" data-t="财务数据">财务数据</a>')
     L.append('    <a class="grp" href="#p2" data-t="经营事件与信号">经营事件与信号</a>')
     for sig in s["key"]:
-        L.append(f'    <a class="sub" href="#{sig["id"]}" data-t="{esc(sig["nav"])}">{esc(sig["nav"])}</a>')
+        L.append(f'    <a class="sub" href="#{esc_attr(sig["id"])}" data-t="{esc_attr(sig["nav"])}">{esc(sig["nav"])}</a>')
     if s.get("dynamic_nav"):
-        L.append(f'    <a class="sub" href="#sig-dyn" data-t="{esc(s["dynamic_nav"])}">{esc(s["dynamic_nav"])}</a>')
+        L.append(f'    <a class="sub" href="#sig-dyn" data-t="{esc_attr(s["dynamic_nav"])}">{esc(s["dynamic_nav"])}</a>')
     L.append('    <a class="grp" href="#p3" data-t="业务及技术解析">业务及技术解析</a>')
     for mech in m["items"]:
-        L.append(f'    <a class="sub" href="#{mech["id"]}" data-t="{esc(mech["nav"])}">{esc(mech["nav"])}</a>')
+        L.append(f'    <a class="sub" href="#{esc_attr(mech["id"])}" data-t="{esc_attr(mech["nav"])}">{esc(mech["nav"])}</a>')
     L.append('    <a class="grp" href="#p4" data-t="IT关注方向及跟进">IT关注方向及跟进</a>')
     L.append('    <a class="grp" href="#p5" data-t="来源索引与证据链">来源索引与证据链</a>')
     return "\n".join(L)

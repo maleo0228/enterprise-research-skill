@@ -1,7 +1,7 @@
 # Enterprise Research Skill｜企业深度研究 Skill
 
 **基于公开证据的企业研究 → 单文件交互式 HTML 报告。**
-**当前版本：v2.0.8** ·[更新日志](https://github.com/maleo0228/enterprise-research-skill/releases)
+**当前版本：v2.0.9** ·[更新日志](https://github.com/maleo0228/enterprise-research-skill/releases)
 v2.0 是对 v1.x 的**完全重写**（v1.x 产出 Markdown＋CSV＋Excel，已归档，见 [Releases](https://github.com/maleo0228/enterprise-research-skill/releases)）。
 
 ## 它做什么
@@ -22,19 +22,37 @@ v2.0 是对 v1.x 的**完全重写**（v1.x 产出 Markdown＋CSV＋Excel，已�
 
 ## 工作原理
 
+本仓库只覆盖**报告生成段**：研究由你的工作流完成，渲染器负责把数据集变成报告。三步：
+
 ```
-研究底稿 → report.json（按数据契约填写）→ render.py → 成品 HTML
+你的研究  →  report.json（按数据契约填写）  →  render.py  →  成品 HTML
 ```
 
-1. 按数据契约（[`data-contract/report-data.schema.json`](data-contract/report-data.schema.json)）填写 `report.json`，[`examples/`](examples/) 内有两个通过校验的实例（鸣石／锦浪）；
-2. 渲染——一条命令，**零第三方依赖**（仅需 Python 3.8+ 标准库）：
+**1. 准备数据集。** 把研究结论结构化为一个符合 [`data-contract/report-data.schema.json`](data-contract/report-data.schema.json) 的 `report.json`。[`examples/`](examples/) 内有两个通过校验的实例（鸣石／锦浪）展示完整形态：五个模块、编号来源表、逐条结论的 `sources` 数组。契约硬性规则：
 
-   ```bash
-   python renderer/render.py report.json renderer/skeleton.html report.html
-   ```
+- **来源闭环**——每条结论以 `[E#]` 引用，每个 `[E#]` 在来源表声明，每个声明的来源都被实际引用；环环相扣，无孤证。
+- **引用标记由渲染器生成，禁止手写**——数据只提供 `sources` 数组，渲染器自动输出 `[E#]`；手写引用标记会被拒绝。
+- **财务块命名制**——财务内容按类型分块（`table`／`chart_bar`／`timeline`／`text`／`missing`），每块带 `表N｜` 或 `图N｜` 命名行；缺项用 `missing` 显式声明，不静默丢弃。
 
-   渲染器先执行业务校验（来源闭环、导航唯一、命名齐全、禁手写引用标），**校验不过直接失败，不出半成品**；
-3. 改版回归用 `renderer/compare.py` 与基线样张做等价比对。
+数据不合契约时，改数据迁就契约——不要改渲染器迁就数据。
+
+**2. 渲染。** 一条命令，**零第三方依赖**（仅需 Python 3.8+ 标准库，无网络、无构建步骤）：
+
+```bash
+python renderer/render.py report.json renderer/skeleton.html report.html
+```
+
+`render.py` **先校验后渲染**——结构完整性、来源闭环、导航锚点唯一、命名齐全、图表数据合法性——任何问题都以逐条列出的"校验失败"清单中止，**不出半成品**。通过后填充冻结的 `skeleton.html`，产出完全自包含的页面：侧边导航、全文搜索、SVG 图表（支持负值）、可点击跳转来源表的 `[E#]` 锚点、按模块与全文导出 Markdown。
+
+**3. 交付前核验。**
+
+```bash
+python renderer/check_urls.py report.json   # 每个来源 URL 可达；被标 403/202 的需人工复核
+```
+
+然后在浏览器中打开一次（导航、搜索、MD 导出、图表），确认无 `{{...}}` 令牌残留。
+
+**维护者专用**（仅改版渲染器/骨架时）：`python renderer/test_renderer.py` 跑 48 项攻击面与回归套件——发版前必须全绿；`python renderer/compare.py <渲染产物.html> <基线样张.html>` 与冻结基线做等价比对。
 
 ## 目录结构
 

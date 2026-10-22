@@ -301,6 +301,86 @@ def main():
     r, html = run_render(t)
     check("A5 URL 内嵌引号不突破属性", r.returncode == 0 and 'onmouseover="PWNED(1)"' not in html)
 
+    # ---- 红队 M2（计划 v0.1 已批准）：A1 输入变异 · A6 结构破坏 · A7 图表边界 ----
+    t = copy.deepcopy(base_data)
+    cb = find_chart(t)
+    if cb is None:
+        add_chart(t, ["2024"], [{"name": "n", "values": [1]}])
+        cb = t["overview"]["financial"]["blocks"][-1]
+    cb["series"][0]["values"] = [float("nan")] * len(cb["categories"])
+    r, _ = run_render(t)
+    check("A7 NaN 数值干净拒绝", r.returncode != 0 and "数值" in (r.stderr or "") and "Traceback" not in (r.stderr or ""), (r.stderr or "")[-120:])
+
+    t = copy.deepcopy(base_data)
+    cb = find_chart(t)
+    if cb is None:
+        add_chart(t, ["2024"], [{"name": "n", "values": [1]}])
+        cb = t["overview"]["financial"]["blocks"][-1]
+    cb["series"][0]["values"] = [float("inf")] * len(cb["categories"])
+    r, _ = run_render(t)
+    check("A7 Inf 数值干净拒绝", r.returncode != 0 and "数值" in (r.stderr or ""), (r.stderr or "")[-120:])
+
+    t = copy.deepcopy(base_data)
+    add_chart(t, ["2022", "2023", "2024"], [{"name": "零值序列", "values": [0, 0, 0]}])
+    r, html = run_render(t)
+    check("A7 全零序列正常渲染", r.returncode == 0, (r.stderr or "")[-120:])
+
+    t = copy.deepcopy(base_data)
+    add_chart(t, ["2022", "2023"], [{"name": "微小值", "values": [0.001, 0.002]}, {"name": "巨大值", "values": [1e9, 2e9]}])
+    r, html = run_render(t)
+    check("A7 跨数量级混合序列", r.returncode == 0 and 'height="-' not in html, (r.stderr or "")[-120:])
+
+    t = copy.deepcopy(base_data)
+    add_chart(t, ["2024"], [{"name": "s%d" % i, "values": [i]} for i in range(20)])
+    r, html = run_render(t)
+    check("A7 20 序列不崩", r.returncode == 0, (r.stderr or "")[-120:])
+
+    t = copy.deepcopy(base_data)
+    add_chart(t, ['<img src=x onerror=PWNED(1)>', "2025"], [{"name": "n", "values": [1, 2]}])
+    r, html = run_render(t)
+    check("A7 categories 含 HTML 被转义", r.returncode == 0 and "<img src=x" not in html and "&lt;img" in html)
+
+    t = copy.deepcopy(base_data); t["meta"] = ["not", "a", "dict"]
+    r, _ = run_render(t)
+    check("A6 meta 类型置换干净拒绝", r.returncode != 0 and "校验失败" in (r.stderr or "") and "Traceback" not in (r.stderr or ""), (r.stderr or "")[-120:])
+
+    a6_swap = []
+    t0 = copy.deepcopy(base_data); t0["overview"]["basic_info"] = {"label": "x"}
+    a6_swap.append(("basic_info 对象置换", t0))
+    t0 = copy.deepcopy(base_data); t0["signals"]["key"] = "sig1"
+    a6_swap.append(("signals.key 字符串置换", t0))
+    t0 = copy.deepcopy(base_data); t0["signals"]["key"][0]["sections"] = {"label": "事实依据", "text_html": "x", "sources": ["E1"]}
+    a6_swap.append(("sections 对象置换", t0))
+    t0 = copy.deepcopy(base_data); t0["mechanisms"]["items"][0]["rows"] = {"th": "业务任务", "td_html": "x", "sources": ["E1"]}
+    a6_swap.append(("mech rows 对象置换", t0))
+    t0 = copy.deepcopy(base_data); t0["directions"]["items"][0]["points"] = {"label": "说明", "text_html": "x"}
+    a6_swap.append(("points 对象置换", t0))
+    t0 = copy.deepcopy(base_data); t0["overview"]["financial"]["blocks"][0] = "table"
+    a6_swap.append(("财务块标量置换", t0))
+    for name, t in a6_swap:
+        r, _ = run_render(t)
+        err = r.stderr or ""
+        ok = r.returncode != 0 and "校验失败" in err and "Traceback" not in err
+        check("A6 结构破坏干净拒绝：%s" % name, ok, err[-120:])
+
+    t = copy.deepcopy(base_data)
+    t["signals"]["key"][0]["sections"][0]["sources"] = t["signals"]["key"][0]["sections"][0]["sources"] + ["E01"]
+    r, _ = run_render(t)
+    check("A1 编号变形 E01≠E1 干净拒绝", r.returncode != 0 and "E01" in (r.stderr or ""), (r.stderr or "")[-120:])
+
+    t = copy.deepcopy(base_data)
+    t["sources"]["items"].append(dict(t["sources"]["items"][0]))
+    t["signals"]["dynamic"].append({"id": "dup-test", "text_html": "x", "sources": [t["sources"]["items"][-1]["id"]]})
+    r, _ = run_render(t)
+    check("A1 重复来源编号干净拒绝", r.returncode != 0 and "重复编号" in (r.stderr or ""), (r.stderr or "")[-120:])
+
+    t = copy.deepcopy(base_data)
+    t["signals"]["dynamic"] += [{"id": "d%d" % i, "text_html": "动态%d" % i, "sources": ["E1"]} for i in range(2000)]
+    import time
+    t_start = time.time()
+    r, _ = run_render(t)
+    check("A1 规模冒烟（2000 动态项，性能护栏 10s）", r.returncode == 0 and time.time() - t_start < 10, "耗时 %.1fs" % (time.time() - t_start))
+
     print("\n== 结构自检（完整渲染） ==")
     r, html = run_render(base_data)
     check("完整渲染成功", r.returncode == 0, (r.stderr or "")[-120:])

@@ -1,7 +1,7 @@
 # Enterprise Research Skill
 
 **Evidence-grounded company research → single-file interactive HTML reports.**
-**Current version: v2.0.6** · [Changelog](https://github.com/maleo0228/enterprise-research-skill/releases)
+**Current version: v2.0.7** · [Changelog](https://github.com/maleo0228/enterprise-research-skill/releases)
 v2.0 is a **complete rewrite** of v1.x (which produced Markdown + CSV + Excel; see [Releases](https://github.com/maleo0228/enterprise-research-skill/releases) for the archived v1.0.x line).
 
 ## What it does

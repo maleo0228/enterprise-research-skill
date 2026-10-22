@@ -164,6 +164,7 @@ def main():
     r, html = run_render(base_data)
     check("完整渲染成功", r.returncode == 0, (r.stderr or "")[-120:])
     if r.returncode == 0:
+        check("无遗留 {{ 令牌（D-82 回归：JS 内 {{SHORT}} 曾漏替）", "{{" not in html)
         check("五模块齐全", all(f'id="p{i}"' in html for i in range(1, 6)))
         check("含 [E#] 来源标记", 'class="src"' in html)
         check("侧边导航非空", html.count('class="sub"') >= 3)

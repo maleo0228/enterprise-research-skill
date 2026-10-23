@@ -1,7 +1,7 @@
 # Enterprise Research Skill
 
 **Evidence-grounded company research → single-file interactive HTML reports.**
-**Current version: v2.0.12** · [Changelog](https://github.com/maleo0228/enterprise-research-skill/releases)
+**Current version: v2.0.13** · [Changelog](https://github.com/maleo0228/enterprise-research-skill/releases)
 v2.0 is a **complete rewrite** of v1.x (which produced Markdown + CSV + Excel; see [Releases](https://github.com/maleo0228/enterprise-research-skill/releases) for the archived v1.0.x line).
 
 ## What it does
@@ -54,7 +54,7 @@ python renderer/check_urls.py report.json   # every source URL reachable; manual
 
 Then open the HTML once in a browser (navigation, search, MD export, charts) and confirm no leftover `{{...}}` tokens.
 
-**For maintainers** (renderer or skeleton changes only): `python renderer/test_renderer.py` runs the 95-item attack-surface & regression suite (plus `python renderer/fuzz_renderer.py` for seeded fuzzing) — all green before any release; `python renderer/compare.py <rendered.html> <baseline.html>` checks equivalence against a frozen baseline sample.
+**For maintainers** (renderer or skeleton changes only): `python renderer/test_renderer.py` runs the 100-item attack-surface & regression suite (plus `python renderer/fuzz_renderer.py` for seeded fuzzing) — all green before any release; `python renderer/compare.py <rendered.html> <baseline.html>` checks equivalence against a frozen baseline sample.
 
 ## Repository layout
 

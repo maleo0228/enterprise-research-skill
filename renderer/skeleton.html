@@ -246,21 +246,28 @@
 
 
   /* ===== HTML→Markdown 导出 ===== */
-  function inline(el){
+  /* 红队 M4 A9：畸形 DOM 桩纵深防御——缺 childNodes/children/querySelectorAll、
+     循环引用（深度护栏 40）、SVGAnimatedString 类 className 均不抛裸错；
+     真实 DOM 路径与加固前输出逐字一致（stub 测试锁定） */
+  function inline(el, depth){
+    if(!el) return "";
+    depth=depth||0;
+    if(depth>40) return ""; /* 循环引用护栏 */
     var out="";
-    el.childNodes.forEach(function(n){
-      if(n.nodeType===3){ out+=n.nodeValue; return; }
+    [].slice.call(el.childNodes||[]).forEach(function(n){
+      if(n.nodeType===3){ out+=(n.nodeValue||""); return; }
       var t=(n.tagName||"").toLowerCase();
-      if(t==="b"||t==="strong") out+="**"+inline(n)+"**";
-      else if(t==="a") out+="["+inline(n)+"]("+n.getAttribute("href")+")";
+      if(t==="b"||t==="strong") out+="**"+inline(n, depth+1)+"**";
+      else if(t==="a") out+="["+inline(n, depth+1)+"]("+(n.getAttribute?n.getAttribute("href"):"")+")";
       else if(t==="br") out+=" ";
-      else out+=inline(n);
+      else out+=inline(n, depth+1);
     });
     return out.replace(/\s+/g," ").trim();
   }
   function tableToMd(tbl){
-    var rows=[].slice.call(tbl.querySelectorAll("tr")).map(function(tr){
-      return [].slice.call(tr.children).map(function(c){ return inline(c).replace(/\|/g,"\\|"); });
+    var q=(tbl&&tbl.querySelectorAll)?tbl.querySelectorAll("tr"):[];
+    var rows=[].slice.call(q).map(function(tr){
+      return [].slice.call((tr&&tr.children)||[]).map(function(c){ return inline(c).replace(/\|/g,"\\|"); });
     });
     if(!rows.length) return "";
     var out="| "+rows[0].join(" | ")+" |\n| "+"--- | ".repeat(rows[0].length)+"\n";
@@ -269,16 +276,18 @@
   }
   function listToMd(ul){
     var out="";
-    [].slice.call(ul.children).forEach(function(li){ out+="- "+inline(li)+"\n"; });
+    [].slice.call((ul&&ul.children)||[]).forEach(function(li){ out+="- "+inline(li)+"\n"; });
     return out+"\n";
   }
   function timelineToMd(tl){
     var out="";
-    [].slice.call(tl.querySelectorAll(".tl-node")).forEach(function(n){
+    var nodes=(tl&&tl.querySelectorAll)?[].slice.call(tl.querySelectorAll(".tl-node")):[];
+    nodes.forEach(function(n){
+      if(!n.querySelector) return;
       var card=n.querySelector(".tl-card"); if(!card) return;
       var b=card.querySelector("b"), who=card.querySelector(".who");
       var sups=[].slice.call(card.querySelectorAll("sup")).map(inline).join("");
-      var date=""; card.childNodes.forEach(function(c){ if(c.nodeType===3) date+=c.nodeValue; });
+      var date=""; [].slice.call(card.childNodes||[]).forEach(function(c){ if(c.nodeType===3) date+=(c.nodeValue||""); });
       date=date.trim();
       out+="- **"+inline(b)+"**（"+date+(who?"，"+inline(who):"")+"）"+sups+"\n";
     });
@@ -286,13 +295,14 @@
   }
   function cardToMd(card, isDir){
     var out="";
+    if(!card||!card.querySelector) return out;
     if(isDir){
       var tag=card.querySelector(".tag"), h=card.querySelector("h4");
       out+="#### 【"+inline(tag)+"】"+inline(h)+"\n\n";
     }else{
       var h4=card.querySelector("h4"); if(h4) out+="### "+inline(h4)+"\n\n";
     }
-    [].slice.call(card.children).forEach(function(ch){
+    [].slice.call(card.children||[]).forEach(function(ch){
       if(ch.nodeType!==1) return;
       var cls=(typeof ch.className==="string"?ch.className:(ch.className&&ch.className.baseVal)||""), t=(ch.tagName||"").toLowerCase();
       if(t==="h4") return;
@@ -310,7 +320,7 @@
   }
   function sectionToMd(sec){
     var out="";
-    [].slice.call(sec.children).forEach(function(ch){
+    [].slice.call((sec&&sec.children)||[]).forEach(function(ch){
       if(ch.nodeType!==1) return;
       if((typeof ch.className==="string"?ch.className:(ch.className&&ch.className.baseVal)||"").indexOf("export-row")>=0) return;
       var cls=(typeof ch.className==="string"?ch.className:(ch.className&&ch.className.baseVal)||""), t=(ch.tagName||"").toLowerCase();
@@ -342,16 +352,20 @@
   }
   document.querySelectorAll(".export-btn[data-sec]").forEach(function(btn){
     btn.addEventListener("click", function(){
-      var sec=document.getElementById(btn.getAttribute("data-sec"));
-      download("企业研究_{{SHORT}}_"+btn.getAttribute("data-name")+".md", sectionToMd(sec));
+      try{
+        var sec=document.getElementById(btn.getAttribute("data-sec"));
+        download("企业研究_{{SHORT}}_"+btn.getAttribute("data-name")+".md", sectionToMd(sec));
+      }catch(e){ console.error("导出失败：", e); }
     });
   });
   document.getElementById("export-all").addEventListener("click", function(){
-    var out="# 企业研究报告：{{COMPANY_NAME}}\n\n> 锚点日期 {{ANCHOR_DATE}}；本报告基于公开信息整理。\n\n";
-    ["p1","p2","p3","p4","p5"].forEach(function(id){
-      out+=sectionToMd(document.getElementById(id))+"\n---\n\n";
-    });
-    download("企业研究_{{SHORT}}_全文.md", out);
+    try{
+      var out="# 企业研究报告：{{COMPANY_NAME}}\n\n> 锚点日期 {{ANCHOR_DATE}}；本报告基于公开信息整理。\n\n";
+      ["p1","p2","p3","p4","p5"].forEach(function(id){
+        out+=sectionToMd(document.getElementById(id))+"\n---\n\n";
+      });
+      download("企业研究_{{SHORT}}_全文.md", out);
+    }catch(e){ console.error("导出失败：", e); }
   });
 
   /* 滚动高亮当前导航 */

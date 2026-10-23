@@ -1,8 +1,20 @@
 # -*- coding: utf-8 -*-
 """
-G5 渲染器 v0.10（无第三方依赖，Python 3.8+ 标准库）
+G5 渲染器 v0.11（无第三方依赖，Python 3.8+ 标准库）
 用法: python render.py <report.json> <skeleton.html> <输出.html>
 规则依据：《企业研究Skill_G4数据契约与模板规格 v0.1（含增补）》§四/§五
+v0.11 变更（2026-10-23，第四轮外部审计 G 系列，验证为真修复，D-95）：
+- G8：business.heading 置换为真值非对象时渲染期 AttributeError 裸崩（审计方
+  fuzz 种子 777/31337 共 4 用例同源此路径）——校验期拦截：heading 须为对象、
+  id/title 必填（渲染期直接索引）、nav 可选须字符串；套件 3 例类型置换回归
+- G3：precise 锚点（JS 串/徽章）对骨架文案隐式耦合——锚点失配时此前静默退化
+  为 HTML 语境替换，JS 串 esc_js 失效（短名含引号可未转义直通）。改 fail-fast：
+  锚点缺失＝骨架/渲染器版本 skew，干净报错不出半成品（冻结产物须同源交付）
+- G1：sentinel 保留序列（_SENT 提升为模块级常量）与数据值域隔离——meta 三字段
+  含保留序列干净拒绝，防徽章污染/精确替换错位（自伤型输入纵深防御）
+- 附带修复 _dbg_md_test.js：argv 差一（读脚本自身不读骨架）＋提取正则未随
+  inline(el, depth) 签名更新（第三轮 F10 判定的遗留低危项）
+- 对 v0.10 及以前全部合法输入输出逐字节兼容（三样张等价比对回归锁定，套件 95→99 项）
 v0.10 变更（2026-10-23，红队 M4 收尾，D-94）：
 - 令牌单次扫描替换（红队 A8）：原逐次 str.replace 链中，先插入产物里的 meta 值
   会被后续 replace 二次扫描——company_name 含 {{SHORT}}、短名含 {{BODY}} 等
@@ -88,6 +100,10 @@ def esc_js(t):  # JS 字符串字面量转义（红队 A4：下载文件名/MD �
 
 def esc_href(t):  # 与基线一致：& 不转义（浏览器兼容，基线即为 raw &）
     return str(t).replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
+
+# 令牌替换 sentinel（v0.11 提升为模块级常量）：validate 与 main 共用，
+# 数据侧拒绝含该保留序列的输入（第四轮审计 G1），替换侧检测骨架锚点失配（G3）
+_SENT = "\x00G5TOK%d\x00"
 
 def sups(sources):
     # 红队 M3 fuzz 纵深防御：validate 已保证合法输入为字符串数组；
@@ -184,6 +200,15 @@ def validate(d):
         need(iss(bu.get("strengths_title")), "overview.business.strengths_title 缺失或非字符串")
         for k in ("outline_items", "chain", "strength_items", "moat"):
             need(isl(bu.get(k)), f"overview.business.{k} 缺失或非数组")
+        # 第四轮审计 G8：heading 置换为真值非对象时渲染期 bh.get AttributeError 裸崩
+        #（fuzz 种子 777/31337 共 4 用例同源此路径）；存在时须为对象，
+        # id/title 渲染期直接索引故必填，nav 可选但须字符串
+        if "heading" in bu and bu.get("heading") is not None and not isd(bu["heading"]):
+            errs.append(f"overview.business.heading 须为对象：{bu['heading']!r}")
+        if isd(bu.get("heading")):
+            req_item(bu["heading"], ("id", "title"), "overview.business.heading")
+            if "nav" in bu["heading"] and not iss(bu["heading"]["nav"]):
+                errs.append("overview.business.heading.nav 非字符串")
     if isd(fi):
         need(iss(fi.get("lead_note")), "overview.financial.lead_note 缺失或非字符串")
         need(isl(fi.get("blocks")), "overview.financial.blocks 缺失或非数组")
@@ -339,6 +364,9 @@ def validate(d):
     for k in ("company_name", "company_short", "anchor_date"):
         if not (isinstance(meta.get(k), str) and meta[k].strip()):
             errs.append(f"meta.{k} 缺失或为空")
+        # 第四轮审计 G1：数据含 sentinel 保留序列会污染徽章/精确替换（自伤型，正常研究不会出现）
+        elif _SENT[:6] in meta[k]:
+            errs.append(f"meta.{k} 含渲染器保留序列（非法控制字符）")
     BLOCK_TYPES = {"table", "chart_bar", "timeline", "text", "missing"}
     for i, b in enumerate(d["overview"]["financial"]["blocks"]):
         t = b.get("type")
@@ -713,10 +741,16 @@ def main():
     precise = [("企业研究_{{SHORT}}_", "企业研究_" + esc_js(short) + "_"),
                ("企业研究报告：{{COMPANY_NAME}}", "企业研究报告：" + esc_js(meta["company_name"])),
                ("锚点日期 {{ANCHOR_DATE}}；", "锚点日期 " + esc_js(meta["anchor_date"]) + "；")]
-    SENT = "\x00G5TOK%d\x00"
-    skel = skel.replace('<div class="logo-badge">{{SHORT}}</div>', SENT % 0)
+    skel = skel.replace('<div class="logo-badge">{{SHORT}}</div>', _SENT % 0)
     for i, (tok, _) in enumerate(precise, start=1):
-        skel = skel.replace(tok, SENT % i)
+        skel = skel.replace(tok, _SENT % i)
+    # 第四轮审计 G3：precise 锚点对骨架文案隐式耦合——锚点失配时此前静默退化为
+    # HTML 语境替换，JS 串语境 esc 失效（短名含引号可未转义直通）。冻结产物原则：
+    # 骨架与渲染器必须同源交付，锚点缺失＝版本 skew，干净报错不出半成品。
+    miss_anchor = [_SENT % i for i in range(4) if (_SENT % i) not in skel]
+    if miss_anchor:
+        raise SystemExit("骨架与渲染器不匹配：精确语境锚点缺失（徽章 div/JS 串令牌），"
+                         "skeleton.html 为冻结产物，改版须与渲染器同源改版并同步交付")
     mapping = {"COMPANY_NAME": esc(meta["company_name"]),
                "SAMPLE_VERSION": esc(meta.get("sample_version", "")),
                "SHORT": esc(short),
@@ -726,9 +760,9 @@ def main():
                "BODY": body}
     out = re.sub(r"\{\{(COMPANY_NAME|SAMPLE_VERSION|SHORT|ANCHOR_DATE|SEARCH_HINT|SIDENAV|BODY)\}\}",
                  lambda mo: mapping[mo.group(1)], skel)
-    out = out.replace(SENT % 0, badge)
+    out = out.replace(_SENT % 0, badge)
     for i, (_, val) in enumerate(precise, start=1):
-        out = out.replace(SENT % i, val)
+        out = out.replace(_SENT % i, val)
     pathlib.Path(out_p).write_text(out, encoding="utf-8")
     print(f"渲染完成：{out_p}（{len(out.encode('utf-8'))} 字节）")
 

@@ -506,6 +506,40 @@ def main():
     r, html = run_render(t)
     check("A8 短名撞 {{BODY}} 不串入正文/文件名", r.returncode == 0 and "企业研究_{{BODY}}_" in html, (r.stderr or "")[-120:])
 
+    # ---- 第四轮外部审计新发现（G 系列，2026-10-23，验证为真，同源交付）----
+    g_cases = []
+    t0 = copy.deepcopy(base_data); t0["overview"]["business"]["heading"] = 3.14
+    g_cases.append(("heading 数值置换", t0))
+    t0 = copy.deepcopy(base_data); t0["overview"]["business"]["heading"] = "不是对象"
+    g_cases.append(("heading 字符串置换", t0))
+    t0 = copy.deepcopy(base_data); t0["overview"]["business"]["heading"] = ["a"]
+    g_cases.append(("heading 数组置换", t0))
+    for name, t in g_cases:
+        r, _ = run_render(t)
+        err = r.stderr or ""
+        ok = r.returncode != 0 and "校验失败" in err and "Traceback" not in err
+        check("G8 heading 类型破坏干净拒绝：%s" % name, ok, err[-160:])
+
+    t = copy.deepcopy(base_data); t["meta"]["company_short"] = "词\x00G5TOK0\x00元"
+    r, _ = run_render(t)
+    check("G1 数据含 sentinel 字面量干净拒绝（防徽章污染）",
+          r.returncode != 0 and "校验失败" in (r.stderr or "") and "Traceback" not in (r.stderr or ""), (r.stderr or "")[-120:])
+
+    # G3：骨架文案改版致 precise 锚点失配——必须干净报错，不得静默退化为 HTML 语境替换
+    mod_skel = SKEL.read_text(encoding="utf-8").replace("企业研究_{{SHORT}}_", "改版文案_{{SHORT}}_")
+    with tempfile.TemporaryDirectory() as td:
+        sp = pathlib.Path(td) / "skel.html"
+        jp = pathlib.Path(td) / "in.json"
+        hp = pathlib.Path(td) / "out.html"
+        sp.write_text(mod_skel, encoding="utf-8")
+        t = copy.deepcopy(base_data); t["meta"]["company_short"] = 'x";PWNED(1);//'
+        jp.write_text(json.dumps(t, ensure_ascii=False), encoding="utf-8")
+        r = subprocess.run([sys.executable, str(RENDER), str(jp), str(sp), str(hp)],
+                           capture_output=True, text=True, encoding="utf-8", errors="replace")
+        err = r.stderr or ""
+        check("G3 骨架锚点缺失 fail-fast（skew 干净报错，不出半成品）",
+              r.returncode != 0 and "骨架" in err and "Traceback" not in err and not hp.exists(), err[-160:])
+
     print("\n== 结构自检（完整渲染） ==")
     r, html = run_render(base_data)
     check("完整渲染成功", r.returncode == 0, (r.stderr or "")[-120:])

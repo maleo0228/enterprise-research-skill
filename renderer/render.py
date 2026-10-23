@@ -1,8 +1,32 @@
 # -*- coding: utf-8 -*-
 """
-G5 渲染器 v0.8（无第三方依赖，Python 3.8+ 标准库）
+G5 渲染器 v0.9（无第三方依赖，Python 3.8+ 标准库）
 用法: python render.py <report.json> <skeleton.html> <输出.html>
 规则依据：《企业研究Skill_G4数据契约与模板规格 v0.1（含增补）》§四/§五
+v0.9 变更（2026-10-22，红队 M3 fuzz_renderer.py 驱动，8000 用例 4 种子，D-93）：
+- 容器字段置换全面兜底：validate 逐项循环统一走 lst()（仅确认为数组才迭代），
+  数值/布尔置换的容器字段不再裸崩 TypeError（fuzz 发现：dynamic/key/items/outline_items）
+- 财务块 type 非字符串显式报错（原 unhashable 裸崩）；业务校验段同款加固
+- 引用源编号非字符串（嵌套数组/对象置换）干净拒绝（原 re.match 裸崩）；
+  引用源字段（sources/caption_sources 等）被置换成非数组/对象时显式报错（原静默漏检），
+  根节点 sources 节容器除外（对象合法，按路径豁免）
+- 来源表/导航 id 非字符串显式报错（原 set() 裸崩）；
+  导航 id 字符集收窄为 ^[A-Za-z0-9_-]+$（属性位/锚点防脏污）
+- directions.state 枚举校验（渲染期 STATE_LABEL KeyError 裸崩；数组/对象置换使
+  校验 in 判重自身 unhashable，先判 str）
+- sources 记录全字段字符串校验（url re.match / url_display 子串判断裸崩）；
+  url2 与 url2_display 成对校验（KeyError 裸崩）；legend 数组校验
+- 财务块结构校验补全：caption 非字符串（re.match 裸崩）、table 行须非空数组（r[0]
+  下标裸崩）、chart_bar series/categories 须数组且序列元素须对象（迭代/下标裸崩）、
+  series name/unit 字符串与 color 枚举（拼接裸崩 / COLORS KeyError，color 先判 str）、
+  timeline nodes 与 text blocks 数组校验
+- note_sources 宿主一致性（P3 产物层引用闭环）：table 须有 note、timeline 须有
+  timeline_note、chart_bar/text/missing 不支持 note_sources——校验计为已引用而渲染
+  不输出的字段一律拒绝（fuzz 发现：删 note 后 E19/E20 产物层断链）
+- basic_info label 非字符串显式报错（set 判重 unhashable）
+- sups()/kn_field() 纵深防御：非数组 sources 静默返回空（进程内直调 render 函数时
+  绕过 main 校验的最后一道兜底）
+- 对 v0.8 及以前全部合法输入输出逐字节兼容（双样张等价比对回归锁定）
 v0.8 变更（2026-10-22，红队 M2 修复，D-91）：
 - 结构容器类型校验（need_list：sections/rows/points 等容器字段非数组显式报错，红队 A6）
 - meta 根类型校验（非对象干净拒绝）
@@ -54,7 +78,11 @@ def esc_href(t):  # 与基线一致：& 不转义（浏览器兼容，基线即�
     return str(t).replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
 
 def sups(sources):
-    return "".join(f'<sup class="src" data-e="{e}">[{e}]</sup>' for e in (sources or []))
+    # 红队 M3 fuzz 纵深防御：validate 已保证合法输入为字符串数组；
+    # 进程内直调 render 函数（绕过 main 校验）时不让非数组裸崩
+    if not isinstance(sources, list):
+        return ""
+    return "".join(f'<sup class="src" data-e="{e}">[{e}]</sup>' for e in sources)
 
 _TAG_RE = re.compile(r'<(/?)(b|br|a)(?:\s+href\s*=\s*(?:"([^"]*)"|\'([^\']*)\'))?\s*(/?)>', re.I)
 
@@ -79,7 +107,7 @@ def rich(t):  # _html 字段白名单：仅 <b> <br> <a href="http(s)://...">（
 
 def kn_field(v):  # 机制档位：str 或 {text, sources}
     if isinstance(v, dict):
-        return esc(v["text"]) + sups(v.get("sources"))
+        return esc(v.get("text", "")) + sups(v.get("sources"))
     return esc(v)
 
 STATE_LABEL = {"s1": "优先跟进", "s2": "值得研究", "s3": "持续观察", "s4": "暂缓"}
@@ -116,6 +144,11 @@ def validate(d):
             errs.append(f"{loc}.{key} 须为数组")
             return False
         return True
+
+    def lst(x):
+        # 仅当确认为数组时才迭代（红队 M3 fuzz 发现：容器字段被置换成数值/布尔时
+        # "x.get(k) or []" 仍会对真值非数组迭代，裸崩 TypeError）
+        return x if isinstance(x, list) else []
 
     need(isd(d), "根节点须为 JSON 对象")
     if errs:
@@ -163,36 +196,54 @@ def validate(d):
             req_item(it, ("label", "value_html", "sources"), f"basic_info[{i}]")
     if isd(bu):
         for k in ("outline_items", "strength_items"):
-            for i, it in enumerate(bu.get(k) or []):
+            for i, it in enumerate(lst(bu.get(k))):
                 req_item(it, ("text_html", "sources"), f"business.{k}[{i}]")
-        for i, it in enumerate(bu.get("chain") or []):
+        for i, it in enumerate(lst(bu.get("chain"))):
             req_item(it, ("label", "label_bold", "text_html", "sources"), f"business.chain[{i}]")
-        for i, it in enumerate(bu.get("moat") or []):
+        for i, it in enumerate(lst(bu.get("moat"))):
             req_item(it, ("label", "text_html", "sources"), f"business.moat[{i}]")
     if isd(sg):
-        for i, s in enumerate(sg.get("key") or []):
+        for i, s in enumerate(lst(sg.get("key"))):
             req_item(s, ("id", "nav", "title", "sections"), f"signals.key[{i}]")
             if isd(s) and need_list(s, "sections", f"signals.key[{i}]"):
-                for j, sec in enumerate(s.get("sections") or []):
+                for j, sec in enumerate(lst(s.get("sections"))):
                     req_item(sec, ("label", "text_html", "sources"), f"signals.key[{i}].sections[{j}]")
-        for i, it in enumerate(sg.get("dynamic") or []):
+        for i, it in enumerate(lst(sg.get("dynamic"))):
             req_item(it, ("id", "text_html", "sources"), f"signals.dynamic[{i}]")
     if isd(mc):
-        for i, m in enumerate(mc.get("items") or []):
+        for i, m in enumerate(lst(mc.get("items"))):
             req_item(m, ("id", "nav", "title", "rows", "confirmed", "unconfirmed", "evidence"), f"mechanisms.items[{i}]")
             if isd(m) and need_list(m, "rows", f"mechanisms.items[{i}]"):
-                for j, r in enumerate(m.get("rows") or []):
+                for j, r in enumerate(lst(m.get("rows"))):
                     req_item(r, ("th", "td_html", "sources"), f"mechanisms.items[{i}].rows[{j}]")
     if isd(dr):
-        for i, it in enumerate(dr.get("items") or []):
+        for i, it in enumerate(lst(dr.get("items"))):
             req_item(it, ("id", "state", "title", "basis", "points"), f"directions.items[{i}]")
+            # 红队 M3 fuzz：state 非法值会在渲染期 KeyError 裸崩（STATE_LABEL 映射），校验期拦截；
+            # 注意必须先判 str——数组/对象置换会使 "in" 集合判重自身 unhashable 裸崩
+            st = it.get("state") if isd(it) else None
+            if isd(it) and (not isinstance(st, str) or st not in STATE_LABEL):
+                errs.append(f"directions.items[{i}].state 非法：{st!r}（合法：{'/'.join(STATE_LABEL)}）")
             if isd(it) and need_list(it, "points", f"directions.items[{i}]"):
-                for j, p in enumerate(it.get("points") or []):
+                for j, p in enumerate(lst(it.get("points"))):
                     req_item(p, ("label", "text_html"), f"directions.items[{i}].points[{j}]")
-    if isd(so) and isl(so.get("items")):
-        for i, it in enumerate(so.get("items") or []):
-            req_item(it, ("id", "entity", "time", "caliber", "source", "url", "url_display", "fetched", "identity"),
-                     f"sources.items[{i}]")
+    if isd(so):
+        # 红队 M3 fuzz：legend 被置换成标量时渲染期 TypeError 裸崩
+        if "legend" in so and not isl(so["legend"]):
+            errs.append("sources.legend 须为数组")
+        if isl(so.get("items")):
+            # 红队 M3 fuzz：渲染期对 url 做 re.match、对 url_display 做 "…" in 判断，
+            # 字段被置换成数值/布尔/对象时裸崩——校验期要求来源记录全字段为字符串
+            for i, it in enumerate(so.get("items") or []):
+                req_item(it, ("id", "entity", "time", "caliber", "source", "url", "url_display", "fetched", "identity"),
+                         f"sources.items[{i}]")
+                if isd(it):
+                    for k in ("id", "entity", "time", "caliber", "source", "url", "url_display", "fetched", "identity"):
+                        if k in it and not iss(it[k]):
+                            errs.append(f"sources.items[{i}].{k} 非字符串")
+                # 红队 M3 fuzz：url2 存在而 url2_display 缺失时渲染期 KeyError 裸崩
+                if isd(it) and it.get("url2") and "url2_display" not in it:
+                    errs.append(f"sources.items[{i}] 缺字段 url2_display")
     if isd(fi) and isl(fi.get("blocks")):
         REQ = {"table": ("caption", "header", "rows"),
                "chart_bar": ("caption", "categories", "series"),
@@ -204,19 +255,22 @@ def validate(d):
                 errs.append(f"财务块#{i} 缺字段 type")
                 continue
             bt = b["type"]
+            if not iss(bt):
+                errs.append(f"财务块#{i} type 非字符串")
+                continue
             if bt not in REQ:
                 continue  # 未知类型由业务校验段报"未知块类型"
             for k in REQ[bt]:
                 if k not in b:
                     errs.append(f"财务块#{i}({bt}) 缺字段 {k}")
             if bt == "chart_bar":
-                for j, sr in enumerate(b.get("series") or []):
+                for j, sr in enumerate(lst(b.get("series"))):
                     req_item(sr, ("name", "values"), f"财务块#{i}.series[{j}]")
             if bt == "timeline":
-                for j, nd in enumerate(b.get("nodes") or []):
+                for j, nd in enumerate(lst(b.get("nodes"))):
                     req_item(nd, ("value", "date", "who", "sources"), f"财务块#{i}.nodes[{j}]")
             if bt == "text":
-                for j, blk in enumerate(b.get("blocks") or []):
+                for j, blk in enumerate(lst(b.get("blocks"))):
                     req_item(blk, ("text_html", "sources"), f"财务块#{i}.blocks[{j}]")
     if errs:
         raise SystemExit("校验失败：\n" + "\n".join(" - " + e for e in errs))
@@ -226,9 +280,17 @@ def validate(d):
     def walk(o, loc):
         if isinstance(o, dict):
             for k, v in o.items():
-                if k in SRC_KEYS and isinstance(v, list):
-                    for e in v:
-                        refs.append((loc + "." + k, e))
+                if k in SRC_KEYS:
+                    # 红队 M3 fuzz：引用源字段被置换成对象/标量时须显式报错——
+                    # 此前 else 分支递归会把引用静默漏检（对象）或让 sups() 裸崩（标量）。
+                    # 唯一合法的"对象形 sources"是根节点的 sources 节容器（$.sources，含 items 等）。
+                    if isinstance(v, list):
+                        for e in v:
+                            refs.append((loc + "." + k, e))
+                    elif loc == "$" and k == "sources":
+                        walk(v, loc + "." + k)
+                    else:
+                        errs.append(f"{loc}.{k} 须为数组")
                 else:
                     walk(v, loc + "." + k)
         elif isinstance(o, list):
@@ -236,20 +298,30 @@ def validate(d):
                 walk(v, f"{loc}[{i}]")
     walk(d, "$")
     declared = [it["id"] for it in d["sources"]["items"]]
+    if not all(isinstance(x, str) for x in declared):
+        errs.append("来源表存在非字符串编号")
+        declared = [x for x in declared if isinstance(x, str)]
     dset = set(declared)
     if len(declared) != len(dset):
         errs.append("来源表存在重复编号")
     for loc, e in refs:
-        if not re.match(r"^E\d+$", e) or e not in dset:
-            errs.append(f"引用未声明来源 {e} @ {loc}")
+        # 红队 M3 fuzz：引用元素非字符串（嵌套数组/对象置换）须干净拒绝，不裸崩 re.match
+        if not isinstance(e, str) or not re.match(r"^E\d+$", e) or e not in dset:
+            errs.append(f"引用未声明来源 {e!r} @ {loc}")
     for e in declared:
-        if e not in {x for _, x in refs}:
+        if e not in {x for _, x in refs if isinstance(x, str)}:
             errs.append(f"来源 {e} 从未被引用")
     navs = [s["id"] for s in d["signals"]["key"]] + [m["id"] for m in d["mechanisms"]["items"]]
     bh = d["overview"]["business"].get("heading")
     if bh and bh.get("id"):
         navs.append(bh["id"])
-    if len(navs) != len(set(navs)):
+    # 红队 M3 fuzz：导航 id 非字符串时 set() 裸崩、含空格/引号时属性位与锚点脏污，
+    # 先显式报错；合法 id 仅字母/数字/连字符/下划线（基线实例 s1-biz/sig-dyn/mech1 均满足）
+    if not all(isinstance(x, str) for x in navs):
+        errs.append("导航 id 存在非字符串值")
+    elif not all(re.match(r"^[A-Za-z0-9_-]+$", x) for x in navs):
+        errs.append("导航 id 含非法字符（仅字母/数字/-/_.）")
+    elif len(navs) != len(set(navs)):
         errs.append("导航 id 重复")
     meta = d.get("meta") or {}
     for k in ("company_name", "company_short", "anchor_date"):
@@ -258,20 +330,68 @@ def validate(d):
     BLOCK_TYPES = {"table", "chart_bar", "timeline", "text", "missing"}
     for i, b in enumerate(d["overview"]["financial"]["blocks"]):
         t = b.get("type")
-        if t not in BLOCK_TYPES:
+        if not isinstance(t, str) or t not in BLOCK_TYPES:
             errs.append(f"财务块#{i} 未知块类型：{t!r}（合法：{'/'.join(sorted(BLOCK_TYPES))}）")
             continue
         if t in ("table", "chart_bar", "timeline"):
             cap = b.get("caption", "")
             pat = r"^表\d+｜" if t == "table" else r"^图\d+｜"
-            if not re.match(pat, cap):
+            # 红队 M3 fuzz：caption 置换成布尔/数值时 re.match 裸崩
+            if not isinstance(cap, str):
+                errs.append(f"财务块#{i}({t}) 命名行非字符串：{cap!r}")
+            elif not re.match(pat, cap):
                 errs.append(f"财务块#{i}({t}) 命名行不合规：{cap!r}")
+        # 红队 M3 fuzz：table.rows 元素置换成标量时渲染期 r[0] 下标裸崩；
+        # chart_bar series.name/unit 非字符串时拼接裸崩、color 非法时 COLORS 映射 KeyError；
+        # note_sources 存在但其宿主字段（note/timeline_note）缺失或该类型不渲染它时，
+        # 校验计为已引用而渲染不输出，引用闭环在产物层破坏（P3）
+        if t == "table":
+            if not isl(b.get("header")):
+                errs.append(f"财务块#{i}(table) header 须为数组")
+            if not isl(b.get("rows")):
+                errs.append(f"财务块#{i}(table) rows 须为数组")
+            else:
+                for j, row in enumerate(b["rows"]):
+                    if not isl(row):
+                        errs.append(f"财务块#{i}(table) 行#{j} 须为数组")
+                    elif not row:
+                        errs.append(f"财务块#{i}(table) 行#{j} 为空数组（渲染期 r[0] 下标裸崩）")
+            if "note_sources" in b and not b.get("note"):
+                errs.append(f"财务块#{i}(table) 有 note_sources 但缺 note（引用不会被渲染）")
+        if t == "chart_bar":
+            if "note_sources" in b:
+                errs.append(f"财务块#{i}(chart_bar) 不支持 note_sources（引用不会被渲染）")
+            # 红队 M3 fuzz：series/categories 被置换成对象时渲染期迭代裸崩；元素非对象时 s["values"] 下标裸崩
+            if not isl(b.get("series")):
+                errs.append(f"财务块#{i}(chart_bar) series 须为数组")
+            if not isl(b.get("categories")):
+                errs.append(f"财务块#{i}(chart_bar) categories 须为数组")
+            for j, sr in enumerate(lst(b.get("series"))):
+                if not isd(sr):
+                    errs.append(f"财务块#{i} 序列#{j} 须为对象")
+                    continue
+                if not iss(sr.get("name")):
+                    errs.append(f"财务块#{i} 序列#{j} name 非字符串")
+                if "unit" in sr and not iss(sr["unit"]):
+                    errs.append(f"财务块#{i} 序列#{j} unit 非字符串")
+                # 先判 str——数组/对象置换会使 "in" 集合判重自身 unhashable 裸崩
+                if "color" in sr and (not iss(sr["color"]) or sr["color"] not in COLORS):
+                    errs.append(f"财务块#{i} 序列#{j} color 非法：{sr['color']!r}")
+        if t == "timeline":
+            if not isl(b.get("nodes")):
+                errs.append(f"财务块#{i}(timeline) nodes 须为数组")
+            if "note_sources" in b and not b.get("timeline_note"):
+                errs.append(f"财务块#{i}(timeline) 有 note_sources 但缺 timeline_note（引用不会被渲染）")
+        if t == "text" and not isl(b.get("blocks")):
+            errs.append(f"财务块#{i}(text) blocks 须为数组")
+        if t in ("text", "missing") and "note_sources" in b:
+            errs.append(f"财务块#{i}({t}) 不支持 note_sources（引用不会被渲染）")
         if t == "chart_bar":
             cats = b.get("categories")
             if not isinstance(cats, list) or not cats:
                 errs.append(f"财务块#{i}(chart_bar) categories 缺失或为空")
                 cats = []
-            for j, sr in enumerate(b.get("series") or []):
+            for j, sr in enumerate(lst(b.get("series"))):
                 vals = sr.get("values") if isinstance(sr, dict) else None
                 if not isinstance(vals, list) or not all(isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v) for v in vals):
                     errs.append(f"财务块#{i} 序列#{j} values 非有限数值数组")
@@ -291,6 +411,10 @@ def validate(d):
     bi = d["overview"]["basic_info"]
     exp = ["公司全称", "官网", "成立时间", "注册地／经营地", "所有制／资本状态", "高管背景", "员工规模", "组织结构"]
     labels = [x["label"] for x in bi]
+    # 红队 M3 fuzz：label 被置换成数组/对象时 set() 裸崩，先显式报错
+    if not all(isinstance(x, str) for x in labels):
+        errs.append("basic_info 存在非字符串 label")
+        labels = [x for x in labels if isinstance(x, str)]
     if labels[:len(exp)] != exp:
         errs.append("basic_info 前 8 项核心清单不合规（须按序）")
     if len(set(labels)) != len(labels):

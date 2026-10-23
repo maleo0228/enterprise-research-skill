@@ -1,8 +1,20 @@
 # -*- coding: utf-8 -*-
 """
-G5 渲染器 v0.9（无第三方依赖，Python 3.8+ 标准库）
+G5 渲染器 v0.10（无第三方依赖，Python 3.8+ 标准库）
 用法: python render.py <report.json> <skeleton.html> <输出.html>
 规则依据：《企业研究Skill_G4数据契约与模板规格 v0.1（含增补）》§四/§五
+v0.10 变更（2026-10-23，红队 M4 收尾，D-94）：
+- 令牌单次扫描替换（红队 A8）：原逐次 str.replace 链中，先插入产物里的 meta 值
+  会被后续 replace 二次扫描——company_name 含 {{SHORT}}、短名含 {{BODY}} 等
+  "数据撞令牌"会被交叉替换、数据遭篡改。改为 re.sub 单次扫描＋sentinel 保护
+  精确语境目标（JS 串/徽章），插入值一律不参与扫描，数据令牌字面量原样留产物；
+  基线数据不含令牌，输出与 v0.9 逐字节一致（三样张等价比对锁定，套件 84→95 项）
+- 骨架导出 JS 畸形 DOM 桩纵深防御（红队 A9，配套 node stub 测试）：inline 深度
+  护栏 40（循环引用）、childNodes/children/querySelectorAll 缺省兜底、
+  SVGAnimatedString 类 className、导出按钮 try/catch 不抛裸错；
+  真实 DOM 路径输出与 v0.9 逐字一致
+- 等价比对盲区登记（红队 A10）：compare.py 文档化六类盲区及逐项处置，
+  其中锚点闭环/[E#] 行闭环/导出按钮 data-name 三项并入套件独立断言
 v0.9 变更（2026-10-22，红队 M3 fuzz_renderer.py 驱动，8000 用例 4 种子，D-93）：
 - 容器字段置换全面兜底：validate 逐项循环统一走 lst()（仅确认为数组才迭代），
   数值/布尔置换的容器字段不再裸崩 TypeError（fuzz 发现：dynamic/key/items/outline_items）
@@ -694,18 +706,29 @@ def main():
     badge = (f'<div class="logo-badge" style="font-size:{fs}px; line-height:1.15;">{esc(short)}</div>'
              if fs < 20 else f'<div class="logo-badge">{esc(short)}</div>')
     # 红队 A4：骨架含 JS 字符串语境的令牌，先做精确替换（esc_js），其余按 HTML 语境转义
-    skel = (skel.replace("企业研究_{{SHORT}}_", "企业研究_" + esc_js(short) + "_")
-                .replace("企业研究报告：{{COMPANY_NAME}}", "企业研究报告：" + esc_js(meta["company_name"]))
-                .replace("锚点日期 {{ANCHOR_DATE}}；", "锚点日期 " + esc_js(meta["anchor_date"]) + "；"))
-    out = (skel.replace("{{COMPANY_NAME}}", esc(meta["company_name"]))
-              .replace("{{SAMPLE_VERSION}}", esc(meta.get("sample_version", "")))
-              .replace('<div class="logo-badge">{{SHORT}}</div>', badge)
-              # JS 导出文件名等处仍残留 {{SHORT}}，需全局兜净（D-82 模思试跑发现）
-              .replace("{{SHORT}}", esc(short))
-              .replace("{{ANCHOR_DATE}}", esc(meta["anchor_date"]))
-              .replace("{{SEARCH_HINT}}", esc_attr(meta.get("search_hint", "输入关键词……")))
-              .replace("{{SIDENAV}}", render_sidenav(d))
-              .replace("{{BODY}}", body))
+    # 红队 M4 A8：全部令牌改单次扫描替换——插入值不再参与后续扫描，数据中的
+    # 令牌字面量原样留在产物（防二次替换/交叉污染，如 company_name 含 {{SHORT}}）；
+    # 需特殊语境的精确替换目标（JS 串/徽章）先用 sentinel 保护，其插入值同样不参与扫描。
+    # 基线数据不含令牌字面量，输出与逐次 replace 链逐字节一致（等价比对锁定）。
+    precise = [("企业研究_{{SHORT}}_", "企业研究_" + esc_js(short) + "_"),
+               ("企业研究报告：{{COMPANY_NAME}}", "企业研究报告：" + esc_js(meta["company_name"])),
+               ("锚点日期 {{ANCHOR_DATE}}；", "锚点日期 " + esc_js(meta["anchor_date"]) + "；")]
+    SENT = "\x00G5TOK%d\x00"
+    skel = skel.replace('<div class="logo-badge">{{SHORT}}</div>', SENT % 0)
+    for i, (tok, _) in enumerate(precise, start=1):
+        skel = skel.replace(tok, SENT % i)
+    mapping = {"COMPANY_NAME": esc(meta["company_name"]),
+               "SAMPLE_VERSION": esc(meta.get("sample_version", "")),
+               "SHORT": esc(short),
+               "ANCHOR_DATE": esc(meta["anchor_date"]),
+               "SEARCH_HINT": esc_attr(meta.get("search_hint", "输入关键词……")),
+               "SIDENAV": render_sidenav(d),
+               "BODY": body}
+    out = re.sub(r"\{\{(COMPANY_NAME|SAMPLE_VERSION|SHORT|ANCHOR_DATE|SEARCH_HINT|SIDENAV|BODY)\}\}",
+                 lambda mo: mapping[mo.group(1)], skel)
+    out = out.replace(SENT % 0, badge)
+    for i, (_, val) in enumerate(precise, start=1):
+        out = out.replace(SENT % i, val)
     pathlib.Path(out_p).write_text(out, encoding="utf-8")
     print(f"渲染完成：{out_p}（{len(out.encode('utf-8'))} 字节）")
 

@@ -381,6 +381,87 @@ def main():
     r, _ = run_render(t)
     check("A1 规模冒烟（2000 动态项，性能护栏 10s）", r.returncode == 0 and time.time() - t_start < 10, "耗时 %.1fs" % (time.time() - t_start))
 
+    print("\n== FZ 模糊测试首轮回归（M3 fuzz 发现，红队计划 §六同源交付） ==")
+    fz_cases = []
+    t0 = copy.deepcopy(base_data); t0["overview"]["financial"]["blocks"][0]["type"] = ["table"]
+    fz_cases.append(("财务块 type 数组置换", t0))
+    t0 = copy.deepcopy(base_data); t0["overview"]["financial"]["blocks"][0]["type"] = {"t": 1}
+    fz_cases.append(("财务块 type 对象置换", t0))
+    t0 = copy.deepcopy(base_data); t0["mechanisms"]["items"][0]["rows"][0]["sources"] = [["E1"]]
+    fz_cases.append(("引用源编号嵌套数组置换", t0))
+    t0 = copy.deepcopy(base_data); t0["overview"]["business"]["moat"][0]["sources"] = {"e": "E1"}
+    fz_cases.append(("引用源编号对象置换", t0))
+    t0 = copy.deepcopy(base_data); t0["signals"]["dynamic"] = 3.14
+    fz_cases.append(("signals.dynamic 数值置换", t0))
+    t0 = copy.deepcopy(base_data); t0["signals"]["key"] = {"id": "sig1"}
+    fz_cases.append(("signals.key 对象置换", t0))
+    t0 = copy.deepcopy(base_data); t0["mechanisms"]["items"] = 42
+    fz_cases.append(("mechanisms.items 数值置换", t0))
+    t0 = copy.deepcopy(base_data); t0["directions"]["items"] = True
+    fz_cases.append(("directions.items 布尔置换", t0))
+    t0 = copy.deepcopy(base_data); t0["overview"]["business"]["outline_items"] = 1.5
+    fz_cases.append(("business.outline_items 数值置换", t0))
+    # FZ2：第二轮/三轮 fuzz 发现（79→23→0 过程中转化），同一断言标准。
+    # 块类型相关用例统一用锦浪基座（含 table/chart_bar 全类型）；缺锦浪时退化为 base_data
+    _jinlang = next((f for f in files if "锦浪" in f.name), None)
+    fz_base = json.loads(_jinlang.read_text(encoding="utf-8")) if _jinlang else base_data
+    def find_block(t, btype):
+        for b in t["overview"]["financial"]["blocks"]:
+            if b["type"] == btype:
+                return b
+        return None
+    t0 = copy.deepcopy(base_data); t0["directions"]["items"][1]["state"] = {"s": 1}
+    fz_cases.append(("directions.state 对象置换（校验 in 判重 unhashable）", t0))
+    t0 = copy.deepcopy(base_data); t0["directions"]["items"][1]["state"] = "s9"
+    fz_cases.append(("directions.state 非法枚举值", t0))
+    t0 = copy.deepcopy(base_data); t0["sources"]["items"][5]["url_display"] = 42
+    fz_cases.append(("sources.url_display 数值置换", t0))
+    t0 = copy.deepcopy(base_data); t0["sources"]["items"][5]["url"] = True
+    fz_cases.append(("sources.url 布尔置换", t0))
+    t0 = copy.deepcopy(base_data); t0["sources"]["legend"] = 7
+    fz_cases.append(("sources.legend 数值置换", t0))
+    t0 = copy.deepcopy(base_data)
+    t0["sources"]["items"][0].pop("url2_display", None)  # 基线可能已带双链接，先摘除再测缺配
+    t0["sources"]["items"][0]["url2"] = "https://e.example/x"
+    fz_cases.append(("sources.url2 缺 url2_display", t0))
+    t0 = copy.deepcopy(fz_base)
+    _tb = find_block(t0, "table")
+    if _tb and isinstance(_tb.get("rows"), list) and len(_tb["rows"]) > 1:
+        _tb["rows"][1] = 5
+        fz_cases.append(("table.rows 元素标量置换", t0))
+    t0 = copy.deepcopy(fz_base)
+    _cb = find_block(t0, "chart_bar")
+    if _cb and isinstance(_cb.get("series"), list) and _cb["series"]:
+        _cb["series"][0]["name"] = ["n"]
+        fz_cases.append(("chart_bar series.name 数组置换", t0))
+        t0 = copy.deepcopy(fz_base)
+        find_block(t0, "chart_bar")["series"][0]["color"] = "pwned"
+        fz_cases.append(("chart_bar series.color 非法值", t0))
+    t0 = copy.deepcopy(fz_base)
+    _tb2 = find_block(t0, "table")
+    if _tb2 is not None:
+        _tb2["caption"] = True
+        fz_cases.append(("财务块 caption 布尔置换", t0))
+    t0 = copy.deepcopy(base_data); t0["overview"]["basic_info"][6]["label"] = {"x": 1}
+    fz_cases.append(("basic_info.label 对象置换（set 判重 unhashable）", t0))
+    t0 = copy.deepcopy(base_data); t0["signals"]["key"][1]["id"] = 'sig2" onmouseover="x'
+    fz_cases.append(("导航 id 含引号（属性位脏污）", t0))
+    t0 = copy.deepcopy(fz_base)
+    _note_host_found = False
+    for b in t0["overview"]["financial"]["blocks"]:
+        if b["type"] == "table" and b.get("note"):
+            del b["note"]
+            b["note_sources"] = ["E1"]
+            _note_host_found = True
+            break
+    if _note_host_found:
+        fz_cases.append(("table 有 note_sources 但缺 note（P3 产物层闭环破坏）", t0))
+    for name, t in fz_cases:
+        r, _ = run_render(t)
+        err = r.stderr or ""
+        ok = r.returncode != 0 and "校验失败" in err and "Traceback" not in err
+        check("FZ 类型破坏干净拒绝：%s" % name, ok, err[-160:])
+
     print("\n== 结构自检（完整渲染） ==")
     r, html = run_render(base_data)
     check("完整渲染成功", r.returncode == 0, (r.stderr or "")[-120:])

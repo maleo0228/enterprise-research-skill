@@ -462,6 +462,50 @@ def main():
         ok = r.returncode != 0 and "校验失败" in err and "Traceback" not in err
         check("FZ 类型破坏干净拒绝：%s" % name, ok, err[-160:])
 
+    # ---- 红队 M4（计划 v0.1 已批准）：A2 编码 Unicode · A8 令牌撞模板 ----
+    uni = "“弯引”｜ＡＢＣ‮尾​隐😀𠀀e\u0301"
+    t = copy.deepcopy(base_data); t["overview"]["lead"] = uni
+    r, html = run_render(t)
+    check("A2 Unicode 全量探针直通（弯引号/全角/BIDI/零宽/emoji/CJK-Ext-B/组合符）",
+          r.returncode == 0 and uni in html, (r.stderr or "")[-120:])
+
+    t = copy.deepcopy(base_data); t["signals"]["key"][0]["nav"] = "sig\u200b1"
+    r, html = run_render(t)
+    # 判定锁定（计划 v0.1 A2，P1）：导航显示名为中文文案通道（esc/esc_attr），
+    # 零宽/BIDI 字符不致崩不注入（id 通道才收窄字符集），原样留产物即合规
+    check("A2 导航含零宽字符不崩不注入（P1 行为锁定）", r.returncode == 0 and "sig\u200b1" in html, (r.stderr or "")[-120:])
+
+    t = copy.deepcopy(base_data); t["meta"]["company_short"] = "超长" * 100
+    r, html = run_render(t)
+    m = re.search(r'logo-badge[^>]*style="font-size:(\d+)px', html)
+    check("A2 超长 company_short 不崩且缩字号收底下限", r.returncode == 0 and m and int(m.group(1)) == 9, (r.stderr or "")[-120:])
+
+    t = copy.deepcopy(base_data)
+    add_chart(t, ["😀年", "𠀀年"], [{"name": "序列😀", "values": [1, 2]}], caption="图8｜Unicode 测试")
+    r, html = run_render(t)
+    check("A2 emoji/CJK-Ext-B 入图（SVG 文本转义直通）", r.returncode == 0 and "😀年" in html and "序列😀" in html, (r.stderr or "")[-120:])
+
+    tokens = "{{BODY}} {{COMPANY_NAME}} {{SHORT}} {{SIDENAV}} {{ANCHOR_DATE}} {{SEARCH_HINT}} {{SAMPLE_VERSION}}"
+    t = rich_probe(copy.deepcopy(base_data), tokens)
+    r, html = run_render(t)
+    tok_missing = [tok for tok in tokens.split() if tok not in html]
+    check("A8 数据令牌字面量留产物（七令牌全扫描）", r.returncode == 0 and not tok_missing,
+          "被吞：%s" % "、".join(tok_missing))
+
+    t = copy.deepcopy(base_data); t["meta"]["company_name"] = "甲{{SHORT}}乙"
+    r, html = run_render(t)
+    check("A8 meta 撞令牌不交叉替换（company_name 含 {{SHORT}}）",
+          r.returncode == 0 and "甲{{SHORT}}乙" in html, (r.stderr or "")[-120:])
+
+    t = copy.deepcopy(base_data); t["meta"]["anchor_date"] = "2026-01-01{{COMPANY_NAME}}"
+    r, html = run_render(t)
+    check("A8 meta 撞令牌不交叉替换（anchor_date 含 {{COMPANY_NAME}}）",
+          r.returncode == 0 and "2026-01-01{{COMPANY_NAME}}" in html, (r.stderr or "")[-120:])
+
+    t = copy.deepcopy(base_data); t["meta"]["company_short"] = "{{BODY}}"
+    r, html = run_render(t)
+    check("A8 短名撞 {{BODY}} 不串入正文/文件名", r.returncode == 0 and "企业研究_{{BODY}}_" in html, (r.stderr or "")[-120:])
+
     print("\n== 结构自检（完整渲染） ==")
     r, html = run_render(base_data)
     check("完整渲染成功", r.returncode == 0, (r.stderr or "")[-120:])
@@ -471,6 +515,16 @@ def main():
         check("含 [E#] 来源标记", 'class="src"' in html)
         check("侧边导航非空", html.count('class="sub"') >= 3)
         check("导出按钮齐全", html.count("export-btn") >= 6)
+        # ---- A10：等价比对盲区，独立断言兜底 ----
+        nav_hrefs = set(re.findall(r'<a class="(?:grp|sub)" href="#([^"]+)"', html))
+        miss_tgt = [h for h in nav_hrefs if f'id="{h}"' not in html]
+        check("A10 边栏锚点闭环（每个 href 有目标 id）", not miss_tgt, str(miss_tgt)[:120])
+        sup_refs = set(re.findall(r'<sup class="src" data-e="(E\d+)"', html))
+        miss_row = [e for e in sup_refs if f'id="{e}"' not in html]
+        check("A10 [E#]→来源表行闭环（产物层 P3）", not miss_row, str(miss_row)[:120])
+        page_names = ["1.0企业概览", "2.0经营事件与信号", "3.0业务及技术解析", "4.0IT关注方向及跟进", "5.0来源索引与证据链"]
+        miss_btn = [n for n in page_names if f'data-name="{n}"' not in html]
+        check("A10 导出按钮 data-name 与五页标题一致", not miss_btn, str(miss_btn)[:120])
 
     print("\n== Markdown 导出（N10，需 node；无 node 自动跳过） ==")
     import shutil
@@ -479,16 +533,30 @@ def main():
         js = r"""
 const fs=require("fs");
 const skel=fs.readFileSync(process.argv[2],"utf8");
-const m=skel.match(/function inline\(el\)\{[\s\S]*?\r?\n  \}\r?\n  function cardToMd/);
+const m=skel.match(/function inline\(el[\s\S]*?\r?\n  \}\r?\n  function download\(/);
 if(!m){console.error("NO_MATCH");process.exit(2);}
-var src=m[0].replace(/\r?\n  \}\r?\n  function cardToMd/,"\n  }");
+var src=m[0].replace(/\r?\n  \}\r?\n  function download\($/,"\n  }");
 function C(x){return {nodeType:3,nodeValue:x};}
 function cell(x){return {childNodes:[C(x)],children:[]};}
 function row(cs){return {children:cs,querySelectorAll:function(){return [];}};}
 var tbl={querySelectorAll:function(){return [row([cell("项目"),cell("数值")]),row([cell("a|b"),cell("c")])];}};
-var md=(new Function(src+";return tableToMd;"))()(tbl);
-if(md.indexOf("a\\|b")>=0 && (md.match(/\|/g)||[]).length===10){console.log("MD_OK");}
-else{console.error("BAD_MD:\n"+md);process.exit(1);}
+var F=(new Function(src+";return {inline:inline,tableToMd:tableToMd,timelineToMd:timelineToMd,sectionToMd:sectionToMd};"))();
+var md=F.tableToMd(tbl);
+if(md.indexOf("a\\|b")<0 || (md.match(/\|/g)||[]).length!==10){console.error("BAD_MD:\n"+md);process.exit(1);}
+function ok(cond,msg){ if(!cond){console.error("FAIL:"+msg);process.exit(1);} }
+// ---- A9 红队 M4：畸形 DOM 桩对抗（不抛裸错）----
+ok(F.inline({tagName:"B"})==="", "inline: 无 childNodes 桩");
+var circ={tagName:"DIV",childNodes:[]};
+circ.childNodes.push({nodeType:1,tagName:"B",childNodes:[circ]});
+try{ F.inline(circ); }catch(e){ ok(false,"inline: 循环引用桩抛出裸错 "+e.message); }
+ok(F.tableToMd({})==="", "tableToMd: 无 querySelectorAll 桩");
+try{ F.tableToMd({querySelectorAll:function(){return [{}];}}); }catch(e){ ok(false,"tableToMd: 行无 children 桩抛出裸错 "+e.message); }
+try{ ok(typeof F.timelineToMd({})==="string", "timelineToMd: 空桩"); }catch(e){ ok(false,"timelineToMd: 空桩抛出裸错 "+e.message); }
+var svgStr={nodeType:1,tagName:"P",className:{baseVal:"basis"},childNodes:[C("x")]};
+ok(F.inline(svgStr)==="x", "inline: SVGAnimatedString 类桩");
+var weirdSec={children:[{nodeType:1,tagName:"P",childNodes:[C("hi")]}]};
+ok(F.sectionToMd(weirdSec).indexOf("hi")>=0, "sectionToMd: 畸形子节点桩不崩且正常路径不回归");
+console.log("MD_OK");
 """
         with tempfile.TemporaryDirectory() as td:
             jp = pathlib.Path(td) / "md_test.js"

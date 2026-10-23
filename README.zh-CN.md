@@ -1,7 +1,7 @@
 # Enterprise Research Skill｜企业深度研究 Skill
 
 **基于公开证据的企业研究 → 单文件交互式 HTML 报告。**
-**当前版本：v2.0.13** ·[更新日志](https://github.com/maleo0228/enterprise-research-skill/releases)
+**当前版本：v2.0.14** ·[更新日志](https://github.com/maleo0228/enterprise-research-skill/releases)
 v2.0 是对 v1.x 的**完全重写**（v1.x 产出 Markdown＋CSV＋Excel，已归档，见 [Releases](https://github.com/maleo0228/enterprise-research-skill/releases)）。
 
 ## 它做什么
@@ -52,7 +52,7 @@ python renderer/check_urls.py report.json   # 每个来源 URL 可达；被标 4
 
 然后在浏览器中打开一次（导航、搜索、MD 导出、图表），确认无 `{{...}}` 令牌残留。
 
-**维护者专用**（仅改版渲染器/骨架时）：`python renderer/test_renderer.py` 跑 100 项攻击面与回归套件（另可跑 `python renderer/fuzz_renderer.py` 做种子化模糊测试）——发版前必须全绿；`python renderer/compare.py <渲染产物.html> <基线样张.html>` 与冻结基线做等价比对。
+**维护者专用**（仅改版渲染器/骨架时）：`python renderer/test_renderer.py` 跑 100 项攻击面与回归套件，并必须跑 `python renderer/fuzz_renderer.py` 种子化模糊（4 种子×2000 用例零缺陷）——全部通过才可发版；`python renderer/compare.py <渲染产物.html> <基线样张.html>` 与冻结基线做等价比对。
 
 ## 目录结构
 

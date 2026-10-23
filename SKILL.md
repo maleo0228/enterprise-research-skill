@@ -44,7 +44,7 @@ Supported `type` values:
 
 ## Delivery checklist
 
-1. `python renderer/test_renderer.py` — attack-surface & regression suite (100 items) must pass.
+1. `python renderer/test_renderer.py` — attack-surface & regression suite (100 items) must pass; `python renderer/fuzz_renderer.py` (seeded fuzz, 4 seeds × 2000 cases) must report zero defects. Both are release gates for any renderer-related change.
 2. `python renderer/check_urls.py report.json` — every source URL reachable; manually re-check any flagged 403/202 (anti-crawler/JS pages may still open in a browser).
 3. Open the HTML once in a browser: navigation, search, MD export, charts render.
 4. Confirm no *renderer-residual* `{{...}}` tokens in the output — i.e. tokens the renderer failed to substitute. Literal template tokens coming from your own data values are kept verbatim by design (single-pass substitution, renderer v0.10+) and are not a defect; the regression suite's no-residual-token check covers the renderer side.

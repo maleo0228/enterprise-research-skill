@@ -1,8 +1,14 @@
 # Enterprise Research Skill
 
 **Evidence-grounded company research → single-file interactive HTML reports.**
-**Current version: v2.0.14** · [Changelog](https://github.com/maleo0228/enterprise-research-skill/releases)
+**Current version: v2.3.1** · [Changelog](https://github.com/maleo0228/enterprise-research-skill/releases)
 v2.0 is a **complete rewrite** of v1.x (which produced Markdown + CSV + Excel; see [Releases](https://github.com/maleo0228/enterprise-research-skill/releases) for the archived v1.0.x line).
+
+## What's new in v2.3.1
+
+- **Research discipline spec added.** New [`research-discipline-spec.md`](research-discipline-spec.md) — a frozen (v0.3), tool-neutral reference for the *research stage* upstream of this skill: the three research-output formats (source list / fact card / gap list), retrieval discipline (subject lock & name-mapping chain, platform-direct checks by subject type, one-hop diffusion from the official site, recursive diffusion, counter-evidence first, zero-result discipline, caliber pairing), and a pre-delivery self-check list. The renderer, contract, and samples are unchanged in scope; this spec makes research-stage outputs auditable instead of free-form.
+- **Renderer hardening** (no output changes for conformant data): byte-exact deterministic output (UTF-8/LF on all platforms), GBK-console-safe test suite, and one validation gap closed (deeply nested mechanism fields are now rejected cleanly instead of producing orphan source rows).
+- **Test suite**: 105 items + seeded fuzz gate (4 seeds × 2000 cases, zero defects).
 
 ## What it does
 
@@ -54,13 +60,14 @@ python renderer/check_urls.py report.json   # every source URL reachable; manual
 
 Then open the HTML once in a browser (navigation, search, MD export, charts) and confirm no leftover `{{...}}` tokens.
 
-**For maintainers** (renderer or skeleton changes only): `python renderer/test_renderer.py` runs the 100-item attack-surface & regression suite, and a mandatory seeded fuzz run (`python renderer/fuzz_renderer.py`, 4 seeds × 2000 cases, zero defects required) — all green before any release; `python renderer/compare.py <rendered.html> <baseline.html>` checks equivalence against a frozen baseline sample.
+**For maintainers** (renderer or skeleton changes only): `python renderer/test_renderer.py` runs the 105-item attack-surface & regression suite, and a mandatory seeded fuzz run (`python renderer/fuzz_renderer.py`, 4 seeds × 2000 cases, zero defects required) — all green before any release; `python renderer/compare.py <rendered.html> <baseline.html>` checks equivalence against a frozen baseline sample.
 
 ## Repository layout
 
 | Path | Contents |
 |---|---|
 | `SKILL.md` | Skill entry point (report generation stage) |
+| `research-discipline-spec.md` | Frozen v0.3 research-stage discipline & output-format reference (tool-neutral) |
 | `samples/` | Finished single-file HTML report samples (open offline, share freely) |
 | `renderer/` | `render.py`, `skeleton.html` (frozen page skeleton), `compare.py`, `make_skeleton.py` |
 | `data-contract/` | `report-data.schema.json` — the JSON data contract |
@@ -83,10 +90,14 @@ After installing, restart or refresh the agent so it re-discovers skills.
 
 **Scope note**: this skill covers the *report generation* stage (contract-conformant JSON → validated HTML report). The research stage that produces the dataset is performed by your own research workflow.
 
+## Roadmap
+
+- **Non-IT industry example** — within 3 months of v2.3.1, a manufacturing or consumer-sector listed-company example (full real research, then instantiated to the contract) will be added, shipping with a follow-up release (planned v2.4.0). Progress is tracked in the changelog.
+
 ## License
 
 [MIT](LICENSE)
 
 ---
 
-**Note**: the research rulebooks behind the methodology are not part of this public repository; this repo ships the report renderer, the data contract, and finished samples.
+**Note**: this repo ships the report renderer, the data contract, the research-discipline spec (v0.3), and finished samples. The analytical frameworks behind the methodology — module design rationale, mechanism-analysis perspectives, direction-rating criteria, inclusion thresholds, and the internal case library — are not part of this public repository.

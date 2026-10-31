@@ -8,21 +8,29 @@
 基线缺省时自动尝试 ../samples/*.html。
 退出码：0 全过；1 有失败项。
 """
-import json, re, subprocess, sys, copy, tempfile, pathlib
+import json, re, subprocess, sys, copy, tempfile, pathlib, os
 
 ROOT = pathlib.Path(__file__).resolve().parent
 RENDER = ROOT / "render.py"
 SKEL = ROOT / "skeleton.html"
 
-def run_render(data):
+def utf8_child_env():
+    """子进程输出固定 UTF-8，避免外部 GBK 输出环境影响父进程按 UTF-8 解码。"""
+    env = os.environ.copy()
+    env["PYTHONIOENCODING"] = "utf-8"
+    return env
+
+def run_render(data, return_raw=False):
     with tempfile.TemporaryDirectory() as td:
         jp = pathlib.Path(td) / "in.json"
         hp = pathlib.Path(td) / "out.html"
         jp.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
         r = subprocess.run([sys.executable, str(RENDER), str(jp), str(SKEL), str(hp)],
-                           capture_output=True, text=True, encoding="utf-8", errors="replace")
-        html = hp.read_text(encoding="utf-8") if hp.exists() else ""
-        return r, html
+                           capture_output=True, text=True, encoding="utf-8", errors="replace",
+                           env=utf8_child_env())
+        raw = hp.read_bytes() if hp.exists() else b""
+        html = raw.decode("utf-8") if raw else ""
+        return (r, html, raw) if return_raw else (r, html)
 
 def looks_like_report(p):
     if "schema" in p.name.lower():
@@ -56,7 +64,27 @@ def find_baselines(argv):
 RESULTS = []
 def check(name, ok, detail=""):
     RESULTS.append((name, ok, detail))
-    print(f"  {'✓' if ok else '✗'} {name}" + (f" — {detail}" if detail and not ok else ""))
+    # 双臂验证工程复验缺陷 B：✓/✗ 在 GBK 输出环境不可编码，会让套件首项即崩。
+    # 使用 ASCII 标记，保证 Windows 控制台、CI 与日志重定向环境均可完整运行。
+    print(f"  {'PASS' if ok else 'FAIL'} {name}" + (f" — {detail}" if detail and not ok else ""))
+
+def gbk_output_smoke():
+    """缺陷 B 回归：在 GBK 输出环境调用 check()，不得因状态标记编码而崩溃。"""
+    env = os.environ.copy()
+    env["PYTHONIOENCODING"] = "gbk"
+    code = (
+        "import importlib.util, pathlib, sys;"
+        "p = pathlib.Path(sys.argv[1]);"
+        "spec = importlib.util.spec_from_file_location('renderer_suite', p);"
+        "m = importlib.util.module_from_spec(spec);"
+        "spec.loader.exec_module(m);"
+        "m.check('GBK 输出子进程冒烟', True);"
+        "raise SystemExit(0 if m.RESULTS[-1][1] else 1)"
+    )
+    r = subprocess.run([sys.executable, "-c", code, str(pathlib.Path(__file__).resolve())],
+                       env=env, capture_output=True)
+    detail = (r.stderr or b"")[-160:].decode("utf-8", "replace")
+    check("B1 测试输出兼容 GBK（缺陷 B 回归）", r.returncode == 0, detail)
 
 def load_example():
     files = find_examples()
@@ -65,7 +93,10 @@ def load_example():
     return files, json.loads(files[0].read_text(encoding="utf-8"))
 
 def main():
-    print("== 攻击面与健壮性 ==")
+    print("== 输出环境兼容 ==")
+    gbk_output_smoke()
+
+    print("\n== 攻击面与健壮性 ==")
     files, base_data = load_example()
 
     t = copy.deepcopy(base_data); t["overview"]["financial"]["blocks"][0]["type"] = "note"
@@ -429,14 +460,20 @@ def main():
     if _tb and isinstance(_tb.get("rows"), list) and len(_tb["rows"]) > 1:
         _tb["rows"][1] = 5
         fz_cases.append(("table.rows 元素标量置换", t0))
-    t0 = copy.deepcopy(fz_base)
-    _cb = find_block(t0, "chart_bar")
-    if _cb and isinstance(_cb.get("series"), list) and _cb["series"]:
-        _cb["series"][0]["name"] = ["n"]
-        fz_cases.append(("chart_bar series.name 数组置换", t0))
-        t0 = copy.deepcopy(fz_base)
-        find_block(t0, "chart_bar")["series"][0]["color"] = "pwned"
-        fz_cases.append(("chart_bar series.color 非法值", t0))
+    # chart_bar 用例不依赖基座自带图块：缺块时注入合法块，保证任意基座下计数稳定
+    def _with_chart(t):
+        if find_block(t, "chart_bar") is None:
+            t["overview"]["financial"]["blocks"].append(
+                {"type": "chart_bar", "caption": "图9｜注入基座",
+                 "unit": "%", "categories": ["a", "b"],
+                 "series": [{"name": "s1", "color": "blue", "values": [1.0, 2.0]}]})
+        return t
+    t0 = _with_chart(copy.deepcopy(fz_base))
+    find_block(t0, "chart_bar")["series"][0]["name"] = ["n"]
+    fz_cases.append(("chart_bar series.name 数组置换", t0))
+    t0 = _with_chart(copy.deepcopy(fz_base))
+    find_block(t0, "chart_bar")["series"][0]["color"] = "pwned"
+    fz_cases.append(("chart_bar series.color 非法值", t0))
     t0 = copy.deepcopy(fz_base)
     _tb2 = find_block(t0, "table")
     if _tb2 is not None:
@@ -444,6 +481,12 @@ def main():
         fz_cases.append(("财务块 caption 布尔置换", t0))
     t0 = copy.deepcopy(base_data); t0["overview"]["basic_info"][6]["label"] = {"x": 1}
     fz_cases.append(("basic_info.label 对象置换（set 判重 unhashable）", t0))
+    t0 = copy.deepcopy(base_data)
+    _kn = {"text": "已确认项", "sources": ["E1"]}
+    for _ in range(10):
+        _kn = [_kn]
+    t0["mechanisms"]["items"][0]["confirmed"] = _kn
+    fz_cases.append(("机制档位 confirmed 深度嵌套数组（seed777 P3 孤儿来源）", t0))
     t0 = copy.deepcopy(base_data); t0["signals"]["key"][1]["id"] = 'sig2" onmouseover="x'
     fz_cases.append(("导航 id 含引号（属性位脏污）", t0))
     t0 = copy.deepcopy(fz_base)
@@ -535,15 +578,20 @@ def main():
         t = copy.deepcopy(base_data); t["meta"]["company_short"] = 'x";PWNED(1);//'
         jp.write_text(json.dumps(t, ensure_ascii=False), encoding="utf-8")
         r = subprocess.run([sys.executable, str(RENDER), str(jp), str(sp), str(hp)],
-                           capture_output=True, text=True, encoding="utf-8", errors="replace")
+                           capture_output=True, text=True, encoding="utf-8", errors="replace",
+                           env=utf8_child_env())
         err = r.stderr or ""
         check("G3 骨架锚点缺失 fail-fast（skew 干净报错，不出半成品）",
               r.returncode != 0 and "骨架" in err and "Traceback" not in err and not hp.exists(), err[-160:])
 
     print("\n== 结构自检（完整渲染） ==")
-    r, html = run_render(base_data)
+    r, html, raw = run_render(base_data, return_raw=True)
     check("完整渲染成功", r.returncode == 0, (r.stderr or "")[-120:])
     if r.returncode == 0:
+        logical = html.encode("utf-8")
+        check("A1 渲染落盘为 UTF-8/LF 字节（跨平台逐字节等价）",
+              raw == logical and b"\r\n" not in raw,
+              f"磁盘 {len(raw)} B／逻辑 {len(logical)} B／CRLF {raw.count(b'\r\n')}")
         check("无遗留 {{ 令牌（D-82 回归：JS 内 {{SHORT}} 曾漏替）", "{{" not in html)
         check("五模块齐全", all(f'id="p{i}"' in html for i in range(1, 6)))
         check("含 [E#] 来源标记", 'class="src"' in html)
@@ -654,9 +702,11 @@ console.log("MD_OK");
             with tempfile.TemporaryDirectory() as td:
                 out = pathlib.Path(td) / "r.html"
                 r1 = subprocess.run([sys.executable, str(RENDER), str(ex), str(SKEL), str(out)],
-                                    capture_output=True, text=True, encoding="utf-8", errors="replace")
+                                    capture_output=True, text=True, encoding="utf-8", errors="replace",
+                                    env=utf8_child_env())
                 r2 = subprocess.run([sys.executable, str(ROOT / "compare.py"), str(out), str(bl)],
-                                    capture_output=True, text=True, encoding="utf-8", errors="replace")
+                                    capture_output=True, text=True, encoding="utf-8", errors="replace",
+                                    env=utf8_child_env())
                 ok = r1.returncode == 0 and r2.returncode == 0 and "通过" in (r2.stdout or "")
                 check(f"等价比对 {ex.name} vs {bl.name}", ok, (r2.stdout or "")[-160:])
     else:

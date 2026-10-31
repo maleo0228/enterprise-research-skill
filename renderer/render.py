@@ -112,6 +112,9 @@ def sups(sources):
         return ""
     return "".join(f'<sup class="src" data-e="{e}">[{e}]</sup>' for e in sources)
 
+# 纯文本引用标记：[E9]、［E9］、（E9）、(E9, E10)、（E9／E10）
+_PLAIN_CITE_RE = re.compile(r"[\[［（(]\s*E\d+(?:\s*[、,，/／;；]\s*E\d+)*\s*[\]］）)]")
+
 _TAG_RE = re.compile(r'<(/?)(b|br|a)(?:\s+href\s*=\s*(?:"([^"]*)"|\'([^\']*)\'))?\s*(/?)>', re.I)
 
 def rich(t):  # _html 字段白名单：仅 <b> <br> <a href="http(s)://...">（单引号 href 亦认，F8），其余标签一律转义
@@ -147,8 +150,11 @@ PAGES = [("p1", "1.0", "企业概览", "1.0企业概览"),
          ("p5", "5.0", "来源索引与证据链", "5.0来源索引与证据链")]
 
 # ---------- 业务校验（不过即失败，不出 HTML） ----------
-def validate(d):
+WARNS = []  # 非阻断的契约警告（--strict 时升级为校验失败）
+
+def validate(d, strict=False):
     errs = []
+    warns = []
 
     # ---- 结构完整性自查（F3，2026-10-22 第三轮审计）----
     # schema 无人执行，渲染器兜底自检全部直接索引路径；结构缺失统一"校验失败"干净报错，不裸 traceback。
@@ -422,6 +428,8 @@ def validate(d):
             # 红队 M3 fuzz：series/categories 被置换成对象时渲染期迭代裸崩；元素非对象时 s["values"] 下标裸崩
             if not isl(b.get("series")):
                 errs.append(f"财务块#{i}(chart_bar) series 须为数组")
+            elif not b["series"]:
+                errs.append(f"财务块#{i}(chart_bar) series 为空（至少 1 个序列；无数据请改用 missing 块）")
             if not isl(b.get("categories")):
                 errs.append(f"财务块#{i}(chart_bar) categories 须为数组")
             for j, sr in enumerate(lst(b.get("series"))):
@@ -460,12 +468,36 @@ def validate(d):
             for k, v in o.items():
                 if isinstance(v, str) and ("_html" in k or k in ("text", "note", "timeline_note")) and "<sup" in v:
                     errs.append(f"手写 <sup> @ {loc}.{k}")
+                elif isinstance(v, str) and _PLAIN_CITE_RE.search(v):
+                    # 纯文本引用标记（[E9]／（E9）／(E9、E10)）不经 sources 数组，既不进闭环校验、
+                    # 也不生成可点击锚点：读者看到点不动、来源表里可能也找不到的编号
+                    errs.append(f"手写纯文本引用 {_PLAIN_CITE_RE.search(v).group(0)!r} @ {loc}.{k}"
+                                "（改用对应字段的 sources 数组）")
                 else:
                     scan_sup(v, loc + "." + k)
         elif isinstance(o, list):
             for i, v in enumerate(o):
                 scan_sup(v, f"{loc}[{i}]")
     scan_sup(d, "$")
+    # 契约字段格式（schema 有、渲染器此前未执行；默认警告，--strict 阻断）：日期格式、获取日期不晚于锚点、URL 须 http(s)
+    # ——非 http(s) URL 此前会静默降级为不可点击文本，读者无法溯源
+    _DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+    anchor = d["meta"].get("anchor_date") if isd(d.get("meta")) else None
+    if not (iss(anchor) and _DATE.match(anchor)):
+        warns.append(f"meta.anchor_date 须为 YYYY-MM-DD：{anchor!r}")
+        anchor = None
+    for i, it in enumerate(lst(d["sources"].get("items")) if isd(d.get("sources")) else []):
+        if not isd(it):
+            continue
+        f = it.get("fetched")
+        if iss(f) and not _DATE.match(f):
+            warns.append(f"sources.items[{i}].fetched 须为 YYYY-MM-DD：{f!r}")
+        elif iss(f) and anchor and f > anchor:
+            warns.append(f"sources.items[{i}].fetched {f} 晚于锚点日期 {anchor}")
+        for uk in ("url", "url2"):
+            u = it.get(uk)
+            if uk in it and not (iss(u) and re.match(r"^https?://\S+$", u, re.I)):
+                warns.append(f"sources.items[{i}].{uk} 须为完整 http(s) URL：{u!r}")
     bi = d["overview"]["basic_info"]
     exp = ["公司全称", "官网", "成立时间", "注册地／经营地", "所有制／资本状态", "高管背景", "员工规模", "组织结构"]
     labels = [x["label"] for x in bi]
@@ -484,8 +516,13 @@ def validate(d):
     for s in d["signals"]["key"]:
         if [x["label"] for x in s["sections"]] != ["事实依据", "为什么重要", "对关注方向的影响"]:
             errs.append(f"{s['id']} 三段不合规")
+    if strict:
+        errs += warns
+        warns = []
     if errs:
         raise SystemExit("校验失败：\n" + "\n".join(" - " + e for e in errs))
+    WARNS[:] = warns
+    return warns
 
 # ---------- body 生成 ----------
 def render_financial_block(b):
@@ -739,9 +776,13 @@ def render_sidenav(d):
 
 # ---------- 主流程 ----------
 def main():
-    data_p, skel_p, out_p = sys.argv[1], sys.argv[2], sys.argv[3]
+    strict = "--strict" in sys.argv[1:]
+    args = [a for a in sys.argv[1:] if a != "--strict"]
+    data_p, skel_p, out_p = args[0], args[1], args[2]
     d = json.load(open(data_p, encoding="utf-8"))
-    validate(d)
+    warns = validate(d, strict=strict)
+    for w in warns:
+        print(f"校验警告：{w}", file=sys.stderr)
     meta = d["meta"]
     skel = pathlib.Path(skel_p).read_text(encoding="utf-8")
     body = "\n\n".join([render_p1(d), render_p2(d), render_p3(d), render_p4(d), render_p5(d)])

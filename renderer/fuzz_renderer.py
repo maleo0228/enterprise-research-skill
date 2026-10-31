@@ -270,6 +270,13 @@ def reproduces(base, log, td, max_bytes=2 * 1024 * 1024):
         for op, path, val in log:
             if op == "del":
                 del_at(doc, path)
+            elif op == "nest":
+                # nest 日志记录的是嵌套深度；旧实现误当 set 会把 depth 直接写入，
+                # 导致 shrink/replay 用错误文档复现（seed777 case_1157 实证）。
+                v = get_at(doc, path)
+                for _ in range(int(val)):
+                    v = [v]
+                set_at(doc, path, v)
             else:
                 set_at(doc, path, val)
         raw = json.dumps(doc, ensure_ascii=False, allow_nan=True)

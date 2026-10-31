@@ -1,8 +1,14 @@
 # Enterprise Research Skill｜企业深度研究 Skill
 
 **基于公开证据的企业研究 → 单文件交互式 HTML 报告。**
-**当前版本：v2.0.14** ·[更新日志](https://github.com/maleo0228/enterprise-research-skill/releases)
+**当前版本：v2.3.1** ·[更新日志](https://github.com/maleo0228/enterprise-research-skill/releases)
 v2.0 是对 v1.x 的**完全重写**（v1.x 产出 Markdown＋CSV＋Excel，已归档，见 [Releases](https://github.com/maleo0228/enterprise-research-skill/releases)）。
+
+## v2.3.1 更新
+
+- **新增研究纪律规范**：[`research-discipline-spec.md`](research-discipline-spec.md)——冻结版（v0.3）、工具中立的**研究段**参考规范：研究段三格式（来源清单／事实卡片／缺口清单）、检索动作纪律（主体锁定与名称映射链、按标的类型平台直查、官网一跳扩散、线索递归、反方证据优先、零结果判定纪律、口径配对）与交付前自检清单。渲染器、契约与样张范围不变；本规范让研究段产物可核验、不再是自由散文。
+- **渲染器加固**（合规数据产出零变化）：跨平台逐字节确定性输出（统一 UTF-8/LF）、测试套件 GBK 控制台环境可用、封堵一处校验缺口（机制卡字段深度嵌套现被干净拒绝，不再产生孤儿来源行）。
+- **测试套件**：105 项＋种子化模糊闸门（4 种子×2000 用例零缺陷）。
 
 ## 它做什么
 
@@ -52,13 +58,14 @@ python renderer/check_urls.py report.json   # 每个来源 URL 可达；被标 4
 
 然后在浏览器中打开一次（导航、搜索、MD 导出、图表），确认无 `{{...}}` 令牌残留。
 
-**维护者专用**（仅改版渲染器/骨架时）：`python renderer/test_renderer.py` 跑 100 项攻击面与回归套件，并必须跑 `python renderer/fuzz_renderer.py` 种子化模糊（4 种子×2000 用例零缺陷）——全部通过才可发版；`python renderer/compare.py <渲染产物.html> <基线样张.html>` 与冻结基线做等价比对。
+**维护者专用**（仅改版渲染器/骨架时）：`python renderer/test_renderer.py` 跑 105 项攻击面与回归套件，并必须跑 `python renderer/fuzz_renderer.py` 种子化模糊（4 种子×2000 用例零缺陷）——全部通过才可发版；`python renderer/compare.py <渲染产物.html> <基线样张.html>` 与冻结基线做等价比对。
 
 ## 目录结构
 
 | 路径 | 内容 |
 |---|---|
 | `SKILL.md` | Skill 入口文件（报告生成段） |
+| `research-discipline-spec.md` | 冻结版（v0.3）研究段纪律与输出格式规范（工具中立） |
 | `samples/` | 成品单文件 HTML 样张（离线可开、可自由分享） |
 | `renderer/` | `render.py`、`skeleton.html`（冻结页面骨架）、`compare.py`、`make_skeleton.py` |
 | `data-contract/` | `report-data.schema.json` 数据契约 |
@@ -81,10 +88,14 @@ git clone https://github.com/maleo0228/enterprise-research-skill.git
 
 **范围说明**：本 skill 覆盖"报告生成段"（合规 JSON → 校验过的 HTML 报告）；产出数据集的研究段由使用者自己的研究工作流完成。
 
+## 路线图
+
+- **非 IT 行业示例**——v2.3.1 发布后 3 个月内，将补充一个制造业或消费类上市公司的完整示例（真实研究后按契约实例化），随后续版本（拟 v2.4.0）发布；进展见更新日志。
+
 ## 协议
 
 [MIT](LICENSE)
 
 ---
 
-**说明**：本公开仓库只发布报告渲染器、数据契约与成品样张；支撑方法论的研究规则文件不在公开范围内。
+**说明**：本公开仓库发布报告渲染器、数据契约、研究纪律规范（v0.3）与成品样张；方法论文背后的分析框架——模块划分论证、机制分析视角、方向状态机判据、收录阈值与内部案例库——不在公开范围内。

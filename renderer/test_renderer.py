@@ -693,7 +693,10 @@ console.log("MD_OK");
               len(payloads) == 1,
               "副本内容不一致——按《版本管理规范 v0.2》§三.6，推送前必须 diff 对齐（反面教材：v2.0.4 schema 漏推）")
     else:
-        print("  - 多副本一致性跳过（仅单副本，外部独立运行环境）")
+        # 单副本环境（外部独立运行）：跳过一致性比对，但保持恒运行计数——
+        # 干净克隆下套件总数须与文档声明一致（第三方 README 复验 2026-10-31）
+        check("schema 副本可解析（单副本环境，多副本一致性不适用）", bool(uniq),
+              "未找到任何 schema 副本")
 
     baselines = find_baselines(sys.argv[1:])
     if baselines and len(baselines) == len(files):

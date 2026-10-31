@@ -576,11 +576,23 @@ def render_financial_block(b):
 def chart_svg(n, b):
     cats, series = b["categories"], b["series"]
     base_y, plot_h, x0, gw, bw, bg = 200, 168, 70, 140, 30, 6
+    # 自适应布局：默认几何（≤4 类目、≤3 序列）输出与基线逐字节一致；超出时先压缩组距，
+    # 仍放不下再加宽 viewBox（SVG 有 max-width:100%，加宽后按比例缩放显示），
+    # 避免第 5 个及以后的类目被裁出画布（实测：5 年×2 序列末组被截、6 年第 6 组整组不可见）
+    W = 660
+    nc, ns = len(cats), len(series)
+    group_w = ns * bw + (ns - 1) * bg
+    tail = max(group_w, 60) + 30          # 末组柱宽＋数值标签余量
+    if gw < group_w + 14 or x0 + gw * (nc - 1) + tail > W:
+        fit = (W - x0 - tail) / (nc - 1) if nc > 1 else gw
+        gw = int(fit) if fit >= group_w + 14 else group_w + 24
+        W = max(W, int(x0 + gw * (nc - 1) + tail))
+    W = max(W, x0 + 150 * ns)             # 图例每项 150 宽
     maxv = max(max(s["values"]) for s in series)
     minv = min(min(s["values"]) for s in series)
     names = [s["name"] for s in series]
     aria = f"图{n} {'与'.join(names)}柱状图（{cats[0]}–{cats[-1]}）"
-    el = [f'<svg width="660" height="250" viewBox="0 0 660 250" role="img" aria-label="{esc_attr(aria)}" style="margin:6px 0 4px; max-width:100%;">']
+    el = [f'<svg width="{W}" height="250" viewBox="0 0 {W} 250" role="img" aria-label="{esc_attr(aria)}" style="margin:6px 0 4px; max-width:100%;">']
     lx = x0
     for s in series:
         c = COLORS[s.get("color", "blue")]
@@ -600,7 +612,7 @@ def chart_svg(n, b):
                 y = round(base_y - h, 1)
                 el.append(f'    <rect x="{gx + j*(bw+bg)}" y="{y}" width="{bw}" height="{h}" fill="{COLORS[s.get("color","blue")]}" rx="2"/>')
                 el.append(f'    <text x="{gx + j*(bw+bg)}" y="{round(y-6)}" font-size="12" fill="{COLORS[s.get("color","blue")]}">{v:.2f}</text>')
-        el.append(f'    <line x1="50" y1="{base_y}" x2="640" y2="{base_y}" stroke="#e3e8ef" stroke-width="1.5"/>')
+        el.append(f'    <line x1="50" y1="{base_y}" x2="{W - 20}" y2="{base_y}" stroke="#e3e8ef" stroke-width="1.5"/>')
     else:
         # 负值路径：零线基准双向柱（v0.2 新增，仅数据含负值时启用）
         hi = max(10, -(-int(maxv) // 10) * 10)
@@ -608,7 +620,7 @@ def chart_svg(n, b):
         k = plot_h / (hi - lo)
         top_y = 32
         zero_y = round(top_y + hi * k, 1)
-        el.append(f'    <line x1="50" y1="{top_y}" x2="640" y2="{top_y}" stroke="#e3e8ef" stroke-width="1"/>')
+        el.append(f'    <line x1="50" y1="{top_y}" x2="{W - 20}" y2="{top_y}" stroke="#e3e8ef" stroke-width="1"/>')
         for i, _ in enumerate(cats):
             gx = x0 + gw * i
             for j, s in enumerate(series):
@@ -624,7 +636,7 @@ def chart_svg(n, b):
                     ly = round(y + h + 13)
                 el.append(f'    <rect x="{gx + j*(bw+bg)}" y="{y}" width="{bw}" height="{h}" fill="{c}" rx="2"/>')
                 el.append(f'    <text x="{gx + j*(bw+bg)}" y="{ly}" font-size="12" fill="{c}">{v:.2f}</text>')
-        el.append(f'    <line x1="50" y1="{zero_y}" x2="640" y2="{zero_y}" stroke="#1f2733" stroke-width="1.5"/>')
+        el.append(f'    <line x1="50" y1="{zero_y}" x2="{W - 20}" y2="{zero_y}" stroke="#1f2733" stroke-width="1.5"/>')
     for i, c in enumerate(cats):
         el.append(f'    <text x="{x0 + gw*i}" y="222" font-size="12.5" fill="#1f2733">{esc(c)}</text>')
     el.append("  </svg>")

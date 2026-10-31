@@ -63,7 +63,7 @@ python renderer/render.py report.json renderer/skeleton.html report.html
 **3. 交付前核验。**
 
 ```bash
-python renderer/check_urls.py report.json   # 每个来源 URL 可达；被标 ⚠ 的（重定向 301/302、403、202）需人工复核——反爬/JS 页面在浏览器里仍可能打开
+python renderer/check_urls.py report.json   # 每个来源 URL 可达；标 WARN 的（403/202/429、跨站重定向、超时、TLS 握手中断、网络禁止明文 http）需人工复核——反爬/JS 页面在浏览器里仍可能打开
 ```
 
 然后在浏览器中打开一次（导航、搜索、MD 导出、图表），确认无**渲染器残留**的 `{{...}}` 令牌——数据值里的字面模板令牌按设计原样保留（渲染器 v0.10+ 单趟替换），不属于缺陷。

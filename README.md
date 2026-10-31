@@ -63,7 +63,7 @@ If your data doesn't fit the contract, reshape the data — do not patch the ren
 **3. Verify before delivery.**
 
 ```bash
-python renderer/check_urls.py report.json   # every source URL reachable; URLs flagged ⚠ (redirects 301/302, 403, 202) need a manual re-check
+python renderer/check_urls.py report.json   # every source URL reachable; WARN items (403/202/429, cross-site redirect, timeout, TLS interrupted, http-only blocked by network) need a manual re-check
 ```
 
 Then open the HTML once in a browser (navigation, search, MD export, charts) and confirm no *renderer-residual* `{{...}}` tokens — literal template tokens coming from your own data values are kept verbatim by design (single-pass substitution, renderer v0.10+) and are not a defect.

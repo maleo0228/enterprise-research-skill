@@ -584,6 +584,54 @@ def main():
         check("G3 骨架锚点缺失 fail-fast（skew 干净报错，不出半成品）",
               r.returncode != 0 and "骨架" in err and "Traceback" not in err and not hp.exists(), err[-160:])
 
+    print("\n== 契约加固回归（v3 评审补丁） ==")
+    def _chart(t):
+        for b in t["overview"]["financial"]["blocks"]:
+            if b.get("type") == "chart_bar":
+                return b
+        b = {"type": "chart_bar", "caption": "图9｜注入基座", "unit": "%", "categories": ["a"],
+             "series": [{"name": "s1", "color": "blue", "values": [1.0]}]}
+        t["overview"]["financial"]["blocks"].append(b)
+        return b
+    t = copy.deepcopy(base_data); t["mechanisms"]["items"][0]["evidence"] = "相关信号：S1 [E99]"
+    r, _ = run_render(t)
+    check("R1 纯文本 [E#] 引用干净拒绝", r.returncode != 0 and "纯文本引用" in (r.stderr or "") and "Traceback" not in (r.stderr or ""), (r.stderr or "")[-160:])
+    t = copy.deepcopy(base_data); t["directions"]["items"][0]["points"][0]["text_html"] += "（E1、E2）"
+    r, _ = run_render(t)
+    check("R1 全角括号（E#、E#）引用干净拒绝", r.returncode != 0 and "纯文本引用" in (r.stderr or ""), (r.stderr or "")[-160:])
+    t = copy.deepcopy(base_data); _chart(t)["series"] = []
+    r, _ = run_render(t)
+    check("R2 chart_bar 空 series 干净拒绝（此前 ValueError 裸崩）", r.returncode != 0 and "series 为空" in (r.stderr or "") and "Traceback" not in (r.stderr or ""), (r.stderr or "")[-160:])
+    for nc, ns in ((5, 2), (8, 1), (4, 4)):
+        t = copy.deepcopy(base_data); b = _chart(t)
+        b["categories"] = [f"20{18 + i}" for i in range(nc)]
+        b["series"] = [{"name": f"s{j}", "color": ["blue", "green", "orange", "gray"][j], "values": [10.0 + i + j for i in range(nc)]} for j in range(ns)]
+        r, h = run_render(t)
+        m = re.search(r'<svg width="(\d+)" height="250" viewBox="0 0 (\d+) 250"[^>]*>(.*?)</svg>', h, re.S)
+        ok = r.returncode == 0 and m is not None
+        if ok:
+            W = int(m.group(2))
+            xs = [float(x) + float(w) for x, w in re.findall(r'<rect x="([\d.]+)" y="[^"]+" width="([\d.]+)" height="(?!10")', m.group(3))]
+            ok = bool(xs) and max(xs) <= W and all(c in h for c in b["categories"])
+        check(f"R3 {nc} 类目×{ns} 序列柱图不越界（viewBox 内）", ok, (r.stderr or "")[-120:])
+    t = copy.deepcopy(base_data); t["sources"]["items"][0]["url"] = "not a url"
+    with tempfile.TemporaryDirectory() as td:
+        jp = pathlib.Path(td) / "in.json"; hp = pathlib.Path(td) / "out.html"
+        jp.write_text(json.dumps(t, ensure_ascii=False), encoding="utf-8")
+        r1 = subprocess.run([sys.executable, str(RENDER), str(jp), str(SKEL), str(hp)], capture_output=True, text=True, encoding="utf-8", errors="replace", env=utf8_child_env())
+        r2 = subprocess.run([sys.executable, str(RENDER), str(jp), str(SKEL), str(hp), "--strict"], capture_output=True, text=True, encoding="utf-8", errors="replace", env=utf8_child_env())
+    check("R4 非 http(s) URL 默认警告、--strict 阻断", r1.returncode == 0 and "校验警告" in (r1.stderr or "") and r2.returncode != 0 and "Traceback" not in (r2.stderr or ""), (r2.stderr or "")[-160:])
+    r, h = run_render(base_data)
+    check("R5 柱图携带 data-md 数据表（MD 导出输出数值）", r.returncode == 0 and ('data-md="| 类目' in h or "chart_bar" not in json.dumps(base_data)), "")
+    with tempfile.TemporaryDirectory() as td:
+        jp = pathlib.Path(td) / "empty.json"
+        # 本机关闭端口：不出网、立即失败，确保打印至少一行结果
+        jp.write_text(json.dumps({"sources": {"items": [{"id": "E1", "url": "http://127.0.0.1:9/"}]}}), encoding="utf-8")
+        env = os.environ.copy(); env["PYTHONIOENCODING"] = "gbk"
+        rc = subprocess.run([sys.executable, str(ROOT / "check_urls.py"), str(jp), "--timeout", "3"], capture_output=True, env=env)
+    err6 = (rc.stderr or b"").decode("utf-8", "replace")
+    check("R6 check_urls 在 GBK 输出环境可运行（无 UnicodeEncodeError）", "Traceback" not in err6 and b"E1" in (rc.stdout or b""), err6[-160:])
+
     print("\n== 结构自检（完整渲染） ==")
     r, html, raw = run_render(base_data, return_raw=True)
     check("完整渲染成功", r.returncode == 0, (r.stderr or "")[-120:])

@@ -498,6 +498,16 @@ def validate(d, strict=False):
             u = it.get(uk)
             if uk in it and not (iss(u) and re.match(r"^https?://\S+$", u, re.I)):
                 warns.append(f"sources.items[{i}].{uk} 须为完整 http(s) URL：{u!r}")
+    # 4.0 引用覆盖（schema：basis_sources「建议尽调场景必挂」、points.sources「建议必挂」）：
+    # 不阻断——方向可以是推断——但逐方向汇总未挂来源的条目，提醒补挂或在措辞中标明推断
+    for it in lst(d["directions"].get("items")) if isd(d.get("directions")) else []:
+        if not isd(it):
+            continue
+        pts = [p for p in lst(it.get("points")) if isd(p)]
+        bare = sum(1 for p in pts if not p.get("sources"))
+        if not it.get("basis_sources") or bare:
+            warns.append(f"4.0 {it.get('id')}：basis {'未' if not it.get('basis_sources') else '已'}挂来源，"
+                         f"{bare}/{len(pts)} 条要点未挂来源（属推断请在措辞中标明并给依据）")
     bi = d["overview"]["basic_info"]
     exp = ["公司全称", "官网", "成立时间", "注册地／经营地", "所有制／资本状态", "高管背景", "员工规模", "组织结构"]
     labels = [x["label"] for x in bi]

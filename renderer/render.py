@@ -166,6 +166,21 @@ def validate(d):
             if k not in obj:
                 errs.append(f"{loc} 缺字段 {k}")
 
+    def req_kn(obj, key, loc):
+        """机制档位字段：仅允许字符串或 {text, sources?} 对象（对齐 schema）。
+        fuzz seed 777 实证：深度嵌套数组会被引用扫描计入、但渲染端不输出，
+        造成"来源存在却未被引用"的孤儿行，必须在校验期干净拒绝。"""
+        if not isd(obj) or key not in obj:
+            return
+        v = obj[key]
+        if iss(v):
+            return
+        if isd(v):
+            if not iss(v.get("text")):
+                errs.append(f"{loc}.{key}.text 缺失或非字符串")
+            return
+        errs.append(f"{loc}.{key} 须为字符串或对象")
+
     def need_list(obj, key, loc):
         # 容器字段存在但类型非数组（红队 A6 结构破坏）：显式报错，防渲染期裸崩
         if isd(obj) and key in obj and not isl(obj[key]):
@@ -250,6 +265,9 @@ def validate(d):
     if isd(mc):
         for i, m in enumerate(lst(mc.get("items"))):
             req_item(m, ("id", "nav", "title", "rows", "confirmed", "unconfirmed", "evidence"), f"mechanisms.items[{i}]")
+            if isd(m):
+                for kn in ("confirmed", "unconfirmed", "evidence"):
+                    req_kn(m, kn, f"mechanisms.items[{i}]")
             if isd(m) and need_list(m, "rows", f"mechanisms.items[{i}]"):
                 for j, r in enumerate(lst(m.get("rows"))):
                     req_item(r, ("th", "td_html", "sources"), f"mechanisms.items[{i}].rows[{j}]")
@@ -763,7 +781,9 @@ def main():
     out = out.replace(_SENT % 0, badge)
     for i, (_, val) in enumerate(precise, start=1):
         out = out.replace(_SENT % i, val)
-    pathlib.Path(out_p).write_text(out, encoding="utf-8")
+    # 双臂验证工程复验缺陷 A：write_text 在 Windows 会把 \n 转成 CRLF，导致打印的
+    # UTF-8 字节数与落盘字节数不一致，也破坏跨平台逐字节等价。按字节写盘固定 LF。
+    pathlib.Path(out_p).write_bytes(out.encode("utf-8"))
     print(f"渲染完成：{out_p}（{len(out.encode('utf-8'))} 字节）")
 
 if __name__ == "__main__":

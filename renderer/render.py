@@ -155,6 +155,7 @@ WARNS = []  # 非阻断的契约警告（--strict 时升级为校验失败）
 def validate(d, strict=False):
     errs = []
     warns = []
+    soft = []  # 仅提示：--strict 下也不升级为失败
 
     # ---- 结构完整性自查（F3，2026-10-22 第三轮审计）----
     # schema 无人执行，渲染器兜底自检全部直接索引路径；结构缺失统一"校验失败"干净报错，不裸 traceback。
@@ -510,6 +511,12 @@ def validate(d, strict=False):
             continue
         pts = [p for p in lst(it.get("points")) if isd(p)]
         bare = sum(1 for p in pts if not p.get("sources"))
+        if it.get("state") == "s4" and not it.get("basis_sources") and bare == len(pts):
+            # s4（暂缓/零结果）整条无来源是规范允许的形态（规范 §1.5：零结果须附渠道/动作/时间三要素），
+            # 不按"推断未挂来源"处理，也不在 --strict 下阻断；只给针对性提示
+            soft.append(f"4.0 {it.get('id')}（s4）：整条未挂来源——若为零结果判定，请在 basis 写明"
+                        f"渠道／动作／时间三要素（规范 §1.5），否则请补挂来源")
+            continue
         if not it.get("basis_sources") or bare:
             warns.append(f"4.0 {it.get('id')}：basis {'未' if not it.get('basis_sources') else '已'}挂来源，"
                          f"{bare}/{len(pts)} 条要点未挂来源（属推断请在措辞中标明并给依据）")
@@ -551,6 +558,7 @@ def validate(d, strict=False):
     if strict:
         errs += warns
         warns = []
+    warns += soft
     if errs:
         raise SystemExit("校验失败：\n" + "\n".join(" - " + e for e in errs))
     WARNS[:] = warns

@@ -814,6 +814,25 @@ document.body.setAttribute('data-r18',bad.length?('压字 '+bad.length+' 处 '+b
           w_tab and s_tab and w_cht and s_cht and not w_ok, f"tab={w_tab}/{s_tab} chart={w_cht}/{s_cht} false_pos={w_ok}")
     r, h = run_render(base_data)
     check("R5 柱图携带 data-md 数据表（MD 导出输出数值）", r.returncode == 0 and ('data-md="| 类目' in h or "chart_bar" not in json.dumps(base_data)), "")
+    def _both(data):
+        """同一数据分别以默认与 --strict 渲染，返回 (r_default, r_strict)。"""
+        with tempfile.TemporaryDirectory() as td:
+            jp = pathlib.Path(td) / "in.json"; hp = pathlib.Path(td) / "out.html"
+            jp.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+            a = subprocess.run([sys.executable, str(RENDER), str(jp), str(SKEL), str(hp)], capture_output=True, text=True, encoding="utf-8", errors="replace", env=utf8_child_env())
+            b = subprocess.run([sys.executable, str(RENDER), str(jp), str(SKEL), str(hp), "--strict"], capture_output=True, text=True, encoding="utf-8", errors="replace", env=utf8_child_env())
+        return a, b
+    # R11：s4（暂缓/零结果）整条无来源只提示、--strict 不阻断；非 s4 未挂来源在 --strict 下仍阻断
+    t = copy.deepcopy(base_data); dirs = t["directions"]["items"]
+    dirs[0]["state"] = "s4"; dirs[0].pop("basis_sources", None)
+    for pt in dirs[0]["points"]: pt.pop("sources", None)
+    a, b = _both(t)
+    t2 = copy.deepcopy(base_data); d2 = t2["directions"]["items"][0]; d2["state"] = "s2"; d2.pop("basis_sources", None)
+    for pt in d2["points"]: pt.pop("sources", None)
+    a2, b2 = _both(t2)
+    check("R11 s4 零结果方向整条无来源：仅提示（§1.5 三要素），--strict 不阻断；s2 同形态 --strict 仍阻断",
+          a.returncode == 0 and b.returncode == 0 and "三要素" in (b.stderr or "") and a2.returncode == 0 and b2.returncode != 0,
+          f"s4 rc={a.returncode}/{b.returncode} s2 rc={a2.returncode}/{b2.returncode}")
     with tempfile.TemporaryDirectory() as td:
         jp = pathlib.Path(td) / "empty.json"
         # 本机关闭端口：不出网、立即失败，确保打印至少一行结果

@@ -556,7 +556,7 @@ def render_financial_block(b):
         n = re.match(r"^图(\d+)｜", b["caption"]).group(1)
         return "\n".join([
             f'  <p style="margin-top:14px"><b>{esc(b["caption"])}</b>{sups(b.get("caption_sources"))}</p>',
-            chart_svg(n, b),
+            chart_scroll(chart_svg(n, b)),
             f'  <p class="note">{esc(b.get("chart_note", ""))}</p>'])
     if t == "timeline":
         nodes = []
@@ -605,6 +605,20 @@ def _tw(s, fs):
         else:
             w += 0.64
     return w * fs
+
+_CHART_MIN_PX = 11  # 屏幕上图内最小字号（CSS px），经用户确认取 11px
+
+def chart_scroll(svg):
+    """把柱图 <svg> 包进 <div class="chart-scroll">（窄屏横向滚动）。
+    按画布宽 W 与图内最小字号 fs 算出 --chart-minw = ceil(W*11/fs)：svg 被 max-width:100% 缩放后，
+    渲染宽度不低于该值即可保证最小字号 ≥11px。min-width 只在单栏版式（≤920px，见骨架 CSS）生效，
+    带侧栏的桌面版式不受影响（≥1000px 截图与此前逐像素一致）。W 取 0010 动态画布的 viewBox 宽。"""
+    W = float(re.search(r'viewBox="0 0 ([\d.]+) ', svg).group(1))
+    fs = min(float(x) for x in re.findall(r'font-size="([\d.]+)"', svg))
+    minw = -(-int(W * _CHART_MIN_PX * 100) // int(fs * 100))  # 整数运算向上取整，避免浮点误差
+    svg = svg.replace('style="margin:6px 0 4px; max-width:100%;"',
+                      f'style="margin:6px 0 4px; max-width:100%; --chart-minw:{minw}px;"', 1)
+    return '<div class="chart-scroll">' + svg + '</div>'
 
 def chart_svg(n, b):
     cats, series = b["categories"], b["series"]

@@ -56,7 +56,7 @@ def norm_text(frag):
     """归一化后与基线做文本逐字比较：
     1) 剥离 <sup>（来源引用按集合另比）；2) 去 HTML 注释（节间注释不渲染）；
     3) 弯直引号归一（G3 基线为半角直引号，实例为全角弯引号，视觉等价）；
-    4) SVG 整体换令牌（坐标/元素顺序不逐字比，文本经 svg_texts 另比）；
+    4) SVG 整体换令牌（坐标/元素顺序不逐字比，文本经 svg_texts 另比）；柱图外层 chart-scroll 横滑壳剥除；
     5) 命名行 margin-top 归一为 14px（基线 12/16px 手调差异）；
     6) 时间线前命名行忽略（鸣石 v0.8 缺命名行系基线缺陷，渲染侧按规范补齐，已登记归一化）；
     7) 压缩全部空白。"""
@@ -64,6 +64,7 @@ def norm_text(frag):
     frag = re.sub(r'<!--.*?-->', '', frag, flags=re.S)
     frag = frag.replace('“', '"').replace('”', '"').replace('‘', "'").replace('’', "'")
     frag = re.sub(r'<svg.*?</svg>', '⟦SVG⟧', frag, flags=re.S)
+    frag = frag.replace('<div class="chart-scroll">⟦SVG⟧</div>', '⟦SVG⟧')  # 柱图横滑壳（纯版式容器，0012）
     frag = frag.replace('margin-top:12px', 'margin-top:14px').replace('margin-top:16px', 'margin-top:14px')
     frag = frag.replace(' style="margin-top:20px"', '')
     frag = re.sub(r'<p style="margin-top:14px"><b>图\d+｜[^<]*</b></p>(?=\s*<div class="timeline">)',

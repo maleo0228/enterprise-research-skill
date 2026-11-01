@@ -102,7 +102,7 @@ After installing, restart or refresh the agent so it re-discovers skills.
 
 ## For maintainers
 
-Renderer or skeleton changes only: `python renderer/test_renderer.py` runs the 122-item attack-surface & regression suite, and a mandatory seeded fuzz run (`python renderer/fuzz_renderer.py`, 4 seeds × 2000 cases, zero defects required) — all green before any release; `python renderer/compare.py <rendered.html> <baseline.html>` checks equivalence against a frozen baseline sample.
+Renderer or skeleton changes only: `python renderer/test_renderer.py` runs the 123-item attack-surface & regression suite, and a mandatory seeded fuzz run (`python renderer/fuzz_renderer.py`, 4 seeds × 2000 cases, zero defects required) — all green before any release; `python renderer/compare.py <rendered.html> <baseline.html>` checks equivalence against a frozen baseline sample.
 
 ## Roadmap
 

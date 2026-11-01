@@ -80,6 +80,9 @@
 
   mark.hit{background:#ffe9a8; padding:0;}
   mark.hit.cur{background:#ffb900;}
+  /* 图内（SVG）命中：HTML <mark> 在 <text> 里不渲染、会把文字吞掉，改用 SVG <tspan> 着色 */
+  tspan.hit{fill:#b45309; text-decoration:underline;}
+  tspan.hit.cur{fill:#c2410c; font-weight:700;}
 
   .signal{border:1px solid var(--line); border-radius:10px; padding:16px 18px; margin-bottom:14px; scroll-margin-top:16px;}
   .signal h4{font-size:15px; margin-bottom:8px;}
@@ -226,7 +229,7 @@
       hits=[], cur=-1;
 
   function clearHits(){
-    content.querySelectorAll("mark.hit").forEach(function(m){
+    content.querySelectorAll("mark.hit, tspan.hit").forEach(function(m){
       var p=m.parentNode; p.replaceChild(document.createTextNode(m.textContent), m);
       p.normalize();
     });
@@ -246,17 +249,18 @@
     var walker=document.createTreeWalker(content, NodeFilter.SHOW_TEXT, {
       acceptNode:function(n){
         if(!n.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
-        if(n.parentElement.closest("script,style,mark")) return NodeFilter.FILTER_REJECT;
+        if(n.parentElement.closest("script,style,mark,tspan.hit")) return NodeFilter.FILTER_REJECT;
         return n.nodeValue.toLowerCase().indexOf(lower)>=0 ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
       }});
     var nodes=[]; while(walker.nextNode()) nodes.push(walker.currentNode);
     nodes.forEach(function(n){
-      var el=n.parentNode, txt=n.nodeValue, ltxt=txt.toLowerCase();
+      var el=n.parentNode, txt=n.nodeValue, ltxt=txt.toLowerCase(),
+          inSvg=(el.namespaceURI==="http://www.w3.org/2000/svg");
       var frag=document.createDocumentFragment(), idx=0, pos;
       while((pos=ltxt.indexOf(lower, idx))>=0){
         frag.appendChild(document.createTextNode(txt.slice(idx, pos)));
-        var m=document.createElement("mark");
-        m.className="hit"; m.textContent=txt.slice(pos, pos+k.length);
+        var m=inSvg?document.createElementNS("http://www.w3.org/2000/svg","tspan"):document.createElement("mark");
+        m.setAttribute("class","hit"); m.textContent=txt.slice(pos, pos+k.length);
         frag.appendChild(m); hits.push(m); idx=pos+k.length;
       }
       frag.appendChild(document.createTextNode(txt.slice(idx)));
@@ -345,7 +349,7 @@
     return out;
   }
   function svgToMd(ch){
-    return "> 📊 "+(ch.getAttribute("aria-label")||"图表")+"（图形见网页版）\n\n"+(ch.getAttribute("data-md")?ch.getAttribute("data-md")+"\n\n":"");
+    return "> 📊 "+(ch.getAttribute("aria-label")||"图表").replace(/\s+/g," ")+"（图形见网页版）\n\n"+(ch.getAttribute("data-md")?ch.getAttribute("data-md")+"\n\n":"");
   }
   function sectionToMd(sec){
     var out="";

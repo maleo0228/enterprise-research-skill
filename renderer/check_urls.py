@@ -30,8 +30,10 @@ def _reason(e):
         return "REFUSED"
     return "NET"
 
+UA = "Mozilla/5.0"
+
 def fetch(url, timeout, ctx):
-    req = urllib.request.Request(url, method="GET", headers={"User-Agent": "Mozilla/5.0"})
+    req = urllib.request.Request(url, method="GET", headers={"User-Agent": UA})
     try:
         with urllib.request.urlopen(req, timeout=timeout, context=ctx) as r:
             return r.status, r.geturl(), ""
@@ -71,7 +73,12 @@ def main():
     ap.add_argument("--timeout", type=int, default=12)
     ap.add_argument("--insecure", action="store_true", help="关闭 TLS 证书校验（仅作对照）")
     ap.add_argument("--json", action="store_true", help="以 JSON 输出结果")
+    ap.add_argument("--user-agent", default=None,
+                    help="自定义 User-Agent（如 SEC EDGAR 要求 \"Name email@example.com\"，默认 UA 返回 403）")
     args = ap.parse_args()
+    global UA
+    if args.user_agent:
+        UA = args.user_agent
     d = json.load(open(args.report_json, encoding="utf-8"))
     refs = [(it["id"], it[k]) for it in d["sources"]["items"] for k in ("url", "url2") if it.get(k)]
     ctx = ssl.create_default_context()

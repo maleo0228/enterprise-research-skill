@@ -166,6 +166,12 @@
   /* 全文导出按钮放进边栏标题区（不再 position:fixed 浮在正文上）：桌面随固定边栏常驻可见，
      ≤920px 边栏变为页首静态块，按钮随之成为页首行内元素——任何宽度都不压正文 */
   .export-side{display:inline-block; margin-top:8px;}
+  /* 单栏版式导航精简（可选）：侧栏在手机上原本占满首屏（≈710px），子项隐藏、五个一级入口排成一行可换行的标签 */
+  @media(max-width:920px){
+    .sidenav{display:flex; flex-wrap:wrap; gap:6px; padding:4px 16px 14px;}
+    .sidenav .sub{display:none;}
+    .sidenav .grp{padding:3px 10px; border:1px solid var(--line); font-size:13px;}
+  }
 </style>
 </head>
 <body>

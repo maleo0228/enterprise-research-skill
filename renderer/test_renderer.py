@@ -890,6 +890,17 @@ document.body.setAttribute('data-r14',bad.length?bad.join(','):'OK');});</script
             g14 = repr(ex)[:120]
     check("R14 搜索命中图内文字不吞字、清除后复原（静态契约" + ("＋Chrome 实测）" if chrome else "；未找到 Chrome，实测跳过）"),
           st14 and (g14 is None or g14 == "OK"), f"static={st14} geo={g14}")
+    # R16（可选补丁）：375px 下侧栏导航精简，正文首屏可见（侧栏高度 < 400px，此前约 710px）
+    st16 = ".sidenav .sub{display:none;}" in skel_css
+    g16 = None
+    if chrome and r14.returncode == 0:
+        probe16 = """<script>window.addEventListener('load',function(){document.body.setAttribute('data-r16',String(Math.round(document.querySelector('.sidebar').getBoundingClientRect().height)));});</script></body>"""
+        try:
+            g16 = chrome_narrow(chrome, h14.replace("</body>", probe16, 1), "r16", width=375)
+        except Exception as ex:
+            g16 = repr(ex)[:80]
+    check("R16 窄屏侧栏导航精简、首屏可见正文（静态契约" + ("＋Chrome 实测）" if chrome else "；未找到 Chrome，实测跳过）"),
+          st16 and (g16 is None or (g16.isdigit() and int(g16) < 400)), f"static={st16} sidebar_h={g16}")
     with tempfile.TemporaryDirectory() as td:
         jp = pathlib.Path(td) / "empty.json"
         # 本机关闭端口：不出网、立即失败，确保打印至少一行结果

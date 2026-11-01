@@ -806,6 +806,15 @@ document.body.setAttribute('data-r18',bad.length?('压字 '+bad.length+' 处 '+b
             fwd = fwd.replace(o, n, 1) if n or o in fwd else fwd
         ok20 = fwd == sk20; why = why or ("" if ok20 else "正向套用结果与骨架不一致")
     check(f"R20 make_skeleton.py 改写表（{len(_pairs)} 处）与冻结骨架一致", ok20, why)
+    # R21：点引用 [En] 跳到页尾来源表后能回到原处（手机上一次跳转常达 1.6 万像素，此前浏览器"返回"直接离开页面）。
+    # 静态契约：跳转前入栈并 pushState、popstate 只认本次引用条目、来源编号格可点回。实测见 v6 报告（Playwright 375px：
+    # 3148→19532→返回 3148）；--dump-dom 的 srcdoc iframe 不执行滚动，故套件内只做静态部分。
+    sk21 = SKEL.read_text(encoding="utf-8")
+    st21 = all(x in sk21 for x in ('history.pushState({esrSrc:srcBack.length}', 'window.addEventListener("popstate"',
+                                   'k!==srcBack.length-1', '#src-table td.eid', 'srcBack.push(window.pageYOffset)'))
+    r21, h21 = run_render(base_data)
+    check("R21 引用跳转可返回原处（pushState＋popstate＋来源编号格回跳，静态契约）",
+          r21.returncode == 0 and st21 and 'history.pushState' in h21, f"static={st21}")
     t = copy.deepcopy(base_data); t["sources"]["items"][0]["url"] = "not a url"
     with tempfile.TemporaryDirectory() as td:
         jp = pathlib.Path(td) / "in.json"; hp = pathlib.Path(td) / "out.html"

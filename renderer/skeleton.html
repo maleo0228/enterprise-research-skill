@@ -73,6 +73,7 @@
   table.t>tbody{display:table; width:100%; border-collapse:collapse;}
   /* 柱图滚动壳：单栏版式下 svg 不再无限缩小，最小字号 ≥11px（--chart-minw 由渲染器按画布宽/最小字号算出），放不下就横滑 */
   .chart-scroll{overflow-x:auto; -webkit-overflow-scrolling:touch;}
+  .chart-scroll>svg{min-width:var(--chart-minw-wide,0);} /* 加宽画布的图：桌面也保底 11px */
 
   sup.src{cursor:pointer; color:var(--side); font-size:11px; font-weight:600; padding:0 2px;}
   sup.src:hover{color:var(--side-deep);}

@@ -843,6 +843,32 @@ document.body.setAttribute('data-r18',bad.length?('压字 '+bad.length+' 处 '+b
           blk is not None and a.returncode == 0 and "是否应为 caption_sources" in (a.stderr or "")
           and "contract_version" in (a.stderr or "") and b.returncode != 0 and "Traceback" not in (b.stderr or ""),
           (a.stderr or "")[-200:])
+    # R13：加宽画布（8 类目×4 序列，W>660）的柱图在桌面 1280px 下也保底 11px（此前被压到约 5px）；默认宽度图不带 --chart-minw-wide
+    t = copy.deepcopy(base_data)
+    for b in t["overview"]["financial"]["blocks"]:
+        if b.get("type") == "chart_bar":
+            b["categories"] = [str(2018 + i) for i in range(8)]
+            b["series"] = [{"name": f"序列{j}（亿元）", "color": ["blue", "green", "orange", "gray"][j],
+                            "values": [round(1234.56 + 37.1 * i - 50 * j, 2) for i in range(8)]} for j in range(4)]
+            break
+    r13, h13 = run_render(t)
+    _, h_def = run_render(base_data)
+    st13 = r13.returncode == 0 and "--chart-minw-wide:" in h13 and "--chart-minw-wide:" not in h_def \
+        and bool(re.search(r"\.chart-scroll>svg\{min-width:var\(--chart-minw-wide,0\);\}", skel_css))
+    g13 = None
+    if st13 and chrome:
+        probe13 = """<script>window.addEventListener('load',function(){var bad=[];
+document.querySelectorAll('svg[role=img]').forEach(function(sv,k){var sc=sv.getBoundingClientRect().width/sv.viewBox.baseVal.width;
+sv.querySelectorAll('text').forEach(function(tx){var f=parseFloat(tx.getAttribute('font-size'))*sc;if(f<10.99)bad.push('图'+k+' 字号'+f.toFixed(2));});
+var sec=sv.closest('section.page'),sr=sec.getBoundingClientRect(),cs=getComputedStyle(sec),inR=sr.right-parseFloat(cs.paddingRight)-parseFloat(cs.borderRightWidth);
+if(sv.parentElement.getBoundingClientRect().right>inR+0.5)bad.push('图'+k+' 越出卡片');});
+document.body.setAttribute('data-r13',bad.length?bad.slice(0,4).join(','):'OK');});</script></body>"""
+        try:
+            g13 = chrome_narrow(chrome, h13.replace("</body>", probe13, 1), "r13", width=1280, height=900)
+        except Exception as ex:
+            g13 = repr(ex)[:120]
+    check("R13 加宽画布柱图桌面 1280px 下文字 ≥11px（静态契约" + ("＋Chrome 实测）" if chrome else "；未找到 Chrome，实测跳过）"),
+          st13 and (g13 is None or g13 == "OK"), f"static={st13} geo={g13}")
     with tempfile.TemporaryDirectory() as td:
         jp = pathlib.Path(td) / "empty.json"
         # 本机关闭端口：不出网、立即失败，确保打印至少一行结果

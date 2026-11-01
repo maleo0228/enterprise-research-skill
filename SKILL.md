@@ -56,7 +56,7 @@ This skill performs no research (see Boundaries). The checklist below documents,
 
 ## Delivery checklist
 
-1. `python renderer/test_renderer.py` — attack-surface & regression suite (117 items) must pass; `python renderer/fuzz_renderer.py` (seeded fuzz, 4 seeds × 2000 cases) must report zero defects. Both are release gates for any renderer-related change.
+1. `python renderer/test_renderer.py` — attack-surface & regression suite (118 items) must pass; `python renderer/fuzz_renderer.py` (seeded fuzz, 4 seeds × 2000 cases) must report zero defects. Both are release gates for any renderer-related change.
 2. `python renderer/check_urls.py report.json` — every source URL reachable; manually re-check every `WARN` (403/202/429, cross-site redirect, timeout, TLS interrupted, or http-only links blocked by the network — anti-crawler/JS pages may still open in a browser). TLS certificates are verified by default; `--insecure` is for comparison only. For due-diligence deliveries also run `render.py … --strict` so contract warnings (date/URL format, uncited 4.0 items) fail the build.
 3. Open the HTML once in a browser: navigation, search, MD export, charts render.
 4. Confirm no *renderer-residual* `{{...}}` tokens in the output — i.e. tokens the renderer failed to substitute. Literal template tokens coming from your own data values are kept verbatim by design (single-pass substitution, renderer v0.10+) and are not a defect; the regression suite's no-residual-token check covers the renderer side.

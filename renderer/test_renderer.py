@@ -607,7 +607,7 @@ def main():
         b["categories"] = [f"20{18 + i}" for i in range(nc)]
         b["series"] = [{"name": f"s{j}", "color": ["blue", "green", "orange", "gray"][j], "values": [10.0 + i + j for i in range(nc)]} for j in range(ns)]
         r, h = run_render(t)
-        m = re.search(r'<svg width="(\d+)" height="250" viewBox="0 0 (\d+) 250"[^>]*>(.*?)</svg>', h, re.S)
+        m = re.search(r'<svg width="(\d+)" height="\d+" viewBox="0 0 (\d+) \d+"[^>]*>(.*?)</svg>', h, re.S)
         ok = r.returncode == 0 and m is not None
         if ok:
             W = int(m.group(2))
@@ -621,6 +621,50 @@ def main():
     ys = [int(y) for y in re.findall(r'<text x="[\d.]+" y="(\d+)" font-size="12" fill="#(?!1f2733)', m.group(1))] if m else []
     check("R7 整数序列不补 .00（计数类数据）", r.returncode == 0 and ">1793<" in h and ">1793.00<" not in h, "")
     check("R7 最高柱数值标签不压图例行（基线 y ≥ 32）", bool(ys) and min(ys) >= 32, str(ys))
+    # R8：柱图几何无重叠矩阵。文本包围盒用渲染器自身的保守字宽估计（render._tw，经 Chrome getBBox 标定
+    # 只偏大），纵向取 [基线-0.95em, 基线+0.3em]；断言 数值标签×图例／标签／柱／类目、图例×图例 互不相交，且全部落在 viewBox 内
+    sys.path.insert(0, str(ROOT)); import render as _R
+    def _boxes(svg):
+        L, V, B, C = [], [], [], []
+        for m in re.finditer(r'<(rect|text) ([^>]*)>([^<]*)', svg):
+            a = dict(re.findall(r'([\w-]+)="([^"]*)"', m.group(2)))
+            if m.group(1) == "rect":
+                bx = (float(a["x"]), float(a["y"]), float(a["width"]), float(a["height"]))
+                (L if a["width"] == "10" and a["height"] == "10" else B).append(bx)
+                continue
+            fs = float(a["font-size"]); w = _R._tw(html_unescape(m.group(3)), fs)
+            x = float(a["x"]) - (w / 2 if a.get("text-anchor") == "middle" else 0)
+            bx = (x, float(a["y"]) - 0.95 * fs, w, 1.25 * fs)
+            (C if fs == 12.5 else L if a["fill"] == "#1f2733" else V).append(bx)
+        return L, V, B, C
+    def _ov(p, q):
+        return p[0] < q[0] + q[2] - 0.5 and q[0] < p[0] + p[2] - 0.5 and p[1] < q[1] + q[3] - 0.5 and q[1] < p[1] + p[3] - 0.5
+    from html import unescape as html_unescape
+    bad8, n8 = [], 0
+    vsets = {"near": lambda i, j: 99.0 + (i + j) % 3 * 0.45, "long": lambda i, j: 12345.67 - i * 7.1 - j,
+             "int": lambda i, j: 1695 + 98 * ((i + j) % 2), "neg": lambda i, j: (-1) ** (i + j) * (987.65 + 10 * i)}
+    longnames = ["名创优品品牌中国内地收入（亿元）", "名创优品品牌海外市场收入（亿元）", "TOP TOY 品牌收入（亿元）", "其他收入"]
+    for ns in (1, 2, 3, 4):
+        for nc in (1, 3, 5, 8):
+            for vk, vf in vsets.items():
+                for long_ in (False, True):
+                    t = copy.deepcopy(base_data); b = _chart(t)
+                    b["categories"] = (["亚洲（除中国）", "北美", "拉美", "欧洲", "其他", "2024", "2025", "2026H1"])[:nc]
+                    b["series"] = [{"name": (longnames[j] if long_ else f"s{j}"), "color": ["blue", "green", "orange", "gray"][j],
+                                    "values": [(int(vf(i, j)) if vk == "int" else round(vf(i, j), 2)) for i in range(nc)]} for j in range(ns)]
+                    html = _R.chart_svg(9, b); n8 += 1
+                    mv = re.search(r'viewBox="0 0 ([\d.]+) ([\d.]+)"', html); Wv, Hv = float(mv.group(1)), float(mv.group(2))
+                    L, V, B, C = _boxes(html)
+                    errs = []
+                    for i, v in enumerate(V):
+                        if any(_ov(v, x) for x in L): errs.append("标签×图例")
+                        if any(_ov(v, x) for x in V[i + 1:]): errs.append("标签×标签")
+                        if any(_ov(v, x) for x in B): errs.append("标签×柱")
+                        if any(_ov(v, x) for x in C): errs.append("标签×类目")
+                    if any(_ov(p, q) for i, p in enumerate(L) for q in L[i + 1:] if not (p[2] == 10 or q[2] == 10)): errs.append("图例×图例")
+                    if any(x[0] < -0.5 or x[1] < -0.5 or x[0] + x[2] > Wv + 0.5 or x[1] + x[3] > Hv + 0.5 for x in L + V + B + C): errs.append("越界")
+                    if errs: bad8.append(f"{ns}序列×{nc}类目/{vk}/{'长名' if long_ else '短名'}:{sorted(set(errs))}")
+    check(f"R8 柱图几何无重叠矩阵（{n8} 例：1–4 序列×1/3/5/8 类目×近最大值/长标签/整数/正负混合×长短图例名）", not bad8, "; ".join(bad8[:3]))
     t = copy.deepcopy(base_data); t["sources"]["items"][0]["url"] = "not a url"
     with tempfile.TemporaryDirectory() as td:
         jp = pathlib.Path(td) / "in.json"; hp = pathlib.Path(td) / "out.html"

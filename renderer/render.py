@@ -305,6 +305,11 @@ def validate(d, strict=False):
                 # 红队 M3 fuzz：url2 存在而 url2_display 缺失时渲染期 KeyError 裸崩
                 if isd(it) and it.get("url2") and "url2_display" not in it:
                     errs.append(f"sources.items[{i}] 缺字段 url2_display")
+                # 红队 M3 fuzz：url2/url2_display 被置换成数值/数组时渲染期 re.match 裸崩（与必填字段一致要求字符串）
+                if isd(it):
+                    for k in ("url2", "url2_display"):
+                        if k in it and not iss(it[k]):
+                            errs.append(f"sources.items[{i}].{k} 非字符串")
     if isd(fi) and isl(fi.get("blocks")):
         REQ = {"table": ("caption", "header", "rows"),
                "chart_bar": ("caption", "categories", "series"),
@@ -573,83 +578,113 @@ def render_financial_block(b):
         return f'  <div class="missing">{esc(b["note"])}</div>'
     raise ValueError("未知块类型 " + t)
 
+# ---- 柱图布局 v2（评审补丁 0010）：先算各元素包围盒、再定坐标，结构上保证不重叠 ----
+# 根因（171e1bc 及更早版本均存在）：① 图例固定画在 y≈10–20，绘图区顶 y=32 与之只隔 12px，
+#   且纵轴上限只把最大值向上取整到 10 的倍数，最高柱几乎顶到 y=32，数值标签（基线 y-6、字高约 9px）
+#   落进图例行；② 数值标签左对齐于柱左缘，"1695.00"约 46px 宽而每柱槽位仅 36px（柱宽 30＋间距 6），
+#   多序列时标签压到相邻柱和相邻标签；③ 图例按固定 150px 步进不换行，长名称互相覆盖；
+#   ④ 负值标签画在柱底下方 13px，可压到 y=222 的类目文字。
+_CH_FS, _CH_LH = 12, 13          # 数值标签字号与行高（字面高度约 9px，留 4px 余量）
+
+def _tw(s, fs):
+    """文本宽度保守估计（SVG 用户坐标）。系数按 headless Chrome＋Noto Sans/Noto CJK 实测 getBBox 标定并上浮，
+    Windows（微软雅黑/Segoe UI）与 macOS（苹方）字形更窄，估计值只会偏大、不会偏小。"""
+    w = 0.0
+    for ch in str(s):
+        o = ord(ch)
+        if o >= 0x2E80 or 0xFF00 <= o <= 0xFFEF:
+            w += 1.15
+        elif ch in ".,:;'!|ij l":
+            w += 0.36
+        elif ch in "-()/":
+            w += 0.45
+        elif ch.isdigit():
+            w += 0.66
+        elif ch.isupper():
+            w += 0.82
+        else:
+            w += 0.64
+    return w * fs
+
 def chart_svg(n, b):
     cats, series = b["categories"], b["series"]
-    base_y, plot_h, x0, gw, bw, bg = 200, 168, 70, 140, 30, 6
-    # 自适应布局：默认几何（≤4 类目、≤3 序列）输出与基线逐字节一致；超出时先压缩组距，
-    # 仍放不下再加宽 viewBox（SVG 有 max-width:100%，加宽后按比例缩放显示），
-    # 避免第 5 个及以后的类目被裁出画布（实测：5 年×2 序列末组被截、6 年第 6 组整组不可见）
-    W = 660
     nc, ns = len(cats), len(series)
-    group_w = ns * bw + (ns - 1) * bg
-    tail = max(group_w, 60) + 30          # 末组柱宽＋数值标签余量
-    if gw < group_w + 14 or x0 + gw * (nc - 1) + tail > W:
-        fit = (W - x0 - tail) / (nc - 1) if nc > 1 else gw
-        gw = int(fit) if fit >= group_w + 14 else group_w + 24
-        W = max(W, int(x0 + gw * (nc - 1) + tail))
-    W = max(W, x0 + 150 * ns)             # 图例每项 150 宽
-    # 全部为 JSON 整数（门店数、人数等计数）时不补 ".00"；含浮点则保持两位小数（与基线一致）
-    fmt = "{:.0f}" if all(isinstance(v, int) for s in series for v in s["values"]) else "{:.2f}"
+    ints = all(isinstance(v, int) for s in series for v in s["values"])
+    def fmt(v):  # 计数类整数不补 .00；≥1 万加千分位（基线数据均 <1 万，文本不变）
+        f = "{:,.0f}" if ints else "{:,.2f}"
+        return (f if abs(v) >= 10000 else f.replace(",", "")).format(v)
+    labels = [[fmt(v) for v in s["values"]] for s in series]
     maxv = max(max(s["values"]) for s in series)
     minv = min(min(s["values"]) for s in series)
     names = [s["name"] for s in series]
     aria = f"图{n} {'与'.join(names)}柱状图（{cats[0]}–{cats[-1]}）"
-    # data-md：图表数据的 Markdown 表，供骨架"导出 MD"输出数值（此前 MD 中图表仅剩占位文字）
+    # 水平：每柱槽位 ≥ 最宽数值标签＋4，标签居中于柱心 → 组内标签、相邻柱互不覆盖
+    bw, x0 = 30, 70
+    sw = max(36, max(_tw(t, _CH_FS) for row in labels for t in row) + 4)
+    group_w = ns * sw
+    catw = max(_tw(c, 12.5) for c in cats)
+    need = max(group_w + 14, catw + 8)
+    W = 660
+    gw = max(need, min(140, (W - x0 - 20) / nc))
+    W = max(W, int(x0 + gw * nc + 20 + 0.999))
+    # 图例：按实际文字宽度排布，超出可用宽度自动换行
+    items = [(s, esc(s["name"] + (f'（{s["unit"]}）' if s.get("unit") else "")),
+              16 + _tw(s["name"] + (f'（{s["unit"]}）' if s.get("unit") else ""), 12) + 20) for s in series]
+    rows, cur, cw = [], [], 0.0
+    for it in items:
+        if cur and x0 + cw + it[2] > W - 10:
+            rows.append(cur); cur, cw = [], 0.0
+        cur.append(it); cw += it[2]
+    rows.append(cur)
+    W = max(W, int(max(x0 + sum(i[2] for i in r) for r in rows) + 10.999))
+    legend_end = 10 + 18 * len(rows)                 # 图例带底（最后一行色块底 y=legend_end-8）
+    plot_top = legend_end + _CH_LH + 4               # 预留一行数值标签高度：最高柱标签必在图例带之下
+    plot_h = 160
+    neg = minv < 0
+    base_y = plot_top + plot_h                       # 绘图区底
+    cat_y = base_y + (_CH_LH + 6 if neg else 0) + 22 # 负值标签占用绘图区下方一行，类目文字再下移
+    H = cat_y + 28
+    # data-md：图表数据的 Markdown 表，供骨架"导出 MD"输出数值
     def _md(x):
         return str(x).replace("|", "\\|").replace("\n", " ")
     hdr = ["类目"] + [_md(s["name"] + (f'（{s["unit"]}）' if s.get("unit") else "")) for s in series]
     md_rows = ["| " + " | ".join(hdr) + " |", "|" + "---|" * len(hdr)]
     for i, c in enumerate(cats):
-        md_rows.append("| " + " | ".join([_md(c)] + [fmt.format(s["values"][i]) for s in series]) + " |")
+        md_rows.append("| " + " | ".join([_md(c)] + [labels[j][i] for j in range(ns)]) + " |")
     data_md = esc_attr("\n".join(md_rows))
-    el = [f'<svg width="{W}" height="250" viewBox="0 0 {W} 250" role="img" aria-label="{esc_attr(aria)}" data-md="{data_md}" style="margin:6px 0 4px; max-width:100%;">']
-    lx = x0
-    for s in series:
-        c = COLORS[s.get("color", "blue")]
-        unit = f'（{s["unit"]}）' if s.get("unit") else ""
-        el.append(f'    <rect x="{lx}" y="10" width="10" height="10" fill="{c}" rx="2"/>')
-        el.append(f'    <text x="{lx+16}" y="19" font-size="12" fill="#1f2733">{esc(s["name"]+unit)}</text>')
-        lx += 150
-    if minv >= 0:
-        # 非负路径：与 v0.1 输出逐字节一致（基线等价比对依赖）
-        ceil = max(10, -(-int(maxv) // 10) * 10)
-        # 顶部留白：最高柱的数值标签不得压到 y≈10–19 的图例行（实测 1793/1800、69.52/70 均会压线）
-        k = min(plot_h / ceil, (plot_h - 16) / maxv) if maxv > 0 else plot_h / ceil
-        for i, _ in enumerate(cats):
-            gx = x0 + gw * i
-            for j, s in enumerate(series):
-                v = s["values"][i]
-                h = round(v * k, 1)
-                y = round(base_y - h, 1)
-                el.append(f'    <rect x="{gx + j*(bw+bg)}" y="{y}" width="{bw}" height="{h}" fill="{COLORS[s.get("color","blue")]}" rx="2"/>')
-                el.append(f'    <text x="{gx + j*(bw+bg)}" y="{round(y-6)}" font-size="12" fill="{COLORS[s.get("color","blue")]}">{fmt.format(v)}</text>')
-        el.append(f'    <line x1="50" y1="{base_y}" x2="{W - 20}" y2="{base_y}" stroke="#e3e8ef" stroke-width="1.5"/>')
-    else:
-        # 负值路径：零线基准双向柱（v0.2 新增，仅数据含负值时启用）
-        hi = max(10, -(-int(maxv) // 10) * 10)
-        lo = min(-10, (int(minv) // 10) * 10)
-        k = plot_h / (hi - lo)
-        top_y = 32
-        zero_y = round(top_y + hi * k, 1)
-        el.append(f'    <line x1="50" y1="{top_y}" x2="{W - 20}" y2="{top_y}" stroke="#e3e8ef" stroke-width="1"/>')
-        for i, _ in enumerate(cats):
-            gx = x0 + gw * i
-            for j, s in enumerate(series):
-                v = s["values"][i]
-                c = COLORS[s.get("color", "blue")]
-                if v >= 0:
-                    h = round(v * k, 1)
-                    y = round(zero_y - h, 1)
-                    ly = round(y - 6)
-                else:
-                    h = round(-v * k, 1)
-                    y = zero_y
-                    ly = round(y + h + 13)
-                el.append(f'    <rect x="{gx + j*(bw+bg)}" y="{y}" width="{bw}" height="{h}" fill="{c}" rx="2"/>')
-                el.append(f'    <text x="{gx + j*(bw+bg)}" y="{ly}" font-size="12" fill="{c}">{fmt.format(v)}</text>')
-        el.append(f'    <line x1="50" y1="{zero_y}" x2="{W - 20}" y2="{zero_y}" stroke="#1f2733" stroke-width="1.5"/>')
+    el = [f'<svg width="{W}" height="{H}" viewBox="0 0 {W} {H}" role="img" aria-label="{esc_attr(aria)}" data-md="{data_md}" style="margin:6px 0 4px; max-width:100%;">']
+    for r_i, r in enumerate(rows):
+        lx, ly = x0, 10 + 18 * r_i
+        for s, txt, w in r:
+            c = COLORS[s.get("color", "blue")]
+            el.append(f'    <rect x="{round(lx, 1)}" y="{ly}" width="10" height="10" fill="{c}" rx="2"/>')
+            el.append(f'    <text x="{round(lx + 16, 1)}" y="{ly + 9}" font-size="12" fill="#1f2733">{txt}</text>')
+            lx += w
+    hi = max(maxv, 0)
+    lo = min(minv, 0)
+    span = (hi - lo) or 1
+    k = plot_h / span
+    zero_y = plot_top + hi * k
+    for i in range(nc):
+        gx = x0 + gw * i + (gw - group_w) / 2
+        for j, s in enumerate(series):
+            v = s["values"][i]
+            c = COLORS[s.get("color", "blue")]
+            bx = gx + j * sw + (sw - bw) / 2
+            cx = round(bx + bw / 2, 1)
+            h = round(abs(v) * k, 1)
+            if v >= 0:
+                y = round(zero_y - h, 1)
+                ly = int(y - 5)                      # 柱顶上方：基线距柱顶 5px，不触柱
+            else:
+                y = round(zero_y, 1)
+                ly = int(y + h + _CH_LH + 3)         # 柱底下方一行（CJK 字体上伸部较高，留足 3px），落在预留的下方标签带内
+            el.append(f'    <rect x="{round(bx, 1)}" y="{y}" width="{bw}" height="{h}" fill="{c}" rx="2"/>')
+            el.append(f'    <text x="{cx}" y="{ly}" font-size="12" fill="{c}" text-anchor="middle">{labels[j][i]}</text>')
+    zy = round(zero_y, 1)
+    el.append(f'    <line x1="50" y1="{zy}" x2="{W - 20}" y2="{zy}" stroke="{"#1f2733" if neg else "#e3e8ef"}" stroke-width="1.5"/>')
     for i, c in enumerate(cats):
-        el.append(f'    <text x="{x0 + gw*i}" y="222" font-size="12.5" fill="#1f2733">{esc(c)}</text>')
+        el.append(f'    <text x="{round(x0 + gw * i + gw / 2, 1)}" y="{cat_y}" font-size="12.5" fill="#1f2733" text-anchor="middle">{esc(c)}</text>')
     el.append("  </svg>")
     return "\n".join(el)
 

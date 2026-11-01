@@ -829,10 +829,14 @@ document.body.setAttribute('data-r18',bad.length?('压字 '+bad.length+' 处 '+b
                            "series": [{"name": "营收", "values": [1.0] * len(cats)}]}
     w_tab, s_tab = _warn19([T("表9｜混排", ["分部", "2024", "2025", "2026H1（半年）"])], "表9｜混排")
     w_cht, s_cht = _warn19([C("图9｜混排", ["2023", "2024", "2025", "2026 前三季度"])], "图9｜混排")
+    tr = {"type": "table", "caption": "表7｜行混排", "caption_sources": ["E1"], "header": ["期间", "营收", "同比"],
+          "rows": [["2024", "1", "1"], ["2025", "1", "1"], ["2026 前三季度", "1", "1"]]}
+    w_row, s_row = _warn19([tr], "表7｜行混排")
+    w_tab, w_cht = w_tab and w_row, w_cht and s_row
     w_ok = any(_warn19([T("表8｜年度", ["指标", "2023", "2024（重述）", "2025", "2025 同比"]),
                         T("表9｜最新报告期", ["指标", "2025 前三季度", "2026 前三季度", "同比"]),
                         C("图9｜单季", ["25Q3", "25Q4", "26Q1"])], tag)[0] for tag in ("表8｜", "表9｜", "图9｜"))
-    check("R19 年度列与中期/累计列混排：表/图均告警、--strict 阻断；单列最新报告期表与重述年度列不误报",
+    check("R19 年度列与中期/累计列混排：表（列/行）/图均告警、--strict 阻断；单列最新报告期表与重述年度列不误报",
           w_tab and s_tab and w_cht and s_cht and not w_ok, f"tab={w_tab}/{s_tab} chart={w_cht}/{s_cht} false_pos={w_ok}")
     r, h = run_render(base_data)
     check("R5 柱图携带 data-md 数据表（MD 导出输出数值）", r.returncode == 0 and ('data-md="| 类目' in h or "chart_bar" not in json.dumps(base_data)), "")

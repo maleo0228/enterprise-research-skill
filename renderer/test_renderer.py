@@ -749,6 +749,41 @@ document.body.setAttribute('data-r10',bad.length?bad.slice(0,6).join(','):'OK');
     check("R10 窄屏 375px 柱图每个文字渲染 ≥11px、滚动壳不越出卡片（静态 CSS/产物契约"
           + ("＋Chrome 实测）" if chrome else "；未找到 Chrome，实测部分跳过）"),
           st_css and st_out and geo10 is not False, f"css={st_css} out={st_out} geo={g10}")
+    # R18：全文导出按钮不得压住任何文字（作者手机 App 内预览实测：fixed 浮层在 375px 压住「基本信息」表，
+    # 桌面 1280px 也在约 1/4 的滚动位置压住正文）。静态部分：骨架无 position:fixed 导出浮层、按钮位于边栏内；
+    # 装有 Chrome 时在 375 与 1280 两个视口逐个滚动位置（步长 150px）实测按钮矩形与所有可见文字节点矩形不相交。
+    sk = SKEL.read_text(encoding="utf-8")
+    st18 = ("export-fixed" not in sk and re.search(r'<aside class="sidebar">(?:(?!</aside>).)*id="export-all"', sk, re.S) is not None
+            and sk.count('id="export-all"') == 1)
+    r, html18 = run_render(base_data)
+    geo18, g18 = None, []
+    if r.returncode == 0 and chrome:
+        # 无头 --dump-dom 下 srcdoc iframe 的 window.scrollTo 不生效（实测 scrollY 恒 0），故按图层换算滚动：
+        # 固定层（自身或祖先 position:fixed）矩形不随滚动变化，文档流矩形随滚动上移 y；逐个 y（步长 150px）比较。
+        probe18 = """<script>window.addEventListener('load',function(){var b0=document.getElementById('export-all'),bad=[],seen={};
+if(!b0){document.body.setAttribute('data-r18','无按钮');return;}
+function fx(el){for(var e=el;e&&e.nodeType===1;e=e.parentElement){if(getComputedStyle(e).position==='fixed')return true;}return false;}
+var bb=b0.getBoundingClientRect(),bF=fx(b0),H=document.documentElement.scrollHeight,VH=innerHeight,rects=[];
+var w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT),t;
+while((t=w.nextNode())){if(!t.textContent.trim())continue;var pe=t.parentElement;if(!pe||b0.contains(pe)||pe.closest('script,style'))continue;
+var tF=fx(pe),rg=document.createRange();rg.selectNodeContents(t);var q=rg.getClientRects();
+for(var i=0;i<q.length;i++){if(q[i].width)rects.push([q[i],tF,t.textContent.trim().slice(0,8)]);}}
+var n=0;for(var y=0;y<=Math.max(0,H-VH);y+=150){n++;var b={left:bb.left,right:bb.right,top:bb.top-(bF?0:y),bottom:bb.bottom-(bF?0:y)};
+if(b.bottom<0||b.top>VH)continue;
+for(var k=0;k<rects.length;k++){var c=rects[k][0],d=rects[k][1]?0:y;
+if(c.left<b.right-1&&c.right>b.left+1&&c.top-d<b.bottom-1&&c.bottom-d>b.top+1){if(!seen[rects[k][2]]){seen[rects[k][2]]=1;bad.push(y+':'+rects[k][2]);}}}}
+document.body.setAttribute('data-r18',bad.length?('压字 '+bad.length+' 处 '+bad.slice(0,3).join(',')):'OK n='+n);});</script></body>"""
+        geo18 = True
+        for wd, ht in ((375, 812), (1280, 900)):
+            try:
+                res = chrome_narrow(chrome, html18.replace("</body>", probe18, 1), "r18", width=wd, height=ht)
+            except Exception as ex:
+                res = repr(ex)[:120]
+            g18.append(f"{wd}:{res}")
+            geo18 = geo18 and res.startswith("OK n=") and res != "OK n=0"
+    check("R18 全文导出按钮在 375/1280 任何滚动位置都不压文字（静态：无 fixed 浮层、按钮在边栏内"
+          + ("＋Chrome 逐滚动位置实测）" if chrome else "；未找到 Chrome，实测部分跳过）"),
+          r.returncode == 0 and st18 and geo18 is not False, f"static={st18} geo={' '.join(g18)}")
     t = copy.deepcopy(base_data); t["sources"]["items"][0]["url"] = "not a url"
     with tempfile.TemporaryDirectory() as td:
         jp = pathlib.Path(td) / "in.json"; hp = pathlib.Path(td) / "out.html"
@@ -756,6 +791,27 @@ document.body.setAttribute('data-r10',bad.length?bad.slice(0,6).join(','):'OK');
         r1 = subprocess.run([sys.executable, str(RENDER), str(jp), str(SKEL), str(hp)], capture_output=True, text=True, encoding="utf-8", errors="replace", env=utf8_child_env())
         r2 = subprocess.run([sys.executable, str(RENDER), str(jp), str(SKEL), str(hp), "--strict"], capture_output=True, text=True, encoding="utf-8", errors="replace", env=utf8_child_env())
     check("R4 非 http(s) URL 默认警告、--strict 阻断", r1.returncode == 0 and "校验警告" in (r1.stderr or "") and r2.returncode != 0 and "Traceback" not in (r2.stderr or ""), (r2.stderr or "")[-160:])
+    # R19：年度列与中期/累计列混排告警（默认警告、--strict 阻断）；单列的"最新报告期"表与"2024（重述）"类年度列不误报
+    def _warn19(blocks, tag):
+        # 只看本用例追加块的告警（示例自带的表2/表3 本身就混排，会另行告警，见 v5 报告）
+        t = copy.deepcopy(base_data); t["overview"]["financial"]["blocks"] += blocks
+        with tempfile.TemporaryDirectory() as td:
+            jp = pathlib.Path(td) / "in.json"; hp = pathlib.Path(td) / "o.html"
+            jp.write_text(json.dumps(t, ensure_ascii=False), encoding="utf-8")
+            a = subprocess.run([sys.executable, str(RENDER), str(jp), str(SKEL), str(hp)], capture_output=True, text=True, encoding="utf-8", errors="replace", env=utf8_child_env())
+            b = subprocess.run([sys.executable, str(RENDER), str(jp), str(SKEL), str(hp), "--strict"], capture_output=True, text=True, encoding="utf-8", errors="replace", env=utf8_child_env())
+        hit = a.returncode == 0 and any("混排" in ln and tag in ln for ln in (a.stderr or "").splitlines())
+        return hit, b.returncode != 0 and "Traceback" not in (b.stderr or "")
+    T = lambda cap, hd: {"type": "table", "caption": cap, "caption_sources": ["E1"], "header": hd, "rows": [["x"] + ["1"] * (len(hd) - 1)]}
+    C = lambda cap, cats: {"type": "chart_bar", "caption": cap, "caption_sources": ["E1"], "categories": cats,
+                           "series": [{"name": "营收", "values": [1.0] * len(cats)}]}
+    w_tab, s_tab = _warn19([T("表9｜混排", ["分部", "2024", "2025", "2026H1（半年）"])], "表9｜混排")
+    w_cht, s_cht = _warn19([C("图9｜混排", ["2023", "2024", "2025", "2026 前三季度"])], "图9｜混排")
+    w_ok = any(_warn19([T("表8｜年度", ["指标", "2023", "2024（重述）", "2025", "2025 同比"]),
+                        T("表9｜最新报告期", ["指标", "2025 前三季度", "2026 前三季度", "同比"]),
+                        C("图9｜单季", ["25Q3", "25Q4", "26Q1"])], tag)[0] for tag in ("表8｜", "表9｜", "图9｜"))
+    check("R19 年度列与中期/累计列混排：表/图均告警、--strict 阻断；单列最新报告期表与重述年度列不误报",
+          w_tab and s_tab and w_cht and s_cht and not w_ok, f"tab={w_tab}/{s_tab} chart={w_cht}/{s_cht} false_pos={w_ok}")
     r, h = run_render(base_data)
     check("R5 柱图携带 data-md 数据表（MD 导出输出数值）", r.returncode == 0 and ('data-md="| 类目' in h or "chart_bar" not in json.dumps(base_data)), "")
     with tempfile.TemporaryDirectory() as td:

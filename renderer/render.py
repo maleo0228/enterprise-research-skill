@@ -84,7 +84,7 @@ v0.2 变更（2026-10-21，外部审计 14 项修复，D-72）：
  - sources.url/url2 仅 http(s) 生成链接，其余降级为纯文本
  - 结构缺失统一走"校验失败"干净报错，不再裸 traceback
 """
-import json, re, sys, html, pathlib, math
+import json, re, sys, html, pathlib, math, difflib
 
 # ---------- 基础工具 ----------
 def esc(t):
@@ -148,6 +148,48 @@ PAGES = [("p1", "1.0", "企业概览", "1.0企业概览"),
          ("p3", "3.0", "业务及技术解析", "3.0业务及技术解析"),
          ("p4", "4.0", "IT关注方向及跟进", "4.0IT关注方向及跟进"),
          ("p5", "5.0", "来源索引与证据链", "5.0来源索引与证据链")]
+
+# ---------- 契约字段名自查（以仓库内 schema 为准，零依赖） ----------
+# 渲染器按字段名取值：拼错的可选字段（caption_source、url_2、note_source……）会被静默忽略，
+# 来源引用随之丢失且 --strict 也拦不住。这里只执行 schema 的 additionalProperties:false 与 required，
+# 其余约束（类型/模式/条件分支）仍由下方 validate() 负责。找不到 schema（渲染器被单独拷走）时跳过。
+_SCHEMA_P = pathlib.Path(__file__).resolve().parent.parent / "data-contract" / "report-data.schema.json"
+
+def schema_key_check(d):
+    try:
+        S = json.loads(_SCHEMA_P.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return []
+    defs = S.get("definitions", {}) if isinstance(S, dict) else {}
+    out = []
+    def res(sch):
+        for _ in range(10):
+            if isinstance(sch, dict) and "$ref" in sch:
+                sch = defs.get(str(sch["$ref"]).split("/")[-1], {})
+        return sch if isinstance(sch, dict) else {}
+    def walk(x, sch, path, depth):
+        sch = res(sch)
+        if depth > 40 or not sch:
+            return
+        if isinstance(x, dict):
+            props = sch.get("properties", {}) if isinstance(sch.get("properties"), dict) else {}
+            if sch.get("additionalProperties") is False:
+                for k in x:
+                    if k not in props:
+                        near = difflib.get_close_matches(str(k), list(props), n=1, cutoff=0.6)
+                        out.append(f"未知字段 {path}.{k}（契约无此字段，内容会被忽略"
+                                   + (f"；是否应为 {near[0]}" if near else "") + "）")
+            for k in sch.get("required", []) if isinstance(sch.get("required"), list) else []:
+                if k not in x:
+                    out.append(f"缺少契约必填字段 {path}.{k}")
+            for k, v in x.items():
+                if k in props:
+                    walk(v, props[k], f"{path}.{k}", depth + 1)
+        elif isinstance(x, list) and isinstance(sch.get("items"), dict):
+            for i, v in enumerate(x):
+                walk(v, sch["items"], f"{path}[{i}]", depth + 1)
+    walk(d, S, "$", 0)
+    return out
 
 # ---------- 业务校验（不过即失败，不出 HTML） ----------
 WARNS = []  # 非阻断的契约警告（--strict 时升级为校验失败）
@@ -504,6 +546,7 @@ def validate(d, strict=False):
             u = it.get(uk)
             if uk in it and not (iss(u) and re.match(r"^https?://\S+$", u, re.I)):
                 warns.append(f"sources.items[{i}].{uk} 须为完整 http(s) URL：{u!r}")
+    warns += schema_key_check(d)
     # 4.0 引用覆盖（schema：basis_sources「建议尽调场景必挂」、points.sources「建议必挂」）：
     # 不阻断——方向可以是推断——但逐方向汇总未挂来源的条目，提醒补挂或在措辞中标明推断
     for it in lst(d["directions"].get("items")) if isd(d.get("directions")) else []:

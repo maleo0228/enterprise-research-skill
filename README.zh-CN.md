@@ -98,7 +98,7 @@ git clone https://github.com/maleo0228/enterprise-research-skill.git
 
 ## 维护者专用
 
-仅改版渲染器/骨架时：`python renderer/test_renderer.py` 跑 116 项攻击面与回归套件，并必须跑 `python renderer/fuzz_renderer.py` 种子化模糊（4 种子×2000 用例零缺陷）——全部通过才可发版；`python renderer/compare.py <渲染产物.html> <基线样张.html>` 与冻结基线做等价比对。
+仅改版渲染器/骨架时：`python renderer/test_renderer.py` 跑 117 项攻击面与回归套件，并必须跑 `python renderer/fuzz_renderer.py` 种子化模糊（4 种子×2000 用例零缺陷）——全部通过才可发版；`python renderer/compare.py <渲染产物.html> <基线样张.html>` 与冻结基线做等价比对。
 
 ## 路线图
 

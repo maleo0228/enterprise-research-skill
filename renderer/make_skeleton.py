@@ -41,7 +41,7 @@ for _a, _b in _EXP:
     assert s.count(_a) == 1, "基线导出按钮写法与预期不符：" + _a[:40]
     s = s.replace(_a, _b)
 
-# v2.3.5（评审补丁 v6）：0003 加宽图桌面 11px、0004 图内搜索用 <tspan>、0005 单栏导航精简——同样以改写方式
+# v2.3.5（评审补丁 v6）：0003 加宽图桌面 11px、0004 图内搜索用 <tspan>、0005 单栏导航精简、引用跳转可返回——同样以改写方式
 # 落到基线上，保证在持有基线的工作区重新冻结时与 skeleton.html 逐字节一致。每处替换必须各命中一次。
 _V6 = [
     ('  .chart-scroll{overflow-x:auto; -webkit-overflow-scrolling:touch;}\n',
@@ -50,6 +50,12 @@ _V6 = [
      '  mark.hit.cur{background:#ffb900;}\n  /* 图内（SVG）命中：HTML <mark> 在 <text> 里不渲染、会把文字吞掉，改用 SVG <tspan> 着色 */\n  tspan.hit{fill:#b45309; text-decoration:underline;}\n  tspan.hit.cur{fill:#c2410c; font-weight:700;}\n'),
     ('  .export-side{display:inline-block; margin-top:8px;}\n',
      '  .export-side{display:inline-block; margin-top:8px;}\n  /* 单栏版式导航精简（可选）：侧栏在手机上原本占满首屏（≈710px），子项隐藏、五个一级入口排成一行可换行的标签 */\n  @media(max-width:920px){\n    .sidenav{display:flex; flex-wrap:wrap; gap:6px; padding:4px 16px 14px;}\n    .sidenav .sub{display:none;}\n    .sidenav .grp{padding:3px 10px; border:1px solid var(--line); font-size:13px;}\n  }\n'),
+    ('(function(){\n  /* 来源锚点跳转 */\n',
+     '(function(){\n  /* 来源锚点跳转；跳转前记下原位置：浏览器"返回"或点来源表编号格即回到引用处\n     （手机上来源表在页尾，一次跳转常达上万像素，此前无路可回） */\n  var srcBack=[], srcPushed=false;\n'),
+    ('      var t=document.getElementById(s.getAttribute("data-e"));\n      if(t){ t.scrollIntoView({behavior:"smooth", block:"center"});\n',
+     '      var t=document.getElementById(s.getAttribute("data-e"));\n      if(t){ srcBack.push(window.pageYOffset);\n        try{ history.pushState({esrSrc:srcBack.length}, ""); srcPushed=true; }catch(e){ srcPushed=false; }\n        t.scrollIntoView({behavior:"smooth", block:"center"});\n'),
+    ('        t.classList.remove("hl"); void t.offsetWidth; t.classList.add("hl"); }\n',
+     '        t.classList.remove("hl"); void t.offsetWidth; t.classList.add("hl"); }\n    });\n  });\n  window.addEventListener("popstate", function(e){\n    /* 只处理"从本次引用跳转条目退回"：退回后的条目序号应比栈深少 1（目录锚点等其他条目不受影响） */\n    var k=(e.state&&e.state.esrSrc)||0;\n    if(!srcBack.length || k!==srcBack.length-1) return;\n    var y=srcBack.pop();   /* 等浏览器自身的滚动恢复跑完再定位，否则会被覆盖 */\n    setTimeout(function(){ window.scrollTo(0, y); }, 60);\n  });\n  document.querySelectorAll("#src-table td.eid").forEach(function(td){\n    td.title="返回引用处";\n    td.addEventListener("click", function(){\n      if(!srcBack.length) return;\n      if(srcPushed) history.back(); else window.scrollTo(0, srcBack.pop());\n'),
     ('  function clearHits(){\n    content.querySelectorAll("mark.hit").forEach(function(m){\n',
      '  function clearHits(){\n    content.querySelectorAll("mark.hit, tspan.hit").forEach(function(m){\n'),
     ('        if(!n.nodeValue.trim()) return NodeFilter.FILTER_REJECT;\n        if(n.parentElement.closest("script,style,mark")) return NodeFilter.FILTER_REJECT;\n',

@@ -448,12 +448,30 @@
 
 <script>
 (function(){
-  /* 来源锚点跳转 */
+  /* 来源锚点跳转；跳转前记下原位置：浏览器"返回"或点来源表编号格即回到引用处
+     （手机上来源表在页尾，一次跳转常达上万像素，此前无路可回） */
+  var srcBack=[], srcPushed=false;
   document.querySelectorAll("sup.src").forEach(function(s){
     s.addEventListener("click", function(){
       var t=document.getElementById(s.getAttribute("data-e"));
-      if(t){ t.scrollIntoView({behavior:"smooth", block:"center"});
+      if(t){ srcBack.push(window.pageYOffset);
+        try{ history.pushState({esrSrc:srcBack.length}, ""); srcPushed=true; }catch(e){ srcPushed=false; }
+        t.scrollIntoView({behavior:"smooth", block:"center"});
         t.classList.remove("hl"); void t.offsetWidth; t.classList.add("hl"); }
+    });
+  });
+  window.addEventListener("popstate", function(e){
+    /* 只处理"从本次引用跳转条目退回"：退回后的条目序号应比栈深少 1（目录锚点等其他条目不受影响） */
+    var k=(e.state&&e.state.esrSrc)||0;
+    if(!srcBack.length || k!==srcBack.length-1) return;
+    var y=srcBack.pop();   /* 等浏览器自身的滚动恢复跑完再定位，否则会被覆盖 */
+    setTimeout(function(){ window.scrollTo(0, y); }, 60);
+  });
+  document.querySelectorAll("#src-table td.eid").forEach(function(td){
+    td.title="返回引用处";
+    td.addEventListener("click", function(){
+      if(!srcBack.length) return;
+      if(srcPushed) history.back(); else window.scrollTo(0, srcBack.pop());
     });
   });
 

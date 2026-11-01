@@ -588,6 +588,8 @@ def chart_svg(n, b):
         gw = int(fit) if fit >= group_w + 14 else group_w + 24
         W = max(W, int(x0 + gw * (nc - 1) + tail))
     W = max(W, x0 + 150 * ns)             # 图例每项 150 宽
+    # 全部为 JSON 整数（门店数、人数等计数）时不补 ".00"；含浮点则保持两位小数（与基线一致）
+    fmt = "{:.0f}" if all(isinstance(v, int) for s in series for v in s["values"]) else "{:.2f}"
     maxv = max(max(s["values"]) for s in series)
     minv = min(min(s["values"]) for s in series)
     names = [s["name"] for s in series]
@@ -603,7 +605,8 @@ def chart_svg(n, b):
     if minv >= 0:
         # 非负路径：与 v0.1 输出逐字节一致（基线等价比对依赖）
         ceil = max(10, -(-int(maxv) // 10) * 10)
-        k = plot_h / ceil
+        # 顶部留白：最高柱的数值标签不得压到 y≈10–19 的图例行（实测 1793/1800、69.52/70 均会压线）
+        k = min(plot_h / ceil, (plot_h - 16) / maxv) if maxv > 0 else plot_h / ceil
         for i, _ in enumerate(cats):
             gx = x0 + gw * i
             for j, s in enumerate(series):
@@ -611,7 +614,7 @@ def chart_svg(n, b):
                 h = round(v * k, 1)
                 y = round(base_y - h, 1)
                 el.append(f'    <rect x="{gx + j*(bw+bg)}" y="{y}" width="{bw}" height="{h}" fill="{COLORS[s.get("color","blue")]}" rx="2"/>')
-                el.append(f'    <text x="{gx + j*(bw+bg)}" y="{round(y-6)}" font-size="12" fill="{COLORS[s.get("color","blue")]}">{v:.2f}</text>')
+                el.append(f'    <text x="{gx + j*(bw+bg)}" y="{round(y-6)}" font-size="12" fill="{COLORS[s.get("color","blue")]}">{fmt.format(v)}</text>')
         el.append(f'    <line x1="50" y1="{base_y}" x2="{W - 20}" y2="{base_y}" stroke="#e3e8ef" stroke-width="1.5"/>')
     else:
         # 负值路径：零线基准双向柱（v0.2 新增，仅数据含负值时启用）
@@ -635,7 +638,7 @@ def chart_svg(n, b):
                     y = zero_y
                     ly = round(y + h + 13)
                 el.append(f'    <rect x="{gx + j*(bw+bg)}" y="{y}" width="{bw}" height="{h}" fill="{c}" rx="2"/>')
-                el.append(f'    <text x="{gx + j*(bw+bg)}" y="{ly}" font-size="12" fill="{c}">{v:.2f}</text>')
+                el.append(f'    <text x="{gx + j*(bw+bg)}" y="{ly}" font-size="12" fill="{c}">{fmt.format(v)}</text>')
         el.append(f'    <line x1="50" y1="{zero_y}" x2="{W - 20}" y2="{zero_y}" stroke="#1f2733" stroke-width="1.5"/>')
     for i, c in enumerate(cats):
         el.append(f'    <text x="{x0 + gw*i}" y="222" font-size="12.5" fill="#1f2733">{esc(c)}</text>')

@@ -784,6 +784,28 @@ document.body.setAttribute('data-r18',bad.length?('压字 '+bad.length+' 处 '+b
     check("R18 全文导出按钮在 375/1280 任何滚动位置都不压文字（静态：无 fixed 浮层、按钮在边栏内"
           + ("＋Chrome 逐滚动位置实测）" if chrome else "；未找到 Chrome，实测部分跳过）"),
           r.returncode == 0 and st18 and geo18 is not False, f"static={st18} geo={' '.join(g18)}")
+    # R20：冻结一致性——make_skeleton.py 中对基线的全部改写（_EXP、_V6）都已体现在 skeleton.html 中：
+    # 逐条反向还原后再正向套用必须得到 skeleton.html 本身（公开仓库没有基线，以此代替"重新冻结后逐字节一致"）
+    import ast as _ast
+    _ms = (ROOT / "make_skeleton.py").read_text(encoding="utf-8")
+    _pairs = []
+    for node in _ast.parse(_ms).body:
+        if isinstance(node, _ast.Assign) and any(getattr(tg, "id", "") in ("_EXP", "_V6") for tg in node.targets):
+            _pairs += _ast.literal_eval(node.value)
+    sk20 = SKEL.read_text(encoding="utf-8"); back = sk20; ok20 = bool(_pairs); why = ""
+    for o, n in reversed(_pairs):
+        if n == "":
+            if o in back: ok20, why = False, "已删除的片段仍在骨架中：" + o[:30]
+            continue
+        if back.count(n) != 1:
+            ok20, why = False, f"改写结果在骨架中出现 {back.count(n)} 次：" + n[:30]; break
+        back = back.replace(n, o)
+    if ok20:
+        fwd = back
+        for o, n in _pairs:
+            fwd = fwd.replace(o, n, 1) if n or o in fwd else fwd
+        ok20 = fwd == sk20; why = why or ("" if ok20 else "正向套用结果与骨架不一致")
+    check(f"R20 make_skeleton.py 改写表（{len(_pairs)} 处）与冻结骨架一致", ok20, why)
     t = copy.deepcopy(base_data); t["sources"]["items"][0]["url"] = "not a url"
     with tempfile.TemporaryDirectory() as td:
         jp = pathlib.Path(td) / "in.json"; hp = pathlib.Path(td) / "out.html"

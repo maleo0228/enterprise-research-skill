@@ -73,12 +73,16 @@
   table.t>tbody{display:table; width:100%; border-collapse:collapse;}
   /* 柱图滚动壳：单栏版式下 svg 不再无限缩小，最小字号 ≥11px（--chart-minw 由渲染器按画布宽/最小字号算出），放不下就横滑 */
   .chart-scroll{overflow-x:auto; -webkit-overflow-scrolling:touch;}
+  .chart-scroll>svg{min-width:var(--chart-minw-wide,0);} /* 加宽画布的图：桌面也保底 11px */
 
   sup.src{cursor:pointer; color:var(--side); font-size:11px; font-weight:600; padding:0 2px;}
   sup.src:hover{color:var(--side-deep);}
 
   mark.hit{background:#ffe9a8; padding:0;}
   mark.hit.cur{background:#ffb900;}
+  /* 图内（SVG）命中：HTML <mark> 在 <text> 里不渲染、会把文字吞掉，改用 SVG <tspan> 着色 */
+  tspan.hit{fill:#b45309; text-decoration:underline;}
+  tspan.hit.cur{fill:#c2410c; font-weight:700;}
 
   .signal{border:1px solid var(--line); border-radius:10px; padding:16px 18px; margin-bottom:14px; scroll-margin-top:16px;}
   .signal h4{font-size:15px; margin-bottom:8px;}
@@ -162,6 +166,12 @@
   /* 全文导出按钮放进边栏标题区（不再 position:fixed 浮在正文上）：桌面随固定边栏常驻可见，
      ≤920px 边栏变为页首静态块，按钮随之成为页首行内元素——任何宽度都不压正文 */
   .export-side{display:inline-block; margin-top:8px;}
+  /* 单栏版式导航精简（可选）：侧栏在手机上原本占满首屏（≈710px），子项隐藏、五个一级入口排成一行可换行的标签 */
+  @media(max-width:920px){
+    .sidenav{display:flex; flex-wrap:wrap; gap:6px; padding:4px 16px 14px;}
+    .sidenav .sub{display:none;}
+    .sidenav .grp{padding:3px 10px; border:1px solid var(--line); font-size:13px;}
+  }
 </style>
 </head>
 <body>
@@ -250,7 +260,7 @@
   <p><b>护城河：</b>认证与可靠性构成主要结构性壁垒——逆变器设计寿命要求 20 年以上，主流市场准入认证（欧盟 CE、澳 SAA、美 ETL、PVEL 可靠性）周期长、转换成本高；全球渠道与十年品牌积累次之。</p>
   <p><b>短板（如实写）：</b>行业价格竞争激烈，逆变器毛利率从 2022 年 28.88% 降至 2024 年 20.14%（2025 年回升至 26.88%）；规模与阳光电源、华为存在量级差距。结论：存在以认证/可靠性/渠道为核心的结构性壁垒，宽度中等。<sup class="src" data-e="E12">[E12]</sup><sup class="src" data-e="E3">[E3]</sup></p>
   <h3 class="block-title" id="s1-fin">财务数据</h3>
-  <p class="note">口径说明：上市公司经审计年报为主锚（合并报表口径）；2026H1 为半年报、未经审计，单独标注。</p>
+  <p class="note">口径说明：上市公司经审计年报为主锚（合并报表口径），表1–表3 只放完整年度；2026 年半年报未经审计，单列于表4（最新报告期累计）与表5（分产品）。</p>
   <p style="margin-top:14px"><b>表1｜主锚财务指标（2022–2025，合并报表，经审计年报）</b><sup class="src" data-e="E3">[E3]</sup><sup class="src" data-e="E4">[E4]</sup><sup class="src" data-e="E5">[E5]</sup></p>
   <table class="t">
     <tr><th>指标（亿元）</th><th>2022</th><th>2023</th><th>2024</th><th>2025</th></tr>
@@ -307,7 +317,7 @@
     <tr><th>新能源电力生产</th><td>1.35</td><td>0.93</td><td>6.17（＋111%）</td><td>5.87</td></tr>
     <tr><th>储能系统</th><td>—</td><td>—</td><td>—</td><td>1.48（新增）</td></tr>
   </table>
-  <p class="note">年度表只放完整会计年度；2026H1 分产品数据见表4。</p>
+  <p class="note">年度表只放完整会计年度；2026H1 分产品数据见表5。</p>
   <p style="margin-top:14px"><b>表3｜毛利率两口径对照（均如实列示，不混用）</b><sup class="src" data-e="E3">[E3]</sup><sup class="src" data-e="E12">[E12]</sup><sup class="src" data-e="E6">[E6]</sup></p>
   <table class="t">
     <tr><th>口径</th><th>2022</th><th>2023</th><th>2024</th><th>2025</th></tr>
@@ -316,17 +326,27 @@
     <tr><th>年报口径·储能逆变器</th><td>—</td><td>—</td><td>—</td><td>31.75%（＋4.27pct）</td></tr>
     <tr><th>年报口径·并网逆变器</th><td>—</td><td>—</td><td>—</td><td>24.22%（＋5.54pct）</td></tr>
   </table>
-  <p class="note">综合毛利率与逆变器毛利率两口径并存（质保金是否计入营业成本），不混用；2025 全年综合毛利率年报精确值本次未获取，以分产品口径代替，不影响判断；2026H1 毛利率见表4。行业中位数：同细分赛道 5 家上市公司 2025 年综合毛利率中位数约 31–33%（样本含阳光电源、德业股份、固德威、上能电气、禾迈股份，来源混合、口径不完全一致，仅供参考）。<sup class="src" data-e="E19">[E19]</sup><sup class="src" data-e="E20">[E20]</sup></p>
-  <p style="margin-top:14px"><b>表4｜2026 年半年度分产品与毛利率（未经审计，半年报口径）</b><sup class="src" data-e="E3">[E3]</sup><sup class="src" data-e="E4">[E4]</sup><sup class="src" data-e="E5">[E5]</sup><sup class="src" data-e="E6">[E6]</sup></p>
+  <p class="note">综合毛利率与逆变器毛利率两口径并存（质保金是否计入营业成本），不混用；2025 全年综合毛利率年报精确值本次未获取，以分产品口径代替，不影响判断；2026H1 毛利率见表5。行业中位数：同细分赛道 5 家上市公司 2025 年综合毛利率中位数约 31–33%（样本含阳光电源、德业股份、固德威、上能电气、禾迈股份，来源混合、口径不完全一致，仅供参考）。<sup class="src" data-e="E19">[E19]</sup><sup class="src" data-e="E20">[E20]</sup></p>
+  <p style="margin-top:14px"><b>表4｜最新报告期：2026 年上半年（累计，未经审计，截至 2026-06-30，2026-08-29 披露）</b><sup class="src" data-e="E6">[E6]</sup></p>
   <table class="t">
-    <tr><th>分部</th><th>2026H1（亿元）</th><th>同比</th><th>2026H1 毛利率</th></tr>
-    <tr><th>并网逆变器</th><td>10.56</td><td>－41.99%</td><td>30.45%</td></tr>
-    <tr><th>储能逆变器</th><td>16.40</td><td>＋106.7%</td><td>33.16%</td></tr>
-    <tr><th>户用光伏发电系统</th><td>6.64</td><td>－17.8%</td><td>未披露</td></tr>
-    <tr><th>新能源电力生产</th><td>2.55</td><td>－16.0%</td><td>未披露</td></tr>
-    <tr><th>储能系统</th><td>—</td><td>—</td><td>—</td></tr>
+    <tr><th>亿元</th><th>1–6月</th><th>同比</th><th>Q2单季</th><th>同比</th></tr>
+    <tr><th>营业收入</th><td>38.82</td><td>＋2.32%</td><td>24.63</td><td>＋8.21%</td></tr>
+    <tr><th>归母净利润</th><td>4.23</td><td>－29.74%</td><td>3.62</td><td>－11.18%</td></tr>
+    <tr><th>扣非归母</th><td>4.12</td><td>－24.90%</td><td>3.63</td><td>－8.23%</td></tr>
+    <tr><th>经营现金流</th><td>7.41</td><td>－8.59%</td><td>7.71</td><td>＋37.09%</td></tr>
+    <tr><th>研发投入</th><td>2.56</td><td>＋18.90%</td><td>—</td><td>—</td></tr>
   </table>
-  <p class="note">未经审计，半年报口径（截止 2026-06-30）；储能系统仅披露 Q2 单季收入约 1.4 亿元，未披露 H1 累计与毛利率。与年度表分开列示，不与经审计年度数据混算。</p>
+  <p class="note">累计同比为半年报原文值（上年同期：营收 37.94、归母 6.02、扣非 5.49、经营现金流 8.11、研发 2.15）。Q2 单季及其同比均为自算（＝半年报－一季报，2025 年同口径）；启用单季列是因为单季与累计的归母同比相差 ≥10pct（－11.18% vs －29.74%）。2026 三季报截至锚点日尚未披露。<sup class="src" data-e="E6">[E6]</sup><sup class="src" data-e="E7">[E7]</sup></p>
+  <p style="margin-top:14px"><b>表5｜2026H1 分产品营收与毛利率（半年报，未经审计，截至 2026-06-30）</b><sup class="src" data-e="E6">[E6]</sup></p>
+  <table class="t">
+    <tr><th>产品</th><th>营收亿</th><th>同比</th><th>毛利率</th></tr>
+    <tr><th>储能逆变器</th><td>16.40</td><td>＋106.70%</td><td>33.16%</td></tr>
+    <tr><th>并网逆变器</th><td>10.56</td><td>－41.99%</td><td>30.45%</td></tr>
+    <tr><th>户用光伏发电系统</th><td>6.64</td><td>－17.79%</td><td>50.22%</td></tr>
+    <tr><th>新能源电力生产</th><td>2.55</td><td>－16.04%</td><td>42.91%</td></tr>
+    <tr><th>合计（光伏行业）</th><td>38.82</td><td>＋2.32%</td><td>35.10%</td></tr>
+  </table>
+  <p class="note">半年报分产品表只列以上四项，储能系统未单列。分产品只在半年报/年报披露：三季报出来后本表不变，2026 年报发布后并入表2/表3。</p>
   <p style="margin-top:14px"><b>图2｜融资历史时间线（2019 年上市以来五项，合计约 67.6 亿元）</b><sup class="src" data-e="E25">[E25]</sup><sup class="src" data-e="E8">[E8]</sup><sup class="src" data-e="E9">[E9]</sup><sup class="src" data-e="E10">[E10]</sup><sup class="src" data-e="E16">[E16]</sup></p>
   <div class="timeline">
     <div class="tl-node"><div class="tl-dot"></div><div class="tl-card"><b>5.33 亿</b>2019-03<span class="who">IPO（创业板）</span><sup class="src" data-e="E25">[E25]</sup></div></div>
@@ -596,7 +616,7 @@
       hits=[], cur=-1;
 
   function clearHits(){
-    content.querySelectorAll("mark.hit").forEach(function(m){
+    content.querySelectorAll("mark.hit, tspan.hit").forEach(function(m){
       var p=m.parentNode; p.replaceChild(document.createTextNode(m.textContent), m);
       p.normalize();
     });
@@ -616,17 +636,18 @@
     var walker=document.createTreeWalker(content, NodeFilter.SHOW_TEXT, {
       acceptNode:function(n){
         if(!n.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
-        if(n.parentElement.closest("script,style,mark")) return NodeFilter.FILTER_REJECT;
+        if(n.parentElement.closest("script,style,mark,tspan.hit")) return NodeFilter.FILTER_REJECT;
         return n.nodeValue.toLowerCase().indexOf(lower)>=0 ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
       }});
     var nodes=[]; while(walker.nextNode()) nodes.push(walker.currentNode);
     nodes.forEach(function(n){
-      var el=n.parentNode, txt=n.nodeValue, ltxt=txt.toLowerCase();
+      var el=n.parentNode, txt=n.nodeValue, ltxt=txt.toLowerCase(),
+          inSvg=(el.namespaceURI==="http://www.w3.org/2000/svg");
       var frag=document.createDocumentFragment(), idx=0, pos;
       while((pos=ltxt.indexOf(lower, idx))>=0){
         frag.appendChild(document.createTextNode(txt.slice(idx, pos)));
-        var m=document.createElement("mark");
-        m.className="hit"; m.textContent=txt.slice(pos, pos+k.length);
+        var m=inSvg?document.createElementNS("http://www.w3.org/2000/svg","tspan"):document.createElement("mark");
+        m.setAttribute("class","hit"); m.textContent=txt.slice(pos, pos+k.length);
         frag.appendChild(m); hits.push(m); idx=pos+k.length;
       }
       frag.appendChild(document.createTextNode(txt.slice(idx)));
@@ -715,7 +736,7 @@
     return out;
   }
   function svgToMd(ch){
-    return "> 📊 "+(ch.getAttribute("aria-label")||"图表")+"（图形见网页版）\n\n"+(ch.getAttribute("data-md")?ch.getAttribute("data-md")+"\n\n":"");
+    return "> 📊 "+(ch.getAttribute("aria-label")||"图表").replace(/\s+/g," ")+"（图形见网页版）\n\n"+(ch.getAttribute("data-md")?ch.getAttribute("data-md")+"\n\n":"");
   }
   function sectionToMd(sec){
     var out="";

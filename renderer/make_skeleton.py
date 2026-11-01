@@ -41,6 +41,30 @@ for _a, _b in _EXP:
     assert s.count(_a) == 1, "基线导出按钮写法与预期不符：" + _a[:40]
     s = s.replace(_a, _b)
 
+# v2.3.5（评审补丁 v6）：0003 加宽图桌面 11px、0004 图内搜索用 <tspan>、0005 单栏导航精简——同样以改写方式
+# 落到基线上，保证在持有基线的工作区重新冻结时与 skeleton.html 逐字节一致。每处替换必须各命中一次。
+_V6 = [
+    ('  .chart-scroll{overflow-x:auto; -webkit-overflow-scrolling:touch;}\n',
+     '  .chart-scroll{overflow-x:auto; -webkit-overflow-scrolling:touch;}\n  .chart-scroll>svg{min-width:var(--chart-minw-wide,0);} /* 加宽画布的图：桌面也保底 11px */\n'),
+    ('  mark.hit.cur{background:#ffb900;}\n',
+     '  mark.hit.cur{background:#ffb900;}\n  /* 图内（SVG）命中：HTML <mark> 在 <text> 里不渲染、会把文字吞掉，改用 SVG <tspan> 着色 */\n  tspan.hit{fill:#b45309; text-decoration:underline;}\n  tspan.hit.cur{fill:#c2410c; font-weight:700;}\n'),
+    ('  .export-side{display:inline-block; margin-top:8px;}\n',
+     '  .export-side{display:inline-block; margin-top:8px;}\n  /* 单栏版式导航精简（可选）：侧栏在手机上原本占满首屏（≈710px），子项隐藏、五个一级入口排成一行可换行的标签 */\n  @media(max-width:920px){\n    .sidenav{display:flex; flex-wrap:wrap; gap:6px; padding:4px 16px 14px;}\n    .sidenav .sub{display:none;}\n    .sidenav .grp{padding:3px 10px; border:1px solid var(--line); font-size:13px;}\n  }\n'),
+    ('  function clearHits(){\n    content.querySelectorAll("mark.hit").forEach(function(m){\n',
+     '  function clearHits(){\n    content.querySelectorAll("mark.hit, tspan.hit").forEach(function(m){\n'),
+    ('        if(!n.nodeValue.trim()) return NodeFilter.FILTER_REJECT;\n        if(n.parentElement.closest("script,style,mark")) return NodeFilter.FILTER_REJECT;\n',
+     '        if(!n.nodeValue.trim()) return NodeFilter.FILTER_REJECT;\n        if(n.parentElement.closest("script,style,mark,tspan.hit")) return NodeFilter.FILTER_REJECT;\n'),
+    ('    nodes.forEach(function(n){\n      var el=n.parentNode, txt=n.nodeValue, ltxt=txt.toLowerCase();\n',
+     '    nodes.forEach(function(n){\n      var el=n.parentNode, txt=n.nodeValue, ltxt=txt.toLowerCase(),\n          inSvg=(el.namespaceURI==="http://www.w3.org/2000/svg");\n'),
+    ('        frag.appendChild(document.createTextNode(txt.slice(idx, pos)));\n        var m=document.createElement("mark");\n        m.className="hit"; m.textContent=txt.slice(pos, pos+k.length);\n',
+     '        frag.appendChild(document.createTextNode(txt.slice(idx, pos)));\n        var m=inSvg?document.createElementNS("http://www.w3.org/2000/svg","tspan"):document.createElement("mark");\n        m.setAttribute("class","hit"); m.textContent=txt.slice(pos, pos+k.length);\n'),
+    ('  function svgToMd(ch){\n    return "> 📊 "+(ch.getAttribute("aria-label")||"图表")+"（图形见网页版）\\n\\n"+(ch.getAttribute("data-md")?ch.getAttribute("data-md")+"\\n\\n":"");\n',
+     '  function svgToMd(ch){\n    return "> 📊 "+(ch.getAttribute("aria-label")||"图表").replace(/\\s+/g," ")+"（图形见网页版）\\n\\n"+(ch.getAttribute("data-md")?ch.getAttribute("data-md")+"\\n\\n":"");\n'),
+]
+for _a, _b in _V6:
+    assert s.count(_a) == 1, "基线写法与预期不符：" + _a[:40]
+    s = s.replace(_a, _b)
+
 leftovers = [x for x in ["鸣石", "2026-10-14", "超算、备案"] if x in s]
 tokens = ["{{COMPANY_NAME}}", "{{SAMPLE_VERSION}}", "{{SEARCH_HINT}}", "{{SHORT}}",
           "{{ANCHOR_DATE}}", "{{SIDENAV}}", "{{BODY}}"]

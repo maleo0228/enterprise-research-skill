@@ -833,6 +833,16 @@ document.body.setAttribute('data-r18',bad.length?('压字 '+bad.length+' 处 '+b
     check("R11 s4 零结果方向整条无来源：仅提示（§1.5 三要素），--strict 不阻断；s2 同形态 --strict 仍阻断",
           a.returncode == 0 and b.returncode == 0 and "三要素" in (b.stderr or "") and a2.returncode == 0 and b2.returncode != 0,
           f"s4 rc={a.returncode}/{b.returncode} s2 rc={a2.returncode}/{b2.returncode}")
+    # R12：契约字段名自查——拼错的可选字段（来源引用会被静默丢弃）与缺 meta.contract_version 默认警告、--strict 阻断
+    t = copy.deepcopy(base_data)
+    blk = next((b for b in t["overview"]["financial"]["blocks"] if "caption_sources" in b), None)
+    if blk is not None: blk["caption_source"] = blk.pop("caption_sources")
+    t["meta"].pop("contract_version", None)
+    a, b = _both(t)
+    check("R12 未知字段（含拼写建议）与缺 contract_version：默认警告、--strict 阻断",
+          blk is not None and a.returncode == 0 and "是否应为 caption_sources" in (a.stderr or "")
+          and "contract_version" in (a.stderr or "") and b.returncode != 0 and "Traceback" not in (b.stderr or ""),
+          (a.stderr or "")[-200:])
     with tempfile.TemporaryDirectory() as td:
         jp = pathlib.Path(td) / "empty.json"
         # 本机关闭端口：不出网、立即失败，确保打印至少一行结果

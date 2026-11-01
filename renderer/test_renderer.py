@@ -628,8 +628,8 @@ def main():
         r1 = subprocess.run([sys.executable, str(RENDER), str(jp), str(SKEL), str(hp)], capture_output=True, text=True, encoding="utf-8", errors="replace", env=utf8_child_env())
         r2 = subprocess.run([sys.executable, str(RENDER), str(jp), str(SKEL), str(hp), "--strict"], capture_output=True, text=True, encoding="utf-8", errors="replace", env=utf8_child_env())
     check("R4 非 http(s) URL 默认警告、--strict 阻断", r1.returncode == 0 and "校验警告" in (r1.stderr or "") and r2.returncode != 0 and "Traceback" not in (r2.stderr or ""), (r2.stderr or "")[-160:])
-    # R5（data-md/MD 导出附图表数据表）未随本批采用：其渲染器改动依赖补丁 0005，
-    # 而 0005 修改冻结骨架 skeleton.html，须先走骨架冻结流程；用例暂撤，待该流程完成后补回。
+    r, h = run_render(base_data)
+    check("R5 柱图携带 data-md 数据表（MD 导出输出数值）", r.returncode == 0 and ('data-md="| 类目' in h or "chart_bar" not in json.dumps(base_data)), "")
     with tempfile.TemporaryDirectory() as td:
         jp = pathlib.Path(td) / "empty.json"
         # 本机关闭端口：不出网、立即失败，确保打印至少一行结果

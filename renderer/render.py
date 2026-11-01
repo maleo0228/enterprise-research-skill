@@ -594,7 +594,15 @@ def chart_svg(n, b):
     minv = min(min(s["values"]) for s in series)
     names = [s["name"] for s in series]
     aria = f"图{n} {'与'.join(names)}柱状图（{cats[0]}–{cats[-1]}）"
-    el = [f'<svg width="{W}" height="250" viewBox="0 0 {W} 250" role="img" aria-label="{esc_attr(aria)}" style="margin:6px 0 4px; max-width:100%;">']
+    # data-md：图表数据的 Markdown 表，供骨架"导出 MD"输出数值（此前 MD 中图表仅剩占位文字）
+    def _md(x):
+        return str(x).replace("|", "\\|").replace("\n", " ")
+    hdr = ["类目"] + [_md(s["name"] + (f'（{s["unit"]}）' if s.get("unit") else "")) for s in series]
+    md_rows = ["| " + " | ".join(hdr) + " |", "|" + "---|" * len(hdr)]
+    for i, c in enumerate(cats):
+        md_rows.append("| " + " | ".join([_md(c)] + [fmt.format(s["values"][i]) for s in series]) + " |")
+    data_md = esc_attr("\n".join(md_rows))
+    el = [f'<svg width="{W}" height="250" viewBox="0 0 {W} 250" role="img" aria-label="{esc_attr(aria)}" data-md="{data_md}" style="margin:6px 0 4px; max-width:100%;">']
     lx = x0
     for s in series:
         c = COLORS[s.get("color", "blue")]

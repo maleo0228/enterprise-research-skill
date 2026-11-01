@@ -901,6 +901,26 @@ document.body.setAttribute('data-r14',bad.length?bad.join(','):'OK');});</script
             g16 = repr(ex)[:80]
     check("R16 窄屏侧栏导航精简、首屏可见正文（静态契约" + ("＋Chrome 实测）" if chrome else "；未找到 Chrome，实测跳过）"),
           st16 and (g16 is None or (g16.isdigit() and int(g16) < 400)), f"static={st16} sidebar_h={g16}")
+    # R17：check_urls --user-agent（SEC EDGAR 等对默认 UA 返回 403）：本地服务只对指定 UA 返回 200
+    import http.server, threading
+    class _UAH(http.server.BaseHTTPRequestHandler):
+        def do_GET(self):
+            self.send_response(200 if self.headers.get("User-Agent") == "esr-probe ua@example.invalid" else 403); self.end_headers()
+        def log_message(self, *a): pass
+    srv = http.server.ThreadingHTTPServer(("127.0.0.1", 0), _UAH); threading.Thread(target=srv.serve_forever, daemon=True).start()
+    t = copy.deepcopy(base_data); t["sources"]["items"] = t["sources"]["items"][:1]
+    t["sources"]["items"][0]["url"] = f"http://127.0.0.1:{srv.server_address[1]}/edgar"; t["sources"]["items"][0].pop("url2", None)
+    with tempfile.TemporaryDirectory() as td:
+        jp = pathlib.Path(td) / "u.json"; jp.write_text(json.dumps(t, ensure_ascii=False), encoding="utf-8")
+        env = utf8_child_env(); env["NO_PROXY"] = env["no_proxy"] = "127.0.0.1"
+        u1 = subprocess.run([sys.executable, str(ROOT / "check_urls.py"), str(jp), "--timeout", "3", "--json"], capture_output=True, text=True, encoding="utf-8", errors="replace", env=env)
+        u2 = subprocess.run([sys.executable, str(ROOT / "check_urls.py"), str(jp), "--timeout", "3", "--json", "--user-agent", "esr-probe ua@example.invalid"], capture_output=True, text=True, encoding="utf-8", errors="replace", env=env)
+    srv.shutdown()
+    try:
+        v1 = json.loads(u1.stdout)["results"][0]["status"]; v2 = json.loads(u2.stdout)["results"][0]["status"]
+    except Exception:
+        v1 = v2 = None
+    check("R17 check_urls --user-agent 生效（默认 UA 403、指定 UA 200）", v1 == 403 and v2 == 200, f"{v1}/{v2} {(u2.stderr or '')[-120:]}")
     with tempfile.TemporaryDirectory() as td:
         jp = pathlib.Path(td) / "empty.json"
         # 本机关闭端口：不出网、立即失败，确保打印至少一行结果

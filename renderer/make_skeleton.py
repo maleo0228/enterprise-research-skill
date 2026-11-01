@@ -25,6 +25,22 @@ s = s.replace('var out="# 企业研究报告：上海鸣石私募基金管理有
               'var out="# 企业研究报告：{{COMPANY_NAME}}\\n\\n> 锚点日期 {{ANCHOR_DATE}}；本报告基于公开信息整理。')
 s = s.replace('企业研究_鸣石_', '企业研究_{{SHORT}}_')
 
+# v2.3.4：全文导出按钮由 position:fixed 浮层移入边栏标题区（R18）——基线 v0.8 仍是浮层写法，在此改写，
+# 保证在持有基线的工作区重新冻结时不会把浮层带回来。三处替换必须各命中一次。
+_EXP = [
+    ("  .export-fixed{position:fixed; top:14px; right:16px; z-index:60;}\n",
+     "  /* 全文导出按钮放进边栏标题区（不再 position:fixed 浮在正文上）：桌面随固定边栏常驻可见，\n"
+     "     ≤920px 边栏变为页首静态块，按钮随之成为页首行内元素——任何宽度都不压正文 */\n"
+     "  .export-side{display:inline-block; margin-top:8px;}\n"),
+    ('<button id="export-all" class="export-btn export-fixed" title="导出全篇为 Markdown 文件">导出全文 MD</button>\n\n', ""),
+    ('      <div class="logo-sub">企业研究报告 · 锚点 {{ANCHOR_DATE}}</div>\n',
+     '      <div class="logo-sub">企业研究报告 · 锚点 {{ANCHOR_DATE}}</div>\n'
+     '      <button id="export-all" class="export-btn export-side" title="导出全篇为 Markdown 文件">导出全文 MD</button>\n'),
+]
+for _a, _b in _EXP:
+    assert s.count(_a) == 1, "基线导出按钮写法与预期不符：" + _a[:40]
+    s = s.replace(_a, _b)
+
 leftovers = [x for x in ["鸣石", "2026-10-14", "超算、备案"] if x in s]
 tokens = ["{{COMPANY_NAME}}", "{{SAMPLE_VERSION}}", "{{SEARCH_HINT}}", "{{SHORT}}",
           "{{ANCHOR_DATE}}", "{{SIDENAV}}", "{{BODY}}"]

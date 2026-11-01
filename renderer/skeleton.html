@@ -159,12 +159,12 @@
   .export-btn{border:1px solid var(--side); color:var(--side); background:#fff; border-radius:6px;
               padding:4px 12px; font-size:12.5px; cursor:pointer; font-family:inherit;}
   .export-btn:hover{background:var(--side); color:#fff;}
-  .export-fixed{position:fixed; top:14px; right:16px; z-index:60;}
+  /* 全文导出按钮放进边栏标题区（不再 position:fixed 浮在正文上）：桌面随固定边栏常驻可见，
+     ≤920px 边栏变为页首静态块，按钮随之成为页首行内元素——任何宽度都不压正文 */
+  .export-side{display:inline-block; margin-top:8px;}
 </style>
 </head>
 <body>
-
-<button id="export-all" class="export-btn export-fixed" title="导出全篇为 Markdown 文件">导出全文 MD</button>
 
 <!-- ===== 左侧边栏 ===== -->
 <aside class="sidebar">
@@ -175,6 +175,7 @@
     <div>
       <div class="logo-name">{{COMPANY_NAME}}</div>
       <div class="logo-sub">企业研究报告 · 锚点 {{ANCHOR_DATE}}</div>
+      <button id="export-all" class="export-btn export-side" title="导出全篇为 Markdown 文件">导出全文 MD</button>
     </div>
   </div>
 

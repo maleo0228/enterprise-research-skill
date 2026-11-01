@@ -1,10 +1,12 @@
 # Enterprise Research Skill
 
 **Evidence-grounded company research → a single-file, offline HTML report.**
-**Current version: v2.3.1** · [Changelog](https://github.com/maleo0228/enterprise-research-skill/releases) · [中文版 README](README.zh-CN.md)
+**Current version: v2.3.3** · [Changelog](https://github.com/maleo0228/enterprise-research-skill/releases) · [中文版 README](README.zh-CN.md)
 
 Research a company from public sources, structure the findings as one JSON file, and this skill turns it into a **validated, navigable, fully source-traceable report** — a single HTML file that opens in any browser, works offline, and can be shared as-is. v2.0 is a complete rewrite of the archived [v1.x line](https://github.com/maleo0228/enterprise-research-skill/releases).
 
+> **New in v2.3.3** — chart correctness & readability overhaul: bar charts no longer silently drop data past 4 categories; value labels, legend, and axis can no longer overlap (layout computed from measured text boxes); on phones and narrow windows tables scroll inside the card and chart text never shrinks below a readable 11px. Plus: hand-written citation marks are rejected, per-direction source warnings for section 4.0, a rewritten URL checker (TLS verified by default, failure reasons, redirect flags, GBK-safe, `--json`), China-unlisted-company source platforms added to the spec, both shipped examples fully cited, and Markdown export now includes chart data tables. 119-item regression suite, zero-defect seeded fuzz. Desktop rendering at ≥1000px is pixel-identical to v2.3.1.
+>
 > **New in v2.3.1** — the research-stage discipline spec ([see below](#research-discipline--the-stage-before-rendering-new-in-v231)), plus renderer hardening: byte-exact deterministic output (UTF-8/LF on all platforms), GBK-console-safe test suite, one validation gap closed. **Zero output change for conformant data.**
 
 ## See it in one minute

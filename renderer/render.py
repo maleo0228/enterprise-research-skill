@@ -574,12 +574,17 @@ def validate(d, strict=False):
         if not isd(b):
             continue
         cols = lst(b.get("header"))[1:] if b.get("type") == "table" else lst(b.get("categories")) if b.get("type") == "chart_bar" else []
-        cols = [c for c in cols if iss(c)]
-        yr = [c for c in cols if _YR.match(re.sub(r"[（(][^）)]*[）)]", "", c).strip())]
-        it = [c for c in cols if _INT.search(c)]
-        if yr and it:
-            warns.append(f"财务块#{i}「{b.get('caption', '')[:24]}」年度列 {yr[-1]!r} 与中期/累计列 {it[0]!r} 混排"
-                         "（中期数据请单列「最新报告期（累计）」表，年度表/图只放完整年度）")
+        # 期间也可能排在行上（首列为 2024/2025/2026H1……），同样检查表格首列
+        axes = [("列", cols)]
+        if b.get("type") == "table":
+            axes.append(("行", [r[0] for r in lst(b.get("rows")) if isl(r) and r]))
+        for ax, cells in axes:
+            cells = [c for c in cells if iss(c)]
+            yr = [c for c in cells if _YR.match(re.sub(r"[（(][^）)]*[）)]", "", c).strip())]
+            it = [c for c in cells if _INT.search(c)]
+            if yr and it:
+                warns.append(f"财务块#{i}「{b.get('caption', '')[:24]}」年度{ax} {yr[-1]!r} 与中期/累计{ax} {it[0]!r} 混排"
+                             "（中期数据请单列「最新报告期（累计）」表，年度表/图只放完整年度）")
     bi = d["overview"]["basic_info"]
     exp = ["公司全称", "官网", "成立时间", "注册地／经营地", "所有制／资本状态", "高管背景", "员工规模", "组织结构"]
     labels = [x["label"] for x in bi]

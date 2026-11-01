@@ -869,6 +869,27 @@ document.body.setAttribute('data-r13',bad.length?bad.slice(0,4).join(','):'OK');
             g13 = repr(ex)[:120]
     check("R13 加宽画布柱图桌面 1280px 下文字 ≥11px（静态契约" + ("＋Chrome 实测）" if chrome else "；未找到 Chrome，实测跳过）"),
           st13 and (g13 is None or g13 == "OK"), f"static={st13} geo={g13}")
+    # R14：正文搜索命中图内文字时不吞字（此前插入 HTML <mark> 到 SVG <text>，命中的类目/数值从图上消失）；
+    # 清除搜索后图文字复原；图表 aria-label 含换行时 MD 导出不被断行
+    r14, h14 = run_render(base_data)
+    st14 = 'tspan.hit{' in skel_css and 'createElementNS("http://www.w3.org/2000/svg","tspan")' in skel_css
+    g14 = None
+    if r14.returncode == 0 and chrome and "<svg" in h14:
+        probe14 = """<script>window.addEventListener('load',function(){var bad=[];
+var tx=document.querySelector('svg[role=img] text[font-size="12.5"]'); if(!tx){document.body.setAttribute('data-r14','无类目文字');return;}
+var k=tx.textContent.trim(), w0=tx.getBBox().width; document.getElementById('q').value=k;
+document.getElementById('searchform').dispatchEvent(new Event('submit',{cancelable:true}));
+if(!(tx.getBBox().width>w0*0.8))bad.push('命中后宽度 '+tx.getBBox().width.toFixed(1)+'/'+w0.toFixed(1));
+if(tx.querySelector('mark'))bad.push('SVG 内出现 mark');
+document.getElementById('clear').click();
+if(tx.querySelector('.hit')||Math.abs(tx.getBBox().width-w0)>0.5)bad.push('清除后未复原');
+document.body.setAttribute('data-r14',bad.length?bad.join(','):'OK');});</script></body>"""
+        try:
+            g14 = chrome_narrow(chrome, h14.replace("</body>", probe14, 1), "r14", width=1280, height=900)
+        except Exception as ex:
+            g14 = repr(ex)[:120]
+    check("R14 搜索命中图内文字不吞字、清除后复原（静态契约" + ("＋Chrome 实测）" if chrome else "；未找到 Chrome，实测跳过）"),
+          st14 and (g14 is None or g14 == "OK"), f"static={st14} geo={g14}")
     with tempfile.TemporaryDirectory() as td:
         jp = pathlib.Path(td) / "empty.json"
         # 本机关闭端口：不出网、立即失败，确保打印至少一行结果

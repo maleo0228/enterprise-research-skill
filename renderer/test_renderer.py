@@ -665,6 +665,40 @@ def main():
                     if any(x[0] < -0.5 or x[1] < -0.5 or x[0] + x[2] > Wv + 0.5 or x[1] + x[3] > Hv + 0.5 for x in L + V + B + C): errs.append("越界")
                     if errs: bad8.append(f"{ns}序列×{nc}类目/{vk}/{'长名' if long_ else '短名'}:{sorted(set(errs))}")
     check(f"R8 柱图几何无重叠矩阵（{n8} 例：1–4 序列×1/3/5/8 类目×近最大值/长标签/整数/正负混合×长短图例名）", not bad8, "; ".join(bad8[:3]))
+    # R9：窄屏（手机 375px）表格不撑破卡片。静态契约始终检查；装有 Chrome/Chromium 时再做真实排版几何断言
+    # （与 N10 需 node 同理，缺浏览器则只跑静态部分）。用例：长行首标签＋6 列数值表、8 列来源表。
+    skel_css = SKEL.read_text(encoding="utf-8")
+    static_ok = all(re.search(pat, skel_css) for pat in (
+        r"table\.t\{display:block; overflow-x:auto", r"table\.t>tbody\{display:table; width:100%",
+        r"@media\(max-width:640px\)\{[^}]*\}[^@]*table\.t th\{white-space:normal;\}"))
+    t = copy.deepcopy(base_data)
+    t["overview"]["financial"]["blocks"].append({"type": "table", "caption": "表9｜窄屏回归", "caption_sources": ["E1"],
+        "header": ["指标", "2023H1", "2024H1", "2025H1", "2026H1", "同比"],
+        "rows": [["经调整净利润（剔除汇兑影响，非 IFRS）", "12,345.67", "23,456.78", "34,567.89", "45,678.90", "+1234.5%"]]})
+    r, html9 = run_render(t)
+    import shutil as _sh
+    chrome = next((_sh.which(c) for c in ("google-chrome", "chromium", "chromium-browser", "chrome") if _sh.which(c)), None)
+    geo, gdetail = None, ""
+    if r.returncode == 0 and chrome:
+        probe = """<script>window.addEventListener('load',function(){var bad=[];
+document.querySelectorAll('section.page').forEach(function(sec){var r=sec.getBoundingClientRect(),cs=getComputedStyle(sec);
+var inR=r.right-parseFloat(cs.paddingRight)-parseFloat(cs.borderRightWidth);
+sec.querySelectorAll('table,svg,p,li,h3,h4,.mech,.signal,.dir').forEach(function(el){if(el.closest('svg')&&el.tagName.toLowerCase()!=='svg')return;
+var e=el.getBoundingClientRect();if(e.width&&e.right>inR+0.5)bad.push(sec.id+':'+el.tagName+'+'+Math.round(e.right-inR));});});
+if(document.documentElement.scrollWidth>document.documentElement.clientWidth+1)bad.push('page scrollWidth '+document.documentElement.scrollWidth);
+document.body.setAttribute('data-r9',bad.length?bad.join(','):'OK');});</script></body>"""
+        with tempfile.TemporaryDirectory() as td:
+            hp = pathlib.Path(td) / "m.html"; hp.write_text(html9.replace("</body>", probe, 1), encoding="utf-8")
+            try:
+                rc = subprocess.run([chrome, "--headless=new", "--no-sandbox", "--disable-gpu", "--hide-scrollbars",
+                                     "--window-size=375,812", "--virtual-time-budget=3000", "--dump-dom", hp.as_uri()],
+                                    capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=60)
+                mm = re.search(r'data-r9="([^"]*)"', rc.stdout or "")
+                geo = bool(mm) and mm.group(1) == "OK"; gdetail = mm.group(1) if mm else "未取到测量结果"
+            except Exception as ex:
+                geo, gdetail = False, repr(ex)[:120]
+    label = "R9 窄屏 375px 表格/图表/卡片不越出白色卡片（静态 CSS 契约" + ("＋Chrome 实测几何）" if chrome else "；未找到 Chrome，几何部分跳过）")
+    check(label, r.returncode == 0 and static_ok and geo is not False, f"static={static_ok} geo={gdetail}")
     t = copy.deepcopy(base_data); t["sources"]["items"][0]["url"] = "not a url"
     with tempfile.TemporaryDirectory() as td:
         jp = pathlib.Path(td) / "in.json"; hp = pathlib.Path(td) / "out.html"

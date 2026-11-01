@@ -67,6 +67,10 @@
   table.t th,table.t td{border:1px solid var(--line); padding:7px 10px; text-align:left; vertical-align:top;}
   table.t th{background:#f2f5f9; font-weight:600; white-space:nowrap;}
   table.kv th{width:120px;}
+  /* 宽表不撑破卡片：<table> 自身作横向滚动容器，隐式 <tbody> 承担表格布局并照旧铺满 100%。
+     不加包裹层——MD 导出 sectionToMd/cardToMd 与 compare.py 都按"<table> 是卡片直接子节点"遍历。 */
+  table.t{display:block; overflow-x:auto; -webkit-overflow-scrolling:touch;}
+  table.t>tbody{display:table; width:100%; border-collapse:collapse;}
 
   sup.src{cursor:pointer; color:var(--side); font-size:11px; font-weight:600; padding:0 2px;}
   sup.src:hover{color:var(--side-deep);}
@@ -128,6 +132,14 @@
     .sidebar{position:static; width:100%; max-height:none;}
     .content{margin-left:0; padding:18px 16px 60px;}
     footer{margin:0 16px 30px;}
+  }
+  @media(max-width:640px){
+    section.page{padding:18px 14px;}
+    .mech,.signal,.dir{padding:12px 12px;}
+    table.t{font-size:13px;}
+    table.t th,table.t td{padding:6px 7px;}
+    table.t th{white-space:normal;}               /* 行首标签（如"经调整净利润（剔除汇兑）"）允许折行 */
+    table.t tr:first-child th{white-space:nowrap;} /* 表头行仍不折 */
   }
 
   /* 导出按钮 */

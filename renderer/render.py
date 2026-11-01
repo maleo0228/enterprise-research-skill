@@ -513,6 +513,23 @@ def validate(d, strict=False):
         if not it.get("basis_sources") or bare:
             warns.append(f"4.0 {it.get('id')}：basis {'未' if not it.get('basis_sources') else '已'}挂来源，"
                          f"{bare}/{len(pts)} 条要点未挂来源（属推断请在措辞中标明并给依据）")
+    # 期间口径混排（R19，规则见 spec「年度与最新报告期分开展示」）：同一张表的列头或同一张图的类目里，
+    # 既有完整会计年度（2025、FY2025、2025年）又有中期/累计/滚动期间（2026H1、Q3、前三季度、1–9月、TTM……），
+    # 读者会把半年或九个月累计数当成全年来比——默认警告，--strict 阻断。中期数据请单列"最新报告期"表。
+    _YR = re.compile(r"^(?:FY\s*)?\d{4}\s*(?:年度?|A|E)?$", re.I)
+    _INT = re.compile(r"\d{4}\s*(?:H[12]|Q[1-4])|\bH[12]\b|\bQ[1-4]\b|前三季|三季|一季|半年|中报|季报"
+                      r"|\d+\s*[–\-~至]\s*\d+\s*月|TTM|LTM|近四季|近\s*12\s*个月|年初至", re.I)
+    fin = d["overview"].get("financial") if isd(d.get("overview")) else None
+    for i, b in enumerate(lst(fin.get("blocks")) if isd(fin) else []):
+        if not isd(b):
+            continue
+        cols = lst(b.get("header"))[1:] if b.get("type") == "table" else lst(b.get("categories")) if b.get("type") == "chart_bar" else []
+        cols = [c for c in cols if iss(c)]
+        yr = [c for c in cols if _YR.match(re.sub(r"[（(][^）)]*[）)]", "", c).strip())]
+        it = [c for c in cols if _INT.search(c)]
+        if yr and it:
+            warns.append(f"财务块#{i}「{b.get('caption', '')[:24]}」年度列 {yr[-1]!r} 与中期/累计列 {it[0]!r} 混排"
+                         "（中期数据请单列「最新报告期（累计）」表，年度表/图只放完整年度）")
     bi = d["overview"]["basic_info"]
     exp = ["公司全称", "官网", "成立时间", "注册地／经营地", "所有制／资本状态", "高管背景", "员工规模", "组织结构"]
     labels = [x["label"] for x in bi]

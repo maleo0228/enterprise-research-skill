@@ -92,6 +92,27 @@ def load_example():
         raise SystemExit("未找到数据实例 JSON（examples/ 或上级目录）")
     return files, json.loads(files[0].read_text(encoding="utf-8"))
 
+def chrome_narrow(chrome, html, attr, width=375, height=812):
+    """在 headless Chrome 中以真实 width px 视口排版 html，返回探针写到 <body data-attr> 的结果。
+    headless=new 的窗口最小 500px（--window-size=375 实际得到 500 宽视口），故改用 srcdoc iframe 固定视口宽；
+    同时回报 iframe 内 documentElement.clientWidth，调用方据此确认视口确为 width。"""
+    import html as _h
+    host = ('<html><body style="margin:0"><iframe id="f" style="width:%dpx;height:%dpx;border:0" srcdoc="%s"></iframe>'
+            '<script>var f=document.getElementById("f");(function poll(){try{var d=f.contentDocument,'
+            'v=d&&d.body&&d.body.getAttribute("data-%s");if(v){document.body.setAttribute("data-out",v+"|w="+d.documentElement.clientWidth);return;}}'
+            'catch(e){document.body.setAttribute("data-out","ERR "+e);return;}setTimeout(poll,50);})();</script></body></html>'
+            % (width, height, _h.escape(html, quote=True), attr))
+    with tempfile.TemporaryDirectory() as td:
+        hp = pathlib.Path(td) / "host.html"; hp.write_text(host, encoding="utf-8")
+        rc = subprocess.run([chrome, "--headless=new", "--no-sandbox", "--disable-gpu", "--hide-scrollbars",
+                             "--window-size=800,900", "--virtual-time-budget=5000", "--dump-dom", hp.as_uri()],
+                            capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=90)
+    mm = re.search(r'<body[^>]*data-out="([^"]*)"', rc.stdout or "")
+    if not mm:
+        return "未取到测量结果"
+    v, _, w = _h.unescape(mm.group(1)).rpartition("|w=")
+    return v if w == str(width) else f"视口宽 {w}≠{width}：{v}"
+
 def main():
     print("== 输出环境兼容 ==")
     gbk_output_smoke()
@@ -684,21 +705,50 @@ def main():
 document.querySelectorAll('section.page').forEach(function(sec){var r=sec.getBoundingClientRect(),cs=getComputedStyle(sec);
 var inR=r.right-parseFloat(cs.paddingRight)-parseFloat(cs.borderRightWidth);
 sec.querySelectorAll('table,svg,p,li,h3,h4,.mech,.signal,.dir').forEach(function(el){if(el.closest('svg')&&el.tagName.toLowerCase()!=='svg')return;
-var e=el.getBoundingClientRect();if(e.width&&e.right>inR+0.5)bad.push(sec.id+':'+el.tagName+'+'+Math.round(e.right-inR));});});
+var e=(el.closest('.chart-scroll')||el).getBoundingClientRect();if(e.width&&e.right>inR+0.5)bad.push(sec.id+':'+el.tagName+'+'+Math.round(e.right-inR));});});
 if(document.documentElement.scrollWidth>document.documentElement.clientWidth+1)bad.push('page scrollWidth '+document.documentElement.scrollWidth);
 document.body.setAttribute('data-r9',bad.length?bad.join(','):'OK');});</script></body>"""
-        with tempfile.TemporaryDirectory() as td:
-            hp = pathlib.Path(td) / "m.html"; hp.write_text(html9.replace("</body>", probe, 1), encoding="utf-8")
-            try:
-                rc = subprocess.run([chrome, "--headless=new", "--no-sandbox", "--disable-gpu", "--hide-scrollbars",
-                                     "--window-size=375,812", "--virtual-time-budget=3000", "--dump-dom", hp.as_uri()],
-                                    capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=60)
-                mm = re.search(r'data-r9="([^"]*)"', rc.stdout or "")
-                geo = bool(mm) and mm.group(1) == "OK"; gdetail = mm.group(1) if mm else "未取到测量结果"
-            except Exception as ex:
-                geo, gdetail = False, repr(ex)[:120]
+        try:
+            res = chrome_narrow(chrome, html9.replace("</body>", probe, 1), "r9")
+            geo = res == "OK"; gdetail = res
+        except Exception as ex:
+            geo, gdetail = False, repr(ex)[:120]
     label = "R9 窄屏 375px 表格/图表/卡片不越出白色卡片（静态 CSS 契约" + ("＋Chrome 实测几何）" if chrome else "；未找到 Chrome，几何部分跳过）")
     check(label, r.returncode == 0 and static_ok and geo is not False, f"static={static_ok} geo={gdetail}")
+    # R10：窄屏（375px）柱图最小字号 ≥11px 且滚动壳不越出卡片。静态部分：骨架 CSS 规则＋渲染产物带
+    # chart-scroll 壳与正确的 --chart-minw（=ceil(画布宽×11/最小字号)）；装有 Chrome 时再实测每个 <text> 的渲染字号。
+    t = copy.deepcopy(base_data)
+    t["overview"]["financial"]["blocks"].append({"type": "chart_bar", "caption": "图9｜窄屏宽画布回归", "caption_sources": ["E1"],
+        "categories": ["2019", "2020", "2021", "2022", "2023", "2024", "2025", "2026H1"],
+        "series": [{"name": f"序列{j}（亿元）", "color": ["blue", "green", "orange", "gray"][j],
+                    "values": [round(1234.56 + 97.3 * i - 11 * j, 2) for i in range(8)]} for j in range(4)]})
+    r, html10 = run_render(t)
+    st_css = all(re.search(pat, skel_css) for pat in (
+        r"\.chart-scroll\{overflow-x:auto", r"@media\(max-width:920px\)\{\s*\.chart-scroll>svg\{min-width:var\(--chart-minw"))
+    st_out = r.returncode == 0 and bool(re.search(r'<div class="chart-scroll"><svg ', html10))
+    for mo in re.finditer(r'<div class="chart-scroll">(<svg [^>]*viewBox="0 0 (\d+) \d+"[^>]*--chart-minw:(\d+)px;[^>]*>.*?</svg>)</div>', html10, re.S):
+        fsm = min(float(x) for x in re.findall(r'font-size="([\d.]+)"', mo.group(1)))
+        st_out = st_out and int(mo.group(3)) * fsm >= int(mo.group(2)) * 11 - 1e-6
+    st_out = st_out and html10.count("<svg width") == html10.count('<div class="chart-scroll"><svg width')
+    geo10, g10 = None, ""
+    if r.returncode == 0 and chrome:
+        probe10 = """<script>window.addEventListener('load',function(){var bad=[];
+document.querySelectorAll('svg[role=img]').forEach(function(sv,k){var vb=sv.viewBox.baseVal,sc=sv.getBoundingClientRect().width/vb.width;
+sv.querySelectorAll('text').forEach(function(tx){var f=parseFloat(tx.getAttribute('font-size'))*sc;if(f<10.99)bad.push('图'+k+' 字号'+f.toFixed(2));});
+var box=sv.parentElement, sec=sv.closest('section.page');
+if(!box.classList.contains('chart-scroll')){bad.push('图'+k+' 无滚动壳');box=sv;}
+var sr=sec.getBoundingClientRect(),cs=getComputedStyle(sec),inR=sr.right-parseFloat(cs.paddingRight)-parseFloat(cs.borderRightWidth);
+if(box.getBoundingClientRect().right>inR+0.5)bad.push('图'+k+' 越出卡片');});
+if(!document.querySelector('svg[role=img]'))bad.push('无图');
+document.body.setAttribute('data-r10',bad.length?bad.slice(0,6).join(','):'OK');});</script></body>"""
+        try:
+            res = chrome_narrow(chrome, html10.replace("</body>", probe10, 1), "r10")
+            geo10 = res == "OK"; g10 = res
+        except Exception as ex:
+            geo10, g10 = False, repr(ex)[:120]
+    check("R10 窄屏 375px 柱图每个文字渲染 ≥11px、滚动壳不越出卡片（静态 CSS/产物契约"
+          + ("＋Chrome 实测）" if chrome else "；未找到 Chrome，实测部分跳过）"),
+          st_css and st_out and geo10 is not False, f"css={st_css} out={st_out} geo={g10}")
     t = copy.deepcopy(base_data); t["sources"]["items"][0]["url"] = "not a url"
     with tempfile.TemporaryDirectory() as td:
         jp = pathlib.Path(td) / "in.json"; hp = pathlib.Path(td) / "out.html"

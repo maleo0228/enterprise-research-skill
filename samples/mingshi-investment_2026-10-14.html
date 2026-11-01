@@ -71,6 +71,8 @@
      不加包裹层——MD 导出 sectionToMd/cardToMd 与 compare.py 都按"<table> 是卡片直接子节点"遍历。 */
   table.t{display:block; overflow-x:auto; -webkit-overflow-scrolling:touch;}
   table.t>tbody{display:table; width:100%; border-collapse:collapse;}
+  /* 柱图滚动壳：单栏版式下 svg 不再无限缩小，最小字号 ≥11px（--chart-minw 由渲染器按画布宽/最小字号算出），放不下就横滑 */
+  .chart-scroll{overflow-x:auto; -webkit-overflow-scrolling:touch;}
 
   sup.src{cursor:pointer; color:var(--side); font-size:11px; font-weight:600; padding:0 2px;}
   sup.src:hover{color:var(--side-deep);}
@@ -133,8 +135,18 @@
     .content{margin-left:0; padding:18px 16px 60px;}
     footer{margin:0 16px 30px;}
   }
+  @media(max-width:920px){
+    .chart-scroll>svg{min-width:var(--chart-minw,0);}
+  }
   @media(max-width:640px){
     section.page{padding:18px 14px;}
+    /* 可横滑提示：纯 CSS 滚动阴影——"遮罩"随内容滚动(local)，"阴影"固定在视口边(scroll)；
+       不可滚动或已滚到尽头时遮罩正好盖住阴影，提示自动消失 */
+    .chart-scroll{background:
+        linear-gradient(to right, var(--card) 30%, rgba(255,255,255,0)) left center / 28px 100% no-repeat local,
+        linear-gradient(to left, var(--card) 30%, rgba(255,255,255,0)) right center / 28px 100% no-repeat local,
+        radial-gradient(farthest-side at 0 50%, rgba(31,39,51,.22), rgba(31,39,51,0)) left center / 14px 100% no-repeat scroll,
+        radial-gradient(farthest-side at 100% 50%, rgba(31,39,51,.22), rgba(31,39,51,0)) right center / 14px 100% no-repeat scroll;}
     .mech,.signal,.dir{padding:12px 12px;}
     table.t{font-size:13px;}
     table.t th,table.t td{padding:6px 7px;}
@@ -561,6 +573,9 @@
     });
     return out;
   }
+  function svgToMd(ch){
+    return "> 📊 "+(ch.getAttribute("aria-label")||"图表")+"（图形见网页版）\n\n"+(ch.getAttribute("data-md")?ch.getAttribute("data-md")+"\n\n":"");
+  }
   function sectionToMd(sec){
     var out="";
     [].slice.call((sec&&sec.children)||[]).forEach(function(ch){
@@ -574,7 +589,8 @@
       else if(cls.indexOf("mech")>=0) out+=cardToMd(ch,false);
       else if(cls.indexOf("dir")>=0) out+=cardToMd(ch,true);
       else if(cls.indexOf("timeline")>=0) out+=timelineToMd(ch);
-      else if(t==="svg") out+="> 📊 "+(ch.getAttribute("aria-label")||"图表")+"（图形见网页版）\n\n"+(ch.getAttribute("data-md")?ch.getAttribute("data-md")+"\n\n":"");
+      else if(t==="svg") out+=svgToMd(ch);
+      else if(cls.indexOf("chart-scroll")>=0){ var sv=ch.querySelector("svg"); if(sv) out+=svgToMd(sv); }
       else if(cls.indexOf("missing")>=0) out+="> ⚠️ "+inline(ch)+"\n\n";
       else if(cls.indexOf("legend")>=0){
         [].slice.call(ch.children).forEach(function(s){ out+="- "+inline(s)+"\n"; });

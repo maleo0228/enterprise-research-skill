@@ -7,7 +7,7 @@ Research a company from public sources under a frozen discipline spec, structure
 
 > **New in v2.3.7** — spec v0.4: the research-discipline spec gains §10 (collection-dimension table mapping every required contract node to sources and evidence level, mechanically guarded by new regression R24) and §11 (neutral defaults: zero user parameters still executes end-to-end to a first version, at most 2 blocking questions, no deployment-specific defaults); §7.3 gap list gains a machine-readable `gap-list.json` form with carrier syntax; new `renderer/gap_fidelity_check.py` makes gap-to-carrier fidelity a mechanical pre-render gate (R23). 137-item regression suite, zero-defect seeded fuzz.
 >
-> **New in v2.3.6** — two-stage framing made explicit: SKILL.md, `skill.yml`, and this README now state up front that the skill covers **both** the research stage (governed by `research-discipline-spec.md`, read-before-start) and the rendering stage, removing the contradictory "this skill performs no research" declarations that made some agents conclude the skill only renders HTML. `skill.yml` triggers extended ("企业研究 / analyze company"…); new regression R22 locks the framing against regression. 131-item regression suite, zero-defect seeded fuzz.
+> **New in v2.3.6** — two-stage framing made explicit: SKILL.md, `skill.yml`, and this README now state up front that the skill covers **both** the research stage (governed by `research-discipline-spec.md`, read-before-start) and the rendering stage, removing the contradictory declarations that made some agents conclude the skill only renders HTML. `skill.yml` triggers extended ("企业研究 / analyze company"…); new regression R22 locks the framing against regression. 131-item regression suite, zero-defect seeded fuzz.
 >
 > **New in v2.3.5** — mobile reading & validation hardening: on phones the sidebar now collapses to a single row of chips so the report text is visible on the first screen (sidebar 876→292px at 375px); tapping a citation [En] records your reading position — the browser Back button or a tap on the source row's ID cell returns you there. Wide charts (8 categories × 4 series) keep text ≥11px on desktop instead of shrinking to 3–6px; searching no longer swallows chart labels; misspelled field names (e.g. `caption_source`) are flagged with a did-you-mean suggestion instead of silently dropping citations; s4 zero-result directions get a spec-§1.5 hint instead of a `--strict` failure; the annual/interim mixing check also catches periods laid out as rows; `check_urls` gains `--user-agent` for SEC EDGAR; the shipped ginlong example now fully follows spec §5.2.1. 129-item regression suite, zero-defect seeded fuzz.
 >
@@ -46,13 +46,13 @@ Plus sidebar navigation, full-text search, SVG charts (negative values supported
 
 ## Research discipline — the stage before rendering (new in v2.3.1)
 
-A report is only as trustworthy as the research behind it. [`research-discipline-spec.md`](research-discipline-spec.md) — frozen v0.3, tool-neutral — defines what disciplined research output looks like, so research notes are **auditable instead of free-form prose**:
+A report is only as trustworthy as the research behind it. [`research-discipline-spec.md`](research-discipline-spec.md) — frozen v0.4, tool-neutral — defines what disciplined research output looks like, so research notes are **auditable instead of free-form prose**:
 
 - **Three output formats**: source list / fact card / gap list — every number carries a numbered source, every gap is declared with its reason and impact;
 - **Retrieval discipline**: lock the exact legal entity first and build the name-mapping chain (given name → brand → domain → platform namespaces); check platforms directly by subject type; diffuse one hop from the official site; recurse from platform pages; seek counter-evidence before trusting self-reported claims; never assert "nothing exists" without the zero-result evidence trio (channels / actions / date); pair self-reported figures with third-party measurements, calibers labeled;
 - **A pre-delivery self-check list** (spec §8).
 
-`SKILL.md` carries a condensed 7-point checklist of the same discipline. This skill still performs no research itself — the spec tells your own research workflow what "done" looks like.
+`SKILL.md` carries a condensed 8-point checklist of the same discipline. This skill covers the research stage itself: the spec is the discipline the built-in research stage follows, and the renderer validates and renders its output.
 
 ## How it works
 
@@ -82,8 +82,8 @@ Then open the HTML once in a browser (navigation, search, MD export, charts) and
 
 | Path | Contents |
 |---|---|
-| `SKILL.md` | Skill entry point (report generation stage) + condensed research-stage checklist |
-| `research-discipline-spec.md` | Frozen v0.3 research-stage discipline & output-format reference (tool-neutral) |
+| `SKILL.md` | Skill entry point (two stages: research discipline + validated rendering) + condensed research-stage checklist |
+| `research-discipline-spec.md` | Frozen v0.4 research-stage discipline, output formats, collection-dimension table (§10) & neutral defaults (§11) |
 | `data-contract/` | `report-data.schema.json` — the JSON data contract |
 | `examples/` | Two validated example datasets (Mingshi / Ginlong) |
 | `renderer/` | `render.py`, frozen `skeleton.html`, `compare.py`, `check_urls.py`, test & fuzz gates; `make_skeleton.py` (maintainer-only — refuses to run in public checkouts without the internal baseline) |
@@ -104,7 +104,7 @@ git clone https://github.com/maleo0228/enterprise-research-skill.git
 
 After installing, restart or refresh the agent so it re-discovers skills.
 
-**Scope**: this skill covers the *report generation* stage (contract-conformant JSON → validated HTML report). The research stage that produces the dataset is performed by your own research workflow, guided by [`research-discipline-spec.md`](research-discipline-spec.md).
+**Scope**: this skill covers both stages — the research stage (governed by [`research-discipline-spec.md`](research-discipline-spec.md), producing the contract-conformant dataset) and the report generation stage (contract-conformant JSON → validated HTML report).
 
 ## For maintainers
 
@@ -120,4 +120,4 @@ Renderer or skeleton changes only: `python renderer/test_renderer.py` runs the 1
 
 ---
 
-**Note**: this repo ships the report renderer, the data contract, the research-discipline spec (v0.3), and finished samples. The analytical frameworks behind the methodology — module design rationale, mechanism-analysis perspectives, direction-rating criteria, inclusion thresholds, and the internal case library — are not part of this public repository.
+**Note**: this repo ships the report renderer, the data contract, the research-discipline spec (v0.4), and finished samples. The analytical frameworks behind the methodology — module design rationale, mechanism-analysis perspectives, direction-rating criteria, inclusion thresholds, and the internal case library — are not part of this public repository.

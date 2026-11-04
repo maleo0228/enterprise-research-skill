@@ -1,10 +1,12 @@
 # Enterprise Research Skill
 
 **Evidence-grounded company research → a single-file, offline HTML report.**
-**Current version: v2.3.5** · [Changelog](https://github.com/maleo0228/enterprise-research-skill/releases) · [中文版 README](README.zh-CN.md)
+**Current version: v2.3.6** · [Changelog](https://github.com/maleo0228/enterprise-research-skill/releases) · [中文版 README](README.zh-CN.md)
 
-Research a company from public sources, structure the findings as one JSON file, and this skill turns it into a **validated, navigable, fully source-traceable report** — a single HTML file that opens in any browser, works offline, and can be shared as-is. v2.0 is a complete rewrite of the archived [v1.x line](https://github.com/maleo0228/enterprise-research-skill/releases).
+Research a company from public sources under a frozen discipline spec, structure the findings as one JSON file, and this skill turns it into a **validated, navigable, fully source-traceable report** — a single HTML file that opens in any browser, works offline, and can be shared as-is. The skill covers both stages: research ([`research-discipline-spec.md`](research-discipline-spec.md)) and rendering. v2.0 is a complete rewrite of the archived [v1.x line](https://github.com/maleo0228/enterprise-research-skill/releases).
 
+> **New in v2.3.6** — two-stage framing made explicit: SKILL.md, `skill.yml`, and this README now state up front that the skill covers **both** the research stage (governed by `research-discipline-spec.md`, read-before-start) and the rendering stage, removing the contradictory "this skill performs no research" declarations that made some agents conclude the skill only renders HTML. `skill.yml` triggers extended ("企业研究 / analyze company"…); new regression R22 locks the framing against regression. 131-item regression suite, zero-defect seeded fuzz.
+>
 > **New in v2.3.5** — mobile reading & validation hardening: on phones the sidebar now collapses to a single row of chips so the report text is visible on the first screen (sidebar 876→292px at 375px); tapping a citation [En] records your reading position — the browser Back button or a tap on the source row's ID cell returns you there. Wide charts (8 categories × 4 series) keep text ≥11px on desktop instead of shrinking to 3–6px; searching no longer swallows chart labels; misspelled field names (e.g. `caption_source`) are flagged with a did-you-mean suggestion instead of silently dropping citations; s4 zero-result directions get a spec-§1.5 hint instead of a `--strict` failure; the annual/interim mixing check also catches periods laid out as rows; `check_urls` gains `--user-agent` for SEC EDGAR; the shipped ginlong example now fully follows spec §5.2.1. 129-item regression suite, zero-defect seeded fuzz.
 >
 > **New in v2.3.4** — interim-report layout rules: annual tables/charts now hold complete fiscal years only (no more H1/Q3 columns next to audited annual data — Q1, semi-annual, and Q3 reports go into a separate "latest reporting period" table, spec §5.2.1); the renderer warns on year/interim column mixing and `--strict` blocks it. Also: the "export full Markdown" button moved into the sidebar header so it no longer covers report text on phones or desktop. 121-item regression suite, zero-defect seeded fuzz.
@@ -104,7 +106,7 @@ After installing, restart or refresh the agent so it re-discovers skills.
 
 ## For maintainers
 
-Renderer or skeleton changes only: `python renderer/test_renderer.py` runs the 129-item attack-surface & regression suite, and a mandatory seeded fuzz run (`python renderer/fuzz_renderer.py`, 4 seeds × 2000 cases, zero defects required) — all green before any release; `python renderer/compare.py <rendered.html> <baseline.html>` checks equivalence against a frozen baseline sample.
+Renderer or skeleton changes only: `python renderer/test_renderer.py` runs the 131-item attack-surface & regression suite, and a mandatory seeded fuzz run (`python renderer/fuzz_renderer.py`, 4 seeds × 2000 cases, zero defects required) — all green before any release; `python renderer/compare.py <rendered.html> <baseline.html>` checks equivalence against a frozen baseline sample.
 
 ## Roadmap
 

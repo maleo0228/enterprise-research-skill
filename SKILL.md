@@ -1,11 +1,16 @@
 ---
 name: enterprise-research-skill
-description: Turn a completed company-research dataset (report.json) into a validated, single-file, interactive HTML report. Use when the user has research data conforming to the report-data contract and wants a finished offline HTML report with navigation, search, charts, source traceability, and Markdown export. This skill covers the report generation stage only — the research itself is performed by the user's own research workflow.
+description: Research a company from public sources and deliver a validated, single-file, interactive HTML report. Use when the user asks to analyze/research a company or already has research data (report.json) conforming to the report-data contract and wants a finished offline HTML report with navigation, search, charts, source traceability, and Markdown export. Covers both stages — research discipline (governed by research-discipline-spec.md) and validated rendering.
 ---
 
-# Enterprise Research Skill — Report Generation Stage
+# Enterprise Research Skill
 
-Render a company-research dataset into a single-file, offline-capable HTML report.
+Two stages: research a company from public sources into a contract-conformant dataset, then render that dataset into a single-file, offline-capable HTML report.
+
+## Two-stage workflow
+
+1. **Research stage** — collect and verify sources per [`research-discipline-spec.md`](research-discipline-spec.md), then assemble a contract-conformant `report.json`. Every delivery starts here unless the user already supplies a conformant `report.json`.
+2. **Rendering stage** — validate the dataset against the contract and render it into the single-file HTML report described below.
 
 ## What this skill does
 
@@ -42,9 +47,9 @@ Supported `type` values:
 | `text` | free-form multi-paragraph blocks | no numbering |
 | `missing` | explicit data-gap placeholder | — |
 
-## Research-stage checklist (reference — upstream of this skill)
+## Research-stage checklist (mandatory)
 
-This skill performs no research (see Boundaries). The checklist below documents, in a tool-neutral form, the research discipline expected of the upstream workflow that produces a contract-conformant `report.json`. It is reference material only. The full frozen spec — research-stage output formats (source list / fact card / gap list), retrieval discipline, and the pre-delivery self-check list — is in [`research-discipline-spec.md`](research-discipline-spec.md) (v0.3, frozen).
+Every delivery produced with this skill starts here. The checklist below summarizes, in a tool-neutral form, the research discipline for producing a contract-conformant `report.json`. The full frozen spec — research-stage output formats (source list / fact card / gap list), retrieval discipline, and the pre-delivery self-check list — is in [`research-discipline-spec.md`](research-discipline-spec.md) (v0.3, frozen). **Read it in full before the research stage begins.**
 
 1. **Subject lock + name-mapping chain.** Lock the exact legal entity first, then build the chain: given name → brand/product name → official domain → platform namespaces (organization/user names — usually the brand lowercased or the domain stem, e.g. `example.ai` → `github.com/example`, `huggingface.co/example`). Query each candidate namespace **directly**, then verify identity before attributing anything: org name matches domain stem; repo/model content matches the company's business; multiple platforms cross-link. At least two of three checks must pass, else mark "possible name collision, unconfirmed". For non-Latin subjects, cover full-width/half-width and kana variants (e.g. a Latin brand registered as full-width katakana in official filings — search all script variants of the same name).
 2. **Platform-direct checklist by subject type.** Prefer direct page fetches over search-engine site filters (unreliable). Technical subjects: GitHub org/repos → Hugging Face org/models → package registries → preprint servers → leaderboards (note overall vs sub-collection ranking calibers). Japan-based subjects: National Tax Agency corporate number publication (full-width name forms; web API requires a registered ID) → EDINET → Wantedly → PR TIMES → industry press → official social accounts. Listed subjects: exchange disclosure portals (A-share/HK/US) → company IR pages → exchange investor Q&A platforms. Mainland-China unlisted subjects: national enterprise credit publicity system → ICP filing lookup → tender/award notices (government procurement and public-resource trading platforms) → official job postings (JDs reveal systems in use) → patent/software-copyright records; commercial registry aggregators are often geo-blocked abroad — re-check per spec §1.3, never record as "does not exist".
@@ -56,7 +61,7 @@ This skill performs no research (see Boundaries). The checklist below documents,
 
 ## Delivery checklist
 
-1. `python renderer/test_renderer.py` — attack-surface & regression suite (129 items) must pass; `python renderer/fuzz_renderer.py --cases 2000 --seed S` for S in 20261022, 1, 777, 42 (seeded fuzz, 4 seeds × 2000 cases) must report zero defects. Both are release gates for any renderer-related change.
+1. `python renderer/test_renderer.py` — attack-surface & regression suite (131 items) must pass; `python renderer/fuzz_renderer.py --cases 2000 --seed S` for S in 20261022, 1, 777, 42 (seeded fuzz, 4 seeds × 2000 cases) must report zero defects. Both are release gates for any renderer-related change.
 2. `python renderer/check_urls.py report.json` — every source URL reachable; manually re-check every `WARN` (403/202/429, cross-site redirect, timeout, TLS interrupted, or http-only links blocked by the network — anti-crawler/JS pages may still open in a browser). TLS certificates are verified by default; `--insecure` is for comparison only. Sites that reject generic clients (e.g. SEC EDGAR returns 403) need `--user-agent "Name email@example.com"`. For due-diligence deliveries also run `render.py … --strict` so contract warnings (date/URL format, uncited 4.0 items) fail the build.
 3. Open the HTML once in a browser: navigation, search, MD export, charts render.
 4. Confirm no *renderer-residual* `{{...}}` tokens in the output — i.e. tokens the renderer failed to substitute. Literal template tokens coming from your own data values are kept verbatim by design (single-pass substitution, renderer v0.10+) and are not a defect; the regression suite's no-residual-token check covers the renderer side.
@@ -71,6 +76,6 @@ Equivalence comparison: verbatim text, source sets per page, chart labels (not c
 
 ## Boundaries
 
-- This skill performs **no research**. Collecting sources, verifying facts, and filling the dataset are the responsibility of the user's own research process.
+- **Two-stage scope.** This skill covers the research stage (governed by `research-discipline-spec.md`) and the rendering stage. Research discipline is mandatory; the renderer validates and renders its output. When invoked without an existing `report.json`, start at the research stage — do not stop at rendering.
 - `renderer/skeleton.html` is a frozen artifact. Layout changes require a deliberate skeleton-freezing cycle (`make_skeleton.py` documents the procedure), followed by `compare.py` regression against a baseline report.
 - Do not commit or transmit internal research notes; only the contract-conformant JSON enters the renderer.

@@ -830,6 +830,105 @@ document.body.setAttribute('data-r18',bad.length?('压字 '+bad.length+' 处 '+b
         and "both stages" in _rd
     check("R22 两阶段框架：入口文档无自我否定措辞、正向声明研究＋渲染并指向冻结规范",
           not _deny and _pos, f"deny={_deny} pos={_pos}")
+    # R23：缺口保真校验脚本回归（规范 v0.4 §7.3 机器格式／§8 保真钩，2026-11-04）。
+    # 作用域按批准方案限定：契约只在财务节有 missing 块，其余缺口承载=basic_info 标注行
+    # 或报告内声明，脚本不得强求契约表达不了的承载。
+    _gap_script = ROOT / "gap_fidelity_check.py"
+
+    def _run_gap(gaps, report, extra=()):
+        with tempfile.TemporaryDirectory() as td:
+            gp = pathlib.Path(td) / "g.json"; rp = pathlib.Path(td) / "r.json"
+            gp.write_text(json.dumps(gaps, ensure_ascii=False), encoding="utf-8")
+            rp.write_text(json.dumps(report, ensure_ascii=False), encoding="utf-8")
+            return subprocess.run([sys.executable, str(_gap_script), str(gp), str(rp), *extra],
+                                  capture_output=True, text=True, encoding="utf-8", errors="replace")
+
+    _gr = copy.deepcopy(base_data)
+    _gr["overview"]["financial"]["blocks"] = _gr["overview"]["financial"]["blocks"][:1] + [
+        {"type": "missing", "note": "分部收入按区域拆分未公开披露"}]
+    _gr["overview"]["basic_info"][7] = {
+        "label": "组织结构",
+        "value_html": "未公开披露（公开渠道检索未见，2026-11-04 经官网与招聘平台直查）",
+        "sources": []}
+    _ok_gaps = [
+        {"id": "G1", "item": "分部收入拆分", "reason": "未公开披露", "impact": "区域增长判断收窄",
+         "carrier": "financial.blocks[1]"},
+        {"id": "G2", "item": "组织结构", "reason": "公开渠道检索未见，2026-11-04 经官网与招聘平台直查",
+         "impact": "治理结构判断收窄", "carrier": "basic_info:组织结构"},
+    ]
+    _r = _run_gap(_ok_gaps, _gr)
+    check("R23 保真脚本：合法承载（missing 块＋basic_info 标记行）通过",
+          _r.returncode == 0 and "0 error" in (_r.stdout or ""), (_r.stdout or "")[-160:])
+    _r = _run_gap([_ok_gaps[1]], _gr)
+    check("R23 保真脚本：未认领 missing 块警告但不失败",
+          _r.returncode == 0 and "WARN" in (_r.stdout or ""), (_r.stdout or "")[-160:])
+    _rs = _run_gap([_ok_gaps[1]], _gr, ("--strict",))
+    check("R23 保真脚本：--strict 下未认领 missing 块升级为失败", _rs.returncode != 0,
+          (_rs.stdout or "")[-160:])
+    _bad_gaps = [
+        {"id": "G1", "item": "x", "reason": "未公开披露", "impact": "y", "carrier": "financial.blocks[99]"},
+        {"id": "G2", "item": "x", "reason": "未公开披露", "impact": "y", "carrier": "basic_info:公司全称"},
+        {"id": "G3", "item": "x", "reason": "曾缺", "impact": "y", "status": "resolved"},
+        {"id": "G4", "item": "x", "reason": "未公开披露", "impact": "y", "carrier": "text:不存在的声明文字"},
+    ]
+    _r = _run_gap(_bad_gaps, _gr)
+    check("R23 保真脚本：越界 carrier／无未公开标记／resolved 无证据／text 子串缺失均失败",
+          _r.returncode != 0 and (_r.stdout or "").count("FAIL") >= 4, (_r.stdout or "")[-160:])
+    # R24：§10 采集维度表覆盖检查（规范 v0.4，2026-11-04）——schema 必填父节点（≤2 级）
+    # 须逐字出现在 §10.1 表内、叶字段（≥3 级段的末段）须逐一出列；防维度表自身漂移。
+    # 表内花括号枚举（`meta.{company_name, …}`）与型别标签（`table {caption, …}`）先展开再比对。
+    _spec = (ROOT.parent / "research-discipline-spec.md").read_text(encoding="utf-8")
+    _schema = json.loads((ROOT.parent / "data-contract" / "report-data.schema.json")
+                         .read_text(encoding="utf-8"))
+    _m10 = re.search(r"^## 10\..*?(?=^## )", _spec, re.S | re.M)
+    _ch10 = _m10.group(0) if _m10 else ""
+
+    def _req_paths(node, prefix=""):
+        out = []
+        if not isinstance(node, dict):
+            return out
+        props = node.get("properties", {})
+        for name in node.get("required", []):
+            p = f"{prefix}.{name}" if prefix else name
+            out.append(p)
+            out += _req_paths(props.get(name, {}), p)
+        for br in node.get("allOf", []):
+            for name in br.get("then", {}).get("required", []):
+                p = f"{prefix}.{name}" if prefix else name
+                if p not in out:
+                    out.append(p)
+        return out
+
+    def _expand_token(tok):
+        tok = tok.strip().rstrip("?")
+        m = re.search(r"\{([^{}]*)\}", tok)
+        if not m:
+            return [re.sub(r"\[[^\]]*\]", "", tok).strip()]
+        head = tok[:m.start()]
+        # 型别标签（table/chart_bar 等，无点的裸前缀）丢弃；路径前缀保留
+        if "." not in head:
+            head = ""
+        out = []
+        for part in m.group(1).split(","):
+            out += _expand_token(head + part.strip() + tok[m.end():])
+        return out
+
+    _covered = set()
+    for _t in re.findall(r"`([^`]+)`", _ch10):
+        _covered.update(_expand_token(_t))
+
+    def _is_covered(p):
+        return p in _covered or any(c.startswith(p + ".") or c.startswith(p + "[") for c in _covered)
+
+    _need = _req_paths(_schema)
+    _miss_parent = [p for p in _need if len(p.split(".")) <= 2 and not _is_covered(p)]
+    _miss_leaf = [p for p in _need
+                  if len(p.split(".")) >= 3 and p.split(".")[-1] not in _covered
+                  and not any(p.split(".")[-1] in c.split(".") for c in _covered)]
+    check("R24 §10 维度表覆盖 schema 必填父节点（%d 条路径逐字出现）" % len(_need),
+          not _miss_parent, "missing parent: " + ",".join(_miss_parent[:8]))
+    check("R24 §10 维度表逐一出列全部叶字段", not _miss_leaf,
+          "missing leaf: " + ",".join(_miss_leaf[:8]))
     t = copy.deepcopy(base_data); t["sources"]["items"][0]["url"] = "not a url"
     with tempfile.TemporaryDirectory() as td:
         jp = pathlib.Path(td) / "in.json"; hp = pathlib.Path(td) / "out.html"

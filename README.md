@@ -1,10 +1,12 @@
 # Enterprise Research Skill
 
 **Evidence-grounded company research → a single-file, offline HTML report.**
-**Current version: v2.3.6** · [Changelog](https://github.com/maleo0228/enterprise-research-skill/releases) · [中文版 README](README.zh-CN.md)
+**Current version: v2.3.7** · [Changelog](https://github.com/maleo0228/enterprise-research-skill/releases) · [中文版 README](README.zh-CN.md)
 
 Research a company from public sources under a frozen discipline spec, structure the findings as one JSON file, and this skill turns it into a **validated, navigable, fully source-traceable report** — a single HTML file that opens in any browser, works offline, and can be shared as-is. The skill covers both stages: research ([`research-discipline-spec.md`](research-discipline-spec.md)) and rendering. v2.0 is a complete rewrite of the archived [v1.x line](https://github.com/maleo0228/enterprise-research-skill/releases).
 
+> **New in v2.3.7** — spec v0.4: the research-discipline spec gains §10 (collection-dimension table mapping every required contract node to sources and evidence level, mechanically guarded by new regression R24) and §11 (neutral defaults: zero user parameters still executes end-to-end to a first version, at most 2 blocking questions, no deployment-specific defaults); §7.3 gap list gains a machine-readable `gap-list.json` form with carrier syntax; new `renderer/gap_fidelity_check.py` makes gap-to-carrier fidelity a mechanical pre-render gate (R23). 137-item regression suite, zero-defect seeded fuzz.
+>
 > **New in v2.3.6** — two-stage framing made explicit: SKILL.md, `skill.yml`, and this README now state up front that the skill covers **both** the research stage (governed by `research-discipline-spec.md`, read-before-start) and the rendering stage, removing the contradictory "this skill performs no research" declarations that made some agents conclude the skill only renders HTML. `skill.yml` triggers extended ("企业研究 / analyze company"…); new regression R22 locks the framing against regression. 131-item regression suite, zero-defect seeded fuzz.
 >
 > **New in v2.3.5** — mobile reading & validation hardening: on phones the sidebar now collapses to a single row of chips so the report text is visible on the first screen (sidebar 876→292px at 375px); tapping a citation [En] records your reading position — the browser Back button or a tap on the source row's ID cell returns you there. Wide charts (8 categories × 4 series) keep text ≥11px on desktop instead of shrinking to 3–6px; searching no longer swallows chart labels; misspelled field names (e.g. `caption_source`) are flagged with a did-you-mean suggestion instead of silently dropping citations; s4 zero-result directions get a spec-§1.5 hint instead of a `--strict` failure; the annual/interim mixing check also catches periods laid out as rows; `check_urls` gains `--user-agent` for SEC EDGAR; the shipped ginlong example now fully follows spec §5.2.1. 129-item regression suite, zero-defect seeded fuzz.
@@ -106,7 +108,7 @@ After installing, restart or refresh the agent so it re-discovers skills.
 
 ## For maintainers
 
-Renderer or skeleton changes only: `python renderer/test_renderer.py` runs the 131-item attack-surface & regression suite, and a mandatory seeded fuzz run (`python renderer/fuzz_renderer.py`, 4 seeds × 2000 cases, zero defects required) — all green before any release; `python renderer/compare.py <rendered.html> <baseline.html>` checks equivalence against a frozen baseline sample.
+Renderer or skeleton changes only: `python renderer/test_renderer.py` runs the 137-item attack-surface & regression suite, and a mandatory seeded fuzz run (`python renderer/fuzz_renderer.py`, 4 seeds × 2000 cases, zero defects required) — all green before any release; `python renderer/compare.py <rendered.html> <baseline.html>` checks equivalence against a frozen baseline sample.
 
 ## Roadmap
 

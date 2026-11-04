@@ -821,9 +821,12 @@ document.body.setAttribute('data-r18',bad.length?('压字 '+bad.length+' 处 '+b
     _sk = (ROOT.parent / "SKILL.md").read_text(encoding="utf-8")
     _ym = (ROOT.parent / "skill.yml").read_text(encoding="utf-8")
     _rd = (ROOT.parent / "README.md").read_text(encoding="utf-8")
-    _deny = [p for p in ("performs no research", "performs **no research**",
-                         "report generation stage only", "user's own research workflow",
-                         "upstream of this skill", "reference material only") if p in _sk]
+    _rdzh = (ROOT.parent / "README.zh-CN.md").read_text(encoding="utf-8")
+    _deny_pats = ("performs no research", "performs **no research**",
+                  "report generation stage only", "user's own research workflow",
+                  "upstream of this skill", "reference material only", "不做研究")
+    _deny = [f"{lbl}:{p}" for lbl, doc in (("SKILL.md", _sk), ("README", _rd), ("README.zh", _rdzh))
+             for p in _deny_pats if p in doc]
     _pos = all(p in _sk for p in ("## Two-stage workflow", "research-discipline-spec.md",
                                   "Research-stage checklist (mandatory)", "Two-stage scope")) \
         and "stage: research-and-report-generation" in _ym \

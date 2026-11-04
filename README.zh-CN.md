@@ -1,10 +1,12 @@
 # Enterprise Research Skill｜企业深度研究 Skill
 
 **基于公开证据的企业研究 → 单文件离线 HTML 报告。**
-**当前版本：v2.3.5** ·[更新日志](https://github.com/maleo0228/enterprise-research-skill/releases) · [English README](README.md)
+**当前版本：v2.3.6** ·[更新日志](https://github.com/maleo0228/enterprise-research-skill/releases) · [English README](README.md)
 
-对指定企业做公开信息研究，把结论整理成一个 JSON 文件，本 skill 将其变成一份**经校验、可导航、全链路可溯源的报告**——单个 HTML 文件，任何浏览器直接打开、离线可用、可原样转发。v2.0 是对 [v1.x（已归档）](https://github.com/maleo0228/enterprise-research-skill/releases) 的完全重写。
+对指定企业做公开信息研究（按冻结规范 [`research-discipline-spec.md`](research-discipline-spec.md)），把结论整理成一个 JSON 文件，本 skill 将其变成一份**经校验、可导航、全链路可溯源的报告**——单个 HTML 文件，任何浏览器直接打开、离线可用、可原样转发。本 skill 覆盖两个阶段：研究与渲染。v2.0 是对 [v1.x（已归档）](https://github.com/maleo0228/enterprise-research-skill/releases) 的完全重写。
 
+> **v2.3.6 新特性**——两阶段定位明确化：SKILL.md、`skill.yml` 与本 README 现在 upfront 声明 skill 覆盖**研究段**（由 research-discipline-spec.md 管辖，开工前必读）与**渲染段**两个阶段，删除了"本 skill 不做研究"等与正文研究清单自相矛盾的表述——此前部分 agent 读到这些声明会误判"skill 只做渲染"。`skill.yml` 触发词扩充（"企业研究 / analyze company"等）；新增回归 R22 锁定该框架防回退。131 项回归套件、种子化模糊零缺陷。
+>
 > **v2.3.5 新特性**——手机阅读与校验加固：手机端侧栏精简为一行可换行的标签（375px 下侧栏高 876→292px，首屏即可见正文）；点引用 [En] 自动记录阅读位置，浏览器返回键或点来源表编号格即回原处；加宽画布柱图（8 类目×4 序列）桌面端字号保底 11px（原为 3–6px）；正文搜索命中图内文字不再吞字；拼错的字段名（如 `caption_source`）给出"是否应为"提示，不再静默丢引用；s4 零结果方向整条无来源改为 §1.5 三要素提示，`--strict` 不再误拦；年度/中期混排告警扩展到"期间排在行上"的形态；`check_urls` 新增 `--user-agent`（SEC EDGAR 403 问题解决）；锦浪示例完全对齐 §5.2.1。129 项回归套件、种子化模糊零缺陷。
 >
 > **v2.3.4 新特性**——财报中期数据展示规则：年度表/图只放完整会计年度（不再把 H1、前三季度列与经审计年度数据并排——一季报、半年报、三季报统一进单列的「最新报告期」表，规范 §5.2.1）；渲染器对年度列与中期列混排给出警告，`--strict` 时阻断。另有：「导出全文 MD」按钮移入边栏标题区，手机与桌面都不再压住正文。121 项回归套件、种子化模糊零缺陷。
@@ -104,7 +106,7 @@ git clone https://github.com/maleo0228/enterprise-research-skill.git
 
 ## 维护者专用
 
-仅改版渲染器/骨架时：`python renderer/test_renderer.py` 跑 129 项攻击面与回归套件，并必须跑 `python renderer/fuzz_renderer.py` 种子化模糊（4 种子×2000 用例零缺陷）——全部通过才可发版；`python renderer/compare.py <渲染产物.html> <基线样张.html>` 与冻结基线做等价比对。
+仅改版渲染器/骨架时：`python renderer/test_renderer.py` 跑 131 项攻击面与回归套件，并必须跑 `python renderer/fuzz_renderer.py` 种子化模糊（4 种子×2000 用例零缺陷）——全部通过才可发版；`python renderer/compare.py <渲染产物.html> <基线样张.html>` 与冻结基线做等价比对。
 
 ## 路线图
 

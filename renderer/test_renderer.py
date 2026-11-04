@@ -815,6 +815,21 @@ document.body.setAttribute('data-r18',bad.length?('压字 '+bad.length+' 处 '+b
     r21, h21 = run_render(base_data)
     check("R21 引用跳转可返回原处（pushState＋popstate＋来源编号格回跳，静态契约）",
           r21.returncode == 0 and st21 and 'history.pushState' in h21, f"static={st21}")
+    # R22：两阶段框架回归锁（2026-11-04，冷启动误判"skill 只做渲染"的根因修复）。
+    # 入口文档（SKILL.md frontmatter/标题/清单/Boundaries、skill.yml）不得出现自我否定措辞，
+    # 必须正向声明研究＋渲染两阶段并指向冻结规范；README 与 SKILL.md 同步检查。
+    _sk = (ROOT.parent / "SKILL.md").read_text(encoding="utf-8")
+    _ym = (ROOT.parent / "skill.yml").read_text(encoding="utf-8")
+    _rd = (ROOT.parent / "README.md").read_text(encoding="utf-8")
+    _deny = [p for p in ("performs no research", "performs **no research**",
+                         "report generation stage only", "user's own research workflow",
+                         "upstream of this skill", "reference material only") if p in _sk]
+    _pos = all(p in _sk for p in ("## Two-stage workflow", "research-discipline-spec.md",
+                                  "Research-stage checklist (mandatory)", "Two-stage scope")) \
+        and "stage: research-and-report-generation" in _ym \
+        and "both stages" in _rd
+    check("R22 两阶段框架：入口文档无自我否定措辞、正向声明研究＋渲染并指向冻结规范",
+          not _deny and _pos, f"deny={_deny} pos={_pos}")
     t = copy.deepcopy(base_data); t["sources"]["items"][0]["url"] = "not a url"
     with tempfile.TemporaryDirectory() as td:
         jp = pathlib.Path(td) / "in.json"; hp = pathlib.Path(td) / "out.html"
@@ -1078,6 +1093,23 @@ console.log("MD_OK");
         # 干净克隆下套件总数须与文档声明一致（第三方 README 复验 2026-10-31）
         check("schema 副本可解析（单副本环境，多副本一致性不适用）", bool(uniq),
               "未找到任何 schema 副本")
+    # 规范多副本一致（P6，2026-11-04）：同一版本号的 research-discipline-spec.md 只能有一份字节——
+    # 实测 _发布_GitHub_v2.0 暂存过"待冻结"旧修订与仓库"已冻结"v0.3 并存，按需加载可靠性被直接恶化。
+    # 与 schema 同一套候选根；schema 是 JSON、规范是 Markdown，分开比对（规范无重复键/合法 JSON 检查）。
+    spec_cands = [("仓库", ROOT.parent / "research-discipline-spec.md")]
+    if (ws / "企业研究Skill_进度看板.md").is_file():
+        spec_cands += [("工作区根目录", ws / "research-discipline-spec.md"),
+                       ("发布暂存", ws / "_发布_GitHub_v2.0" / "research-discipline-spec.md"),
+                       ("仓库克隆", ws / "_build" / "github-v2" / "research-discipline-spec.md")]
+    spec_uniq = {p.resolve(): l for l, p in spec_cands if p.is_file()}
+    if len(spec_uniq) >= 2:
+        payloads = {p.read_bytes() for p in spec_uniq}
+        check("规范多副本一致（%s）" % "、".join(spec_uniq.values()),
+              len(payloads) == 1,
+              "同一版本号的规范存在不同字节的副本——推送前必须 diff 对齐并同步全部暂存副本")
+    else:
+        check("规范副本存在（单副本环境，多副本一致性不适用）", bool(spec_uniq),
+              "未找到任何规范副本")
 
     baselines = find_baselines(sys.argv[1:])
     if baselines and len(baselines) == len(files):

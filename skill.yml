@@ -1,15 +1,20 @@
 name: enterprise-research-skill
-version: 2.3.5
-description: 将符合数据契约的企业研究数据（report.json）渲染为单文件、可离线、可溯源的交互式 HTML 报告。Turn a contract-conformant company-research dataset into a validated single-file interactive HTML report.
+version: 2.3.6
+description: 对指定企业做公开信息研究并交付单文件、可离线、可溯源的交互式 HTML 报告：研究段按 research-discipline-spec.md 产出符合数据契约的 report.json，渲染段校验并渲染为最终 HTML。Research a company from public sources per research-discipline-spec.md, then render the contract-conformant report.json into a validated single-file interactive HTML report.
 entry: SKILL.md
 triggers:
+  - 企业研究
+  - 分析企业
   - 生成企业研究报告
   - 企业研究报告渲染
+  - company research
+  - company analysis
+  - analyze company
   - render enterprise research report
   - company report html
 tags:
   - research-report
   - html-rendering
   - data-contract
-stage: report-generation
+stage: research-and-report-generation
 license: MIT

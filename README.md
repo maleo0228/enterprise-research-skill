@@ -1,10 +1,12 @@
 # Enterprise Research Skill
 
 **Evidence-grounded company research → a single-file, offline HTML report.**
-**Current version: v2.3.7** · [Changelog](https://github.com/maleo0228/enterprise-research-skill/releases) · [中文版 README](README.zh-CN.md)
+**Current version: v2.3.8** · [Changelog](https://github.com/maleo0228/enterprise-research-skill/releases) · [中文版 README](README.zh-CN.md)
 
 Research a company from public sources under a frozen discipline spec, structure the findings as one JSON file, and this skill turns it into a **validated, navigable, fully source-traceable report** — a single HTML file that opens in any browser, works offline, and can be shared as-is. The skill covers both stages: research ([`research-discipline-spec.md`](research-discipline-spec.md)) and rendering. v2.0 is a complete rewrite of the archived [v1.x line](https://github.com/maleo0228/enterprise-research-skill/releases).
 
+> **New in v2.3.8** — contract pitfalls & pre-check: SKILL.md documents the four pitfalls that cause nearly all first-pass rework (basic_info core order, no annual/interim mixing, no hand-written citation marks, standard URL-reachability handling) with a seconds-fast pre-check — `python renderer/render.py <report.json> --check-only` reuses the delivery-time validator. Explicit gap gate: delivery renders carry `--gap-list gap-list.json` (replaces directory auto-detection); a self-explaining `GAP-GATE-SKIPPED` notice marks non-delivery re-renders. Starting templates in `templates/` (all-placeholder skeleton + gap-list skeleton). spec v0.6 adds §8.1 run-log (four-segment timing, wall-clock + action counts); `benchmarks/` holds release baselines. Zero-result gap entries gain optional structured `zero_result_evidence`. 158-item regression suite, zero-defect seeded fuzz.
+>
 > **New in v2.3.7** — spec v0.4: the research-discipline spec gains §10 (collection-dimension table mapping every required contract node to sources and evidence level, mechanically guarded by new regression R24) and §11 (neutral defaults: zero user parameters still executes end-to-end to a first version, at most 2 blocking questions, no deployment-specific defaults); §7.3 gap list gains a machine-readable `gap-list.json` form with carrier syntax; new `renderer/gap_fidelity_check.py` makes gap-to-carrier fidelity a mechanical pre-render gate (R23). 137-item regression suite, zero-defect seeded fuzz.
 >
 > **New in v2.3.6** — two-stage framing made explicit: SKILL.md, `skill.yml`, and this README now state up front that the skill covers **both** the research stage (governed by `research-discipline-spec.md`, read-before-start) and the rendering stage, removing the contradictory declarations that made some agents conclude the skill only renders HTML. `skill.yml` triggers extended ("企业研究 / analyze company"…); new regression R22 locks the framing against regression. 131-item regression suite, zero-defect seeded fuzz.
@@ -108,7 +110,7 @@ After installing, restart or refresh the agent so it re-discovers skills.
 
 ## For maintainers
 
-Renderer or skeleton changes only: `python renderer/test_renderer.py` runs the 137-item attack-surface & regression suite, and a mandatory seeded fuzz run (`python renderer/fuzz_renderer.py`, 4 seeds × 2000 cases, zero defects required) — all green before any release; `python renderer/compare.py <rendered.html> <baseline.html>` checks equivalence against a frozen baseline sample.
+Renderer or skeleton changes only: `python renderer/test_renderer.py` runs the 158-item attack-surface & regression suite, and a mandatory seeded fuzz run (`python renderer/fuzz_renderer.py`, 4 seeds × 2000 cases, zero defects required) — all green before any release; `python renderer/compare.py <rendered.html> <baseline.html>` checks equivalence against a frozen baseline sample.
 
 ## Roadmap
 

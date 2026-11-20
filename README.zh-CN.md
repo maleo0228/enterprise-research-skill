@@ -1,10 +1,12 @@
 # Enterprise Research Skill｜企业深度研究 Skill
 
 **基于公开证据的企业研究 → 单文件离线 HTML 报告。**
-**当前版本：v2.3.7** ·[更新日志](https://github.com/maleo0228/enterprise-research-skill/releases) · [English README](README.md)
+**当前版本：v2.3.8** ·[更新日志](https://github.com/maleo0228/enterprise-research-skill/releases) · [English README](README.md)
 
 对指定企业做公开信息研究（按冻结规范 [`research-discipline-spec.md`](research-discipline-spec.md)），把结论整理成一个 JSON 文件，本 skill 将其变成一份**经校验、可导航、全链路可溯源的报告**——单个 HTML 文件，任何浏览器直接打开、离线可用、可原样转发。本 skill 覆盖两个阶段：研究与渲染。v2.0 是对 [v1.x（已归档）](https://github.com/maleo0228/enterprise-research-skill/releases) 的完全重写。
 
+> **v2.3.8 新特性**——契约坑位与写作前预检：SKILL.md 文档化四类高频返工坑位（basic_info 前八项顺序、年度与中期数据不混排、禁手写 [E#] 引用标记、URL 可达性失败标准处置），配套秒级预检 `python renderer/render.py <report.json> --check-only`（复用交付期同一校验器）。显式缺口门禁：交付渲染须带 `--gap-list gap-list.json`（取代目录自动探测）；非交付重渲打印自解释提示 `GAP-GATE-SKIPPED`。`templates/` 新增全占位骨架模板与 gap-list 骨架。规范 v0.6 新增 §8.1 run-log 全程计时（四段操作定义＋墙钟/动作数双单位）；`benchmarks/` 目录承载版本发布基准。零结果缺口可附结构化 `zero_result_evidence` 举证。158 项回归套件、种子化模糊零缺陷。
+>
 > **v2.3.7 新特性**——规范 v0.4：研究纪律规范新增 §10 采集维度表（把契约全部必填节点映射到来源分档与证据等级，由新回归 R24 机械防漂移）与 §11 中立默认决策树（零用户参数也可端到端执行至第一版，反问 ≤2 且均阻塞，不写死任何部署方专属场景默认）；§7.3 缺口清单新增机器可读 `gap-list.json` 格式与承载位置语法；新增 `renderer/gap_fidelity_check.py`，把缺口↔承载对应变成渲染前机械门禁（R23）。137 项回归套件、种子化模糊零缺陷。
 >
 > **v2.3.6 新特性**——两阶段定位明确化：SKILL.md、`skill.yml` 与本 README 现在 upfront 声明 skill 覆盖**研究段**（由 research-discipline-spec.md 管辖，开工前必读）与**渲染段**两个阶段，删除了与正文研究清单自相矛盾的表述——此前部分 agent 读到这些声明会误判"skill 只做渲染"。`skill.yml` 触发词扩充（"企业研究 / analyze company"等）；新增回归 R22 锁定该框架防回退。131 项回归套件、种子化模糊零缺陷。
@@ -108,7 +110,7 @@ git clone https://github.com/maleo0228/enterprise-research-skill.git
 
 ## 维护者专用
 
-仅改版渲染器/骨架时：`python renderer/test_renderer.py` 跑 137 项攻击面与回归套件，并必须跑 `python renderer/fuzz_renderer.py` 种子化模糊（4 种子×2000 用例零缺陷）——全部通过才可发版；`python renderer/compare.py <渲染产物.html> <基线样张.html>` 与冻结基线做等价比对。
+仅改版渲染器/骨架时：`python renderer/test_renderer.py` 跑 158 项攻击面与回归套件，并必须跑 `python renderer/fuzz_renderer.py` 种子化模糊（4 种子×2000 用例零缺陷）——全部通过才可发版；`python renderer/compare.py <渲染产物.html> <基线样张.html>` 与冻结基线做等价比对。
 
 ## 路线图
 

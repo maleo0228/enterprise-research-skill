@@ -964,6 +964,157 @@ document.body.setAttribute('data-r18',bad.length?('压字 '+bad.length+' 处 '+b
                         C("图9｜单季", ["25Q3", "25Q4", "26Q1"])], tag)[0] for tag in ("表8｜", "表9｜", "图9｜"))
     check("R19 年度列与中期/累计列混排：表（列/行）/图均告警、--strict 阻断；单列最新报告期表与重述年度列不误报",
           w_tab and s_tab and w_cht and s_cht and not w_ok, f"tab={w_tab}/{s_tab} chart={w_cht}/{s_cht} false_pos={w_ok}")
+    # P0-1（v2.3.8）：chain label_bold 双重冒号修复——归一化剥尾冒号＋空 label 防孤独冒号
+    def _chain_html(labels):
+        t = copy.deepcopy(base_data)
+        # 追加而非替换：原 chain 项携带 E# 引用，替换会使来源悬空、validate 失败
+        t["overview"]["business"]["chain"] += [
+            {"label": lab, "label_bold": bold, "text_html": "段", "sources": []}
+            for lab, bold in labels]
+        _, h = run_render(t)
+        return h
+    _h1 = _chain_html([("核心业务：", True)])
+    _h2 = _chain_html([("核心业务", True)])
+    _h3 = _chain_html([("核心业务:", True)])
+    _h4 = _chain_html([("", True)])
+    check("P0-1 label_bold 自带全角/半角/无冒号均恰好一个全角冒号、空 label 无孤独「：」",
+          _h1.count("<b>核心业务：</b>") == 1 and "：：" not in _h1
+          and _h2.count("<b>核心业务：</b>") == 1
+          and _h3.count("<b>核心业务：</b>") == 1
+          and "<b>：</b>" not in _h4 and "：：" not in _h4,
+          f"全角={_h1.count('<b>核心业务：</b>')} 无={_h2.count('<b>核心业务：</b>')} 半角={_h3.count('<b>核心业务：</b>')} 空含孤独冒号={'<b>：</b>' in _h4}")
+    # P0-2（v2.3.8）：gap 门禁机械耦合 —— 组合矩阵、确定性、WARN 语义
+    # 夹具须本身 render-valid（R23 的 _gr 截过块会孤儿来源）——用 base_data 追加 missing 块
+    _gate_rep = copy.deepcopy(base_data)
+    _gate_rep["overview"]["financial"]["blocks"].append(
+        {"type": "missing", "note": "分部收入按区域拆分未公开披露"})
+    _gate_gaps = [{"id": "G1", "item": "分部收入拆分", "reason": "未公开披露",
+                   "impact": "区域增长判断收窄",
+                   "carrier": "financial.blocks[%d]" % (len(_gate_rep["overview"]["financial"]["blocks"]) - 1)}]
+    def _gap_gate(td, gaps, extra, report=None):
+        jp = pathlib.Path(td) / "in.json"; rp = pathlib.Path(td) / "r.html"; gp = pathlib.Path(td) / "g.json"
+        jp.write_text(json.dumps(report or _gate_rep, ensure_ascii=False), encoding="utf-8")
+        gp.write_text(json.dumps(gaps, ensure_ascii=False), encoding="utf-8")
+        args = [str(jp), str(SKEL), str(rp)] + [x.replace("{G}", str(gp)) for x in extra]
+        return subprocess.run([sys.executable, str(RENDER), *args], capture_output=True,
+                              text=True, encoding="utf-8", errors="replace", env=utf8_child_env()), rp
+    with tempfile.TemporaryDirectory() as td:
+        r, rp = _gap_gate(td, _gate_gaps, ["--gap-list", "{G}"])
+        check("P0-2 --gap-list 合法数据一步通过并出文件",
+              r.returncode == 0 and rp.exists(), (r.stderr or "")[-160:])
+    with tempfile.TemporaryDirectory() as td:
+        r, rp = _gap_gate(td, _bad_gaps, ["--gap-list", "{G}"])
+        check("P0-2 --gap-list 门禁失败 exit≠0 且不写文件",
+              r.returncode != 0 and not rp.exists(), f"rc={r.returncode} file={rp.exists()}")
+    with tempfile.TemporaryDirectory() as td:
+        r, rp = _gap_gate(td, _bad_gaps, ["--no-gap-list"])
+        check("P0-2 --no-gap-list 显式跳过正常渲染且无 WARN",
+              r.returncode == 0 and rp.exists() and "GAP-GATE-SKIPPED" not in (r.stderr or ""),
+              (r.stderr or "")[-160:])
+    with tempfile.TemporaryDirectory() as td:
+        r, rp = _gap_gate(td, _gate_gaps, [])
+        check("P0-2 无 gap 参数：渲染成功且 stderr 含 GAP-GATE-SKIPPED",
+              r.returncode == 0 and rp.exists() and "GAP-GATE-SKIPPED" in (r.stderr or ""),
+              (r.stderr or "")[-160:])
+    with tempfile.TemporaryDirectory() as td:
+        jp = pathlib.Path(td) / "in.json"
+        jp.write_text(json.dumps(_gate_rep, ensure_ascii=False), encoding="utf-8")
+        r = subprocess.run([sys.executable, str(RENDER), "--check-only", str(jp)],
+                           capture_output=True, text=True, encoding="utf-8", errors="replace",
+                           env=utf8_child_env())
+        check("R3 --check-only 单独：只校验、不渲染、无 GAP-GATE WARN、exit 0",
+              r.returncode == 0 and "GAP-GATE-SKIPPED" not in (r.stderr or ""), (r.stderr or "")[-160:])
+    with tempfile.TemporaryDirectory() as td:
+        r, rp = _gap_gate(td, _bad_gaps, ["--check-only", "--gap-list", "{G}"])
+        check("R3/P0-2 --check-only --gap-list：门禁跑、仍不渲染",
+              r.returncode != 0 and not rp.exists(), f"rc={r.returncode}")
+    with tempfile.TemporaryDirectory() as td:
+        r, rp = _gap_gate(td, _gate_gaps, ["--gap-list", "{G}", "--no-gap-list"])
+        check("P0-2 --gap-list 与 --no-gap-list 同传 exit 2", r.returncode == 2, f"rc={r.returncode}")
+    # R3（v2.3.8）：契约坑位四类 fixture 全部经 --check-only 秒级报出（SKILL.md「Contract pitfalls」）
+    def _co(d):
+        with tempfile.TemporaryDirectory() as td:
+            jp = pathlib.Path(td) / "in.json"
+            jp.write_text(json.dumps(d, ensure_ascii=False), encoding="utf-8")
+            return subprocess.run([sys.executable, str(RENDER), "--check-only", str(jp)],
+                                  capture_output=True, text=True, encoding="utf-8", errors="replace",
+                                  env=utf8_child_env())
+    _p1 = copy.deepcopy(base_data)
+    _p1["overview"]["basic_info"][0], _p1["overview"]["basic_info"][1] = \
+        _p1["overview"]["basic_info"][1], _p1["overview"]["basic_info"][0]
+    _r1 = _co(_p1)
+    _p2 = copy.deepcopy(base_data)
+    _p2["overview"]["financial"]["blocks"].append(
+        {"type": "table", "caption": "表9｜混排", "caption_sources": [_p2["sources"]["items"][0]["id"]],
+         "header": ["指标", "2024", "2025", "2026H1"], "rows": [["x", "1", "1", "1"]]})
+    _r2 = _co(_p2)
+    _p3 = copy.deepcopy(base_data)
+    _p3["signals"]["dynamic"][0]["text_html"] += " 正文手写[E1]标记"
+    _r3 = _co(_p3)
+    _p4 = copy.deepcopy(base_data)
+    _p4["sources"]["items"][0]["url"] = "not a url"
+    _r4 = _co(_p4)
+    check("R3 坑位① basic_info 前八项乱序：check-only 拒绝",
+          _r1.returncode != 0 and "须按序" in (_r1.stderr or ""), (_r1.stderr or "")[-160:])
+    check("R3 坑位② 年度与中期混排：check-only 报「混排」警告",
+          _r2.returncode == 0 and any("混排" in ln for ln in (_r2.stderr or "").splitlines()),
+          (_r2.stderr or "")[-160:])
+    check("R3 坑位③ 手写 [E#] 标记：check-only 拒绝",
+          _r3.returncode != 0 and "纯文本引用" in (_r3.stderr or ""), (_r3.stderr or "")[-160:])
+    check("R3 坑位④ 非 http(s) URL：check-only 报「须为完整 http(s) URL」警告",
+          _r4.returncode == 0 and any("须为完整 http(s) URL" in ln for ln in (_r4.stderr or "").splitlines()),
+          (_r4.stderr or "")[-160:])
+    # R4（v2.3.8）：模板三件套——空骨架/填充版 validate＋render 冒烟；basic_info 八项 label 与校验器逐字一致
+    _tmpl = ROOT.parent / "templates"
+    _skel_p, _fill_p = _tmpl / "report-skeleton.json", _tmpl / "report-filled-fixture.json"
+    check("R4 模板三件套文件齐全（骨架/填充版/gap-list 骨架）",
+          _skel_p.is_file() and _fill_p.is_file() and (_tmpl / "gap-list-skeleton.json").is_file(), "")
+    if _skel_p.is_file() and _fill_p.is_file():
+        _skel_d = json.loads(_skel_p.read_text(encoding="utf-8"))
+        _fill_d = json.loads(_fill_p.read_text(encoding="utf-8"))
+        _exp_labels = ["公司全称", "官网", "成立时间", "注册地／经营地", "所有制／资本状态", "高管背景", "员工规模", "组织结构"]
+        check("R4 骨架 basic_info 前八项 label 与校验器核心清单逐字一致",
+              [x["label"] for x in _skel_d["overview"]["basic_info"][:8]] == _exp_labels,
+              str([x["label"] for x in _skel_d["overview"]["basic_info"][:8]]))
+        check("R4 骨架与填充版不含示例公司真实数据（占位-/占位-前缀口径）",
+              "锦浪" not in json.dumps(_skel_d, ensure_ascii=False) + json.dumps(_fill_d, ensure_ascii=False)
+              and "鸣石" not in json.dumps(_skel_d, ensure_ascii=False) + json.dumps(_fill_d, ensure_ascii=False), "")
+        with tempfile.TemporaryDirectory() as td:
+            rp = pathlib.Path(td) / "o.html"
+            r = subprocess.run([sys.executable, str(RENDER), str(_skel_p), str(SKEL), str(rp)],
+                               capture_output=True, text=True, encoding="utf-8", errors="replace",
+                               env=utf8_child_env())
+            check("R4 空骨架 validate＋render 冒烟通过",
+                  r.returncode == 0 and rp.exists() and "Traceback" not in (r.stderr or ""), (r.stderr or "")[-160:])
+            rp2 = pathlib.Path(td) / "o2.html"
+            r2 = subprocess.run([sys.executable, str(RENDER), str(_fill_p), str(SKEL), str(rp2)],
+                                capture_output=True, text=True, encoding="utf-8", errors="replace",
+                                env=utf8_child_env())
+            check("R4 占位填充版 validate＋render 冒烟通过（无门禁参数、零校验警告）",
+                  r2.returncode == 0 and rp2.exists() and "校验警告" not in (r2.stderr or "")
+                  and "Traceback" not in (r2.stderr or ""), (r2.stderr or "")[-200:])
+    with tempfile.TemporaryDirectory() as td:
+        jp = pathlib.Path(td) / "in.json"; rp = pathlib.Path(td) / "r.html"; gp = pathlib.Path(td) / "g.json"
+        jp.write_text(json.dumps(_gate_rep, ensure_ascii=False), encoding="utf-8")
+        gp.write_text(json.dumps(_gate_gaps, ensure_ascii=False), encoding="utf-8")
+        # 值参在前：--gap-list g.json in.json skel.html out.html（防 v2.0.0 裸 KeyError 类回归）
+        r = subprocess.run([sys.executable, str(RENDER), "--gap-list", str(gp), str(jp), str(SKEL), str(rp)],
+                           capture_output=True, text=True, encoding="utf-8", errors="replace", env=utf8_child_env())
+        check("P0-2 取值型参数在前解析正确、渲染成功",
+              r.returncode == 0 and rp.exists() and "Traceback" not in (r.stderr or ""),
+              (r.stderr or "")[-200:])
+    # P1-4（v2.3.8）：zero_result_evidence 分级校验——存在则格式 errors 级，缺失走既有 warnings
+    _zre_ok = [dict(_gate_gaps[0], zero_result_evidence={"channels": ["官网", "招聘平台"],
+                                                         "actions": ["站点检索"], "date": "2026-11-20"})]
+    _zre_bad = [dict(_gate_gaps[0], zero_result_evidence={"channels": [], "date": "20261120"})]
+    _r = _run_gap(_zre_ok, _gate_rep)
+    check("P1-4 结构化零结果举证格式合法通过（checker CLI 行为不变）",
+          _r.returncode == 0, (_r.stdout or "")[-160:])
+    _r = _run_gap(_zre_bad, _gate_rep)
+    check("P1-4 结构化零结果举证格式错 errors 级失败",
+          _r.returncode != 0 and "zero_result_evidence" in (_r.stdout or ""), (_r.stdout or "")[-160:])
+    _r = _run_gap([dict(_gate_gaps[0])], _gate_rep)
+    check("P1-4 缺省该字段不阻塞（既有 warnings 路径）", _r.returncode == 0, (_r.stdout or "")[-160:])
     r, h = run_render(base_data)
     check("R5 柱图携带 data-md 数据表（MD 导出输出数值）", r.returncode == 0 and ('data-md="| 类目' in h or "chart_bar" not in json.dumps(base_data)), "")
     def _both(data):

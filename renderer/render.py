@@ -648,7 +648,9 @@ def render_financial_block(b):
             out.append(f'  <p>{rich(blk["text_html"])}{sups(blk["sources"])}</p>')
         return "\n".join(out)
     if t == "missing":
-        return f'  <div class="missing">{esc(b["note"])}</div>'
+        # P1-3（v2.3.8）：note 支持「首行摘要＋\n 分隔紧凑枚举」（spec §7.3 写法约束），
+        # \n 渲染为换行实现块内多行；不含 \n 的历史 note 输出逐字节不变。
+        return f'  <div class="missing">{esc(b["note"]).replace(chr(10), "<br>")}</div>'
     raise ValueError("未知块类型 " + t)
 
 # ---- 柱图布局 v2（评审补丁 0010）：先算各元素包围盒、再定坐标，结构上保证不重叠 ----
@@ -802,8 +804,13 @@ def render_p1(d):
     if b.get("chain_heading"):
         L.append(f'  <h3 class="block-title">{esc(b["chain_heading"])}</h3>')
     for it in b["chain"]:
-        if it["label_bold"]:
-            L.append(f'  <p><b>{esc(it["label"])}：</b>{rich(it["text_html"])}{sups(it["sources"])}</p>')
+        # P0-1（v2.3.8）：label_bold 分支原先无条件拼接全角冒号，label 自带冒号（鸣石
+        # 模式「核心业务：」）时叠加成「：：」。改为归一化：先剥尾冒号再补恰好一个；
+        # label_bold=True 但 label 为空串时回落无标签段渲染，不出孤独「：」。
+        # 非 label_bold 分支输出不动（既有样例该分支 label 自带冒号，逐字节基线保真）。
+        if it["label_bold"] and it["label"]:
+            _lab = it["label"].rstrip("：:").rstrip()
+            L.append(f'  <p><b>{esc(_lab)}：</b>{rich(it["text_html"])}{sups(it["sources"])}</p>')
         elif it["label"]:
             L.append(f'  <p>{esc(it["label"])}{rich(it["text_html"])}{sups(it["sources"])}</p>')
         else:
@@ -936,13 +943,71 @@ def render_sidenav(d):
 
 # ---------- 主流程 ----------
 def main():
-    strict = "--strict" in sys.argv[1:]
-    args = [a for a in sys.argv[1:] if a != "--strict"]
-    data_p, skel_p, out_p = args[0], args[1], args[2]
-    d = json.load(open(data_p, encoding="utf-8"))
-    warns = validate(d, strict=strict)
+    # v2.3.8（P0-2/R3）：argparse 显式解析——取值型参数消费其值，旗标与位置参数
+    # 顺序无关。旧「过滤旗标＋按位索引」写法会把 --gap-list 的值当位置参数打开，
+    # 重演 v2.0.0 审计的裸 KeyError 类缺陷。组合矩阵（v3.5 定稿）：
+    #   --check-only              只跑 validate（+--gap-list 时加 gap 校验），不渲染、不打 WARN
+    #   --gap-list f              validate → gap 门禁 → 渲染；门禁失败不写文件 exit 1
+    #   --no-gap-list             显式跳过，正常渲染，无 WARN
+    #   --gap-list + --no-gap-list 冲突，exit 2
+    #   无 gap 参数（纯渲染）      正常渲染，stderr 打 GAP-GATE-SKIPPED（--check-only 除外）
+    # 挂载点：validate 之后、渲染之前；两类错误并存时 validate 先报（其 SystemExit 在先）。
+    import argparse
+    ap = argparse.ArgumentParser(prog="render.py")
+    ap.add_argument("in_json")
+    ap.add_argument("skeleton", nargs="?")
+    ap.add_argument("out", nargs="?")
+    ap.add_argument("--strict", action="store_true")
+    ap.add_argument("--check-only", action="store_true", help="只跑校验、不渲染")
+    g = ap.add_mutually_exclusive_group()
+    g.add_argument("--gap-list", metavar="FILE")
+    g.add_argument("--no-gap-list", action="store_true")
+    a = ap.parse_args()
+    if not a.check_only and (not a.skeleton or not a.out):
+        ap.error("渲染需要三个位置参数：<report.json> <skeleton.html> <out.html>"
+                 "（写作前预检用 --check-only，只需 report.json）")
+
+    d = json.load(open(a.in_json, encoding="utf-8"))
+    warns = validate(d, strict=a.strict)
     for w in warns:
         print(f"校验警告：{w}", file=sys.stderr)
+
+    if a.check_only:
+        # R3 写作前预检：秒级、不渲染。--check-only 无交付语义，不打 GAP-GATE-SKIPPED
+        #（预检是全程最高频调用，每跑必打会训练前缀疲劳、废掉该 WARN 的存在目的）。
+        if a.gap_list:
+            import gap_lib
+            ge, gw, goks, gn = [], [], [], 0
+            raw = gap_lib.load_json(a.gap_list, "gap-list", ge)
+            if not ge:
+                ge, gw, goks, gn = gap_lib.run_gap_check(raw, d)
+            for line in goks:
+                print("ok    " + line)
+            for w in gw:
+                print("WARN  " + w)
+            if ge:
+                print("校验失败（gap）：\n" + "\n".join(" - " + e for e in ge), file=sys.stderr)
+                sys.exit(1)
+        return
+
+    if a.gap_list:
+        # P0-2 交付门禁：显式 --gap-list 才触发（argv 级，不探测目录——输出是输入的
+        # 确定函数）。失败即非零退出且不写文件。
+        import gap_lib
+        ge = []
+        raw = gap_lib.load_json(a.gap_list, "gap-list", ge)
+        if not ge:
+            ge, _gw, _goks, _gn = gap_lib.run_gap_check(raw, d)
+        if ge:
+            print("gap 校验失败（--gap-list 门禁）：\n" + "\n".join(" - " + e for e in ge),
+                  file=sys.stderr)
+            sys.exit(1)
+    elif not a.no_gap_list:
+        print("GAP-GATE-SKIPPED: no gap gate applied (expected for batch re-render / "
+              "re-validation / non-delivery use; not an error, do not rework)", file=sys.stderr)
+
+    skel_p, out_p = a.skeleton, a.out
+    data_p = a.in_json
     meta = d["meta"]
     skel = pathlib.Path(skel_p).read_text(encoding="utf-8")
     body = "\n\n".join([render_p1(d), render_p2(d), render_p3(d), render_p4(d), render_p5(d)])

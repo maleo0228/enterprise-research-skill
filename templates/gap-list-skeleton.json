@@ -1,0 +1,14 @@
+[
+  {
+    "id": "G1",
+    "item": "占位-缺口项名称",
+    "reason": "占位-缺口原因（如：未公开披露）",
+    "impact": "占位-对报告结论的影响",
+    "carrier": "占位-挂载点（如：financial.blocks[0]）",
+    "zero_result_evidence": {
+      "channels": ["占位-渠道一", "占位-渠道二"],
+      "actions": ["占位-检索动作"],
+      "date": "2026-01-01"
+    }
+  }
+]

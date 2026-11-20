@@ -1,0 +1,370 @@
+{
+  "meta": {
+    "company_name": "占位-公司全称",
+    "company_short": "占位",
+    "anchor_date": "2026-01-01",
+    "contract_version": "v0.1",
+    "search_hint": "输入关键词，如：占位",
+    "sample_version": "v0.1"
+  },
+  "overview": {
+    "lead": "占位-lead",
+    "basic_info": [
+      {
+        "label": "公司全称",
+        "value_html": "占位-value_html",
+        "sources": [
+          "E1"
+        ]
+      },
+      {
+        "label": "官网",
+        "value_html": "占位-value_html",
+        "sources": [
+          "E2"
+        ]
+      },
+      {
+        "label": "成立时间",
+        "value_html": "占位-value_html",
+        "sources": [
+          "E1"
+        ]
+      },
+      {
+        "label": "注册地／经营地",
+        "value_html": "占位-value_html",
+        "sources": [
+          "E2"
+        ]
+      },
+      {
+        "label": "所有制／资本状态",
+        "value_html": "占位-value_html",
+        "sources": [
+          "E1"
+        ]
+      },
+      {
+        "label": "高管背景",
+        "value_html": "占位-value_html",
+        "sources": [
+          "E2"
+        ]
+      },
+      {
+        "label": "员工规模",
+        "value_html": "占位-value_html",
+        "sources": [
+          "E1"
+        ]
+      },
+      {
+        "label": "组织结构",
+        "value_html": "占位-value_html",
+        "sources": [
+          "E2"
+        ]
+      }
+    ],
+    "business": {
+      "outline_title": "占位-outline_title",
+      "outline_items": [
+        {
+          "text_html": "占位-text_html",
+          "sources": [
+            "E1"
+          ]
+        }
+      ],
+      "chain": [
+        {
+          "label": "占位-label",
+          "label_bold": false,
+          "text_html": "占位-text_html",
+          "sources": [
+            "E2"
+          ]
+        }
+      ],
+      "strengths_title": "占位-strengths_title",
+      "strength_items": [
+        {
+          "text_html": "占位-text_html",
+          "sources": [
+            "E1"
+          ]
+        }
+      ],
+      "moat": [
+        {
+          "label": "占位-label",
+          "text_html": "占位-text_html",
+          "sources": [
+            "E2"
+          ]
+        }
+      ]
+    },
+    "financial": {
+      "lead_note": "占位-lead_note",
+      "blocks": [
+        {
+          "type": "table",
+          "caption": "表1｜",
+          "caption_sources": [
+            "E1"
+          ],
+          "header": [
+            "指标",
+            "2024",
+            "2025"
+          ],
+          "rows": [
+            [
+              "占位-行",
+              1.0
+            ]
+          ]
+        },
+        {
+          "type": "chart_bar",
+          "caption": "图1｜",
+          "caption_sources": [
+            "E2"
+          ],
+          "categories": [
+            "2024",
+            "2025"
+          ],
+          "series": [
+            {
+              "name": "占位-系列甲",
+              "values": [
+                1.0,
+                2.0
+              ]
+            },
+            {
+              "name": "占位-系列乙",
+              "unit": "占位-单位",
+              "color": "blue",
+              "values": [
+                2.0,
+                1.0
+              ]
+            }
+          ]
+        },
+        {
+          "type": "timeline",
+          "caption": "图2｜",
+          "caption_sources": [
+            "E1"
+          ],
+          "nodes": [
+            {
+              "value": "占位-",
+              "date": "占位-",
+              "who": "占位-",
+              "sources": [
+                "E2"
+              ]
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "caption": "占位-标题（text 类不加编号）",
+          "text_sources": [
+            "E1"
+          ],
+          "blocks": [
+            {
+              "text_html": "占位-text_html",
+              "sources": [
+                "E2"
+              ]
+            }
+          ]
+        },
+        {
+          "type": "missing",
+          "note": "占位-缺项说明"
+        }
+      ]
+    }
+  },
+  "signals": {
+    "lead": "占位-lead",
+    "key": [
+      {
+        "id": "sig1",
+        "nav": "占位-导航",
+        "title": "重点信号 S1｜占位",
+        "sections": [
+          {
+            "label": "事实依据",
+            "text_html": "占位-text_html",
+            "sources": [
+              "E1"
+            ]
+          },
+          {
+            "label": "为什么重要",
+            "text_html": "占位-text_html",
+            "sources": [
+              "E2"
+            ]
+          },
+          {
+            "label": "对关注方向的影响",
+            "text_html": "占位-text_html",
+            "sources": [
+              "E1"
+            ]
+          }
+        ]
+      }
+    ],
+    "dynamic_title": "占位-dynamic_title",
+    "dynamic": [
+      {
+        "id": "d1",
+        "date": "2026-01",
+        "text_html": "占位-text_html",
+        "sources": [
+          "E1"
+        ]
+      }
+    ]
+  },
+  "mechanisms": {
+    "lead": "占位-lead",
+    "items": [
+      {
+        "id": "mech1",
+        "nav": "占位-导航",
+        "title": "机制一：占位",
+        "rows": [
+          {
+            "th": "业务任务",
+            "td_html": "占位-td_html",
+            "sources": [
+              "E2"
+            ]
+          },
+          {
+            "th": "业务系统",
+            "td_html": "占位-td_html",
+            "sources": [
+              "E1"
+            ]
+          },
+          {
+            "th": "功能需求",
+            "td_html": "占位-td_html",
+            "sources": [
+              "E2"
+            ]
+          },
+          {
+            "th": "负载特性",
+            "td_html": "占位-td_html",
+            "sources": [
+              "E1"
+            ]
+          },
+          {
+            "th": "运行方式",
+            "td_html": "占位-td_html",
+            "sources": [
+              "E2"
+            ]
+          },
+          {
+            "th": "对业务结果的影响",
+            "td_html": "占位-td_html",
+            "sources": [
+              "E1"
+            ]
+          },
+          {
+            "th": "关联的 IT 能力",
+            "td_html": "占位-td_html",
+            "sources": [
+              "E2"
+            ]
+          }
+        ],
+        "confirmed": {
+          "text": "占位-text"
+        },
+        "unconfirmed": {
+          "text": "占位-text"
+        },
+        "evidence": {
+          "text": "占位-text"
+        }
+      }
+    ]
+  },
+  "directions": {
+    "lead": "占位-lead",
+    "items": [
+      {
+        "id": "dir1",
+        "state": "s1",
+        "title": "D1｜占位",
+        "basis": "占位-basis",
+        "points": [
+          {
+            "label": "为什么值得关注",
+            "text_html": "占位-text_html",
+            "sources": [
+              "E1"
+            ]
+          }
+        ],
+        "basis_sources": [
+          "E2"
+        ]
+      }
+    ]
+  },
+  "sources": {
+    "lead": "占位-lead",
+    "items": [
+      {
+        "id": "E1",
+        "entity": "占位-主体",
+        "time": "占位-时间",
+        "caliber": "占位-口径",
+        "source": "占位-来源与层级",
+        "url": "https://example.com/占位-路径",
+        "url_display": "example.com/占位-路径",
+        "fetched": "2026-01-01",
+        "identity": "已核实事实",
+        "url2": "https://example.com/占位-第二入口",
+        "url2_display": "example.com/占位-第二入口"
+      },
+      {
+        "id": "E2",
+        "entity": "占位-主体",
+        "time": "占位-time",
+        "caliber": "占位-caliber",
+        "source": "占位-source",
+        "url": "https://example.org/占位-路径",
+        "url_display": "example.org/占位-路径",
+        "fetched": "2026-01-01",
+        "identity": "来源说法"
+      }
+    ],
+    "homology_note": "占位-homology_note",
+    "legend": [
+      "已核实事实",
+      "来源说法",
+      "推断"
+    ]
+  }
+}

@@ -8,7 +8,7 @@
   "definitions": {
     "html": { "type": "string", "description": "富文本，白名单标签仅 <b> <br> <a href=\"http(s)://…\">，其余标签一律转义、危险 href 剥离；不得手写 <sup>（引用标记由 sources 数组自动生成）" },
     "sourceRefs": { "type": "array", "items": { "type": "string", "pattern": "^E\\d+$" }, "uniqueItems": true },
-    "lead": { "type": "string", "description": "页首结论：≤2 句、带最硬数字、回答对销售意味着什么" },
+    "lead": { "type": "string", "description": "页首结论：≤2 句、带最硬数字、点明对报告使用者的核心含义（不预设使用者身份与场景，§11 中立默认）" },
     "navItem": {
       "type": "object",
       "required": ["id", "nav"],

@@ -1,8 +1,21 @@
 # -*- coding: utf-8 -*-
 """
-G5 渲染器 v0.11（无第三方依赖，Python 3.8+ 标准库）
-用法: python render.py <report.json> <skeleton.html> <输出.html>
+G5 渲染器 v0.12（无第三方依赖，Python 3.8+ 标准库）
+用法: python render.py <report.json> <skeleton.html> <输出.html> [--check-only | --gap-list <file> | --no-gap-list]
 规则依据：《企业研究Skill_G4数据契约与模板规格 v0.1（含增补）》§四/§五
+v0.12 变更（2026-11-20，v2.3.8 渲染器变更补记＋纯冒号 label 边缘修复，D-96）：
+- 补记 v2.3.8 已交付但未记入本 changelog 的渲染器变更：CLI 改 argparse 显式解析
+  （--check-only 写作前预检／--gap-list 交付门禁／--no-gap-list 显式跳过／两参同传
+  exit 2；取值型参数消费其值，旗标与位置参数顺序无关——杜绝「过滤旗标＋按位索引」
+  把参数值当位置参数打开的裸 KeyError 类缺陷）；gap 校验逻辑抽至 gap_lib.py 双入口
+  复用；无参渲染 stderr 打 GAP-GATE-SKIPPED（--check-only 除外）；chain label_bold
+  冒号归一化；missing 块 note 的 
+→<br>；zero_result_evidence 分级校验
+- 新增修复：label_bold 分支判真条件原先用原始 label，归一化后为空的纯冒号 label
+  （「：」「::」）仍拼接冒号，输出孤独 <b>：</b>——判真改用归一后标签，纯冒号回落
+  无标签渲染路径
+- 对 v0.11 全部合法输入输出逐字节兼容（既有样例 non-bold 分支与基线不受影响；
+  等价比对回归锁定；套件 158→159 项＋4 种子 fuzz 全绿）
 v0.11 变更（2026-10-23，第四轮外部审计 G 系列，验证为真修复，D-95）：
 - G8：business.heading 置换为真值非对象时渲染期 AttributeError 裸崩（审计方
   fuzz 种子 777/31337 共 4 用例同源此路径）——校验期拦截：heading 须为对象、
@@ -806,10 +819,11 @@ def render_p1(d):
     for it in b["chain"]:
         # P0-1（v2.3.8）：label_bold 分支原先无条件拼接全角冒号，label 自带冒号（鸣石
         # 模式「核心业务：」）时叠加成「：：」。改为归一化：先剥尾冒号再补恰好一个；
-        # label_bold=True 但 label 为空串时回落无标签段渲染，不出孤独「：」。
+        # label_bold=True 但 label 为空串时回落无标签段渲染，不出孤独「：」；纯冒号
+        # label（「：」「::」）归一后同样为空，v0.12 起判真条件改用归一后标签一并覆盖。
         # 非 label_bold 分支输出不动（既有样例该分支 label 自带冒号，逐字节基线保真）。
-        if it["label_bold"] and it["label"]:
-            _lab = it["label"].rstrip("：:").rstrip()
+        _lab = (it["label"] or "").rstrip("：:").rstrip()
+        if it["label_bold"] and _lab:
             L.append(f'  <p><b>{esc(_lab)}：</b>{rich(it["text_html"])}{sups(it["sources"])}</p>')
         elif it["label"]:
             L.append(f'  <p>{esc(it["label"])}{rich(it["text_html"])}{sups(it["sources"])}</p>')

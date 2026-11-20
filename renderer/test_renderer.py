@@ -983,6 +983,14 @@ document.body.setAttribute('data-r18',bad.length?('压字 '+bad.length+' 处 '+b
           and _h3.count("<b>核心业务：</b>") == 1
           and "<b>：</b>" not in _h4 and "：：" not in _h4,
           f"全角={_h1.count('<b>核心业务：</b>')} 无={_h2.count('<b>核心业务：</b>')} 半角={_h3.count('<b>核心业务：</b>')} 空含孤独冒号={'<b>：</b>' in _h4}")
+
+    # L1（v0.12 补丁）：纯冒号 label 归一后为空——不得输出孤独 <b>：</b>
+    _h5 = _chain_html([("：", True)])
+    _h6 = _chain_html([("::", True)])
+    check("P0-1 补丁：纯冒号 label（：／::）归一后不出孤独「：」",
+          "<b>：</b>" not in _h5 and "<b>：</b>" not in _h6
+          and "：：" not in _h5 and "：：" not in _h6,
+          f"全角冒号含孤独={'<b>：</b>' in _h5} 半角冒号含孤独={'<b>：</b>' in _h6}")
     # P0-2（v2.3.8）：gap 门禁机械耦合 —— 组合矩阵、确定性、WARN 语义
     # 夹具须本身 render-valid（R23 的 _gr 截过块会孤儿来源）——用 base_data 追加 missing 块
     _gate_rep = copy.deepcopy(base_data)
